@@ -1,1 +1,0 @@
-Upload package.json, next.config.mjs, open-next.config.ts, and wrangler.jsonc into the scentmarked-mvp-v0.5 folder in GitHub. Replace package.json. Then set Cloudflare Deploy command to: npm run deploy. Keep Build command: npm run build. Retry deployment.
