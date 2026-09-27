@@ -1,6 +1,7 @@
 import { login, signup, requestPasswordReset } from './actions'
+export const metadata={title:'Sign In or Join',description:'Sign in to Scentmarked or create an account to save fragrances and manage My Marks.',robots:{index:false,follow:false}}
 export default async function LoginPage({searchParams}:{searchParams:Promise<{error?:string,message?:string,next?:string}>}) {
- const p=await searchParams; const next=p.next||'/collection'
+ const p=await searchParams; const rawNext=p.next||'/collection'; const next=rawNext.startsWith('/')&&!rawNext.startsWith('//')?rawNext:'/collection'
  return <main className="auth-page"><section className="auth-shell">
   <div className="auth-story"><p className="eyebrow">YOUR SCENTED JOURNEY</p><h1>More than scents.<br/>A more informed you.</h1><p>Create your Scentmarked account to collect fragrances, remember what you've tried, and keep your next discoveries close.</p><div className="auth-bottle">S</div><i>Know the notes.<br/>Find the match.</i></div>
   <div className="auth-panel"><a className="auth-logo" href="/">Scentmarked<small>KNOW THE NOTES. FIND THE MATCH.</small></a><h2>Welcome to Scentmarked</h2><p>Sign in or create your free account.</p>{p.error&&<div className="notice error">{p.error}</div>}{p.message&&<div className="notice">{p.message}</div>}
