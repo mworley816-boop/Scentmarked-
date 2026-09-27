@@ -14,7 +14,7 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
 export default async function PerfumePage({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;let s:any;let result:any
  try{s=await createClient();result=await s.from('perfumes').select('id,name,slug,description,concentration,release_year,country,brands(name,slug),perfume_notes(position,notes(name,slug)),perfume_accords(strength,accords(name,slug)),ratings(overall,longevity,projection,sweetness,review,created_at,profiles(display_name))').eq('slug',slug).eq('status','published').maybeSingle()}catch{return <main className="profile-page"><section className="empty-state"><h1>Fragrance profile temporarily unavailable</h1><p>Please try again in a moment.</p><Link className="button" href="/discover">Discover Fragrances</Link></section></main>}
- if(result.error||!result.data)notFound()
+ if(result.error)return <main className="profile-page"><section className="empty-state"><h1>Fragrance profile temporarily unavailable</h1><p>{result.error.message||'The fragrance data could not be loaded.'}</p><Link className="button" href="/discover">Discover Fragrances</Link></section></main>\n if(!result.data)notFound()
  const p:any=result.data,notes:any[]=p.perfume_notes||[],accords:any[]=p.perfume_accords||[],brand=p.brands?.name||'Scentmarked',ratings:any[]=p.ratings||[]
  const avg=ratings.length?(ratings.reduce((a:number,r:any)=>a+Number(r.overall),0)/ratings.length).toFixed(1):null
  const metric=(key:string)=>{const rows=ratings.filter((r:any)=>Number(r[key])>0);return rows.length?(rows.reduce((a:number,r:any)=>a+Number(r[key]),0)/rows.length).toFixed(1):null}
