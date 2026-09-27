@@ -3,45 +3,53 @@ import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 
-function safeNext(value: FormDataEntryValue | null) {
-  const next = typeof value === 'string' ? value : '/collection'
-  return next.startsWith('/') && !next.startsWith('//') ? next : '/collection'
+function safeNext(value:FormDataEntryValue|null){
+ const next=typeof value==='string'?value:'/collection'
+ return next.startsWith('/')&&!next.startsWith('//')?next:'/collection'
+}
+function loginUrl(kind:'error'|'message',message:string,next:string){
+ return `/login?${kind}=${encodeURIComponent(message)}&next=${encodeURIComponent(next)}`
+}
+async function siteOrigin(){
+ const h=await headers()
+ const host=h.get('x-forwarded-host')||h.get('host')
+ const proto=h.get('x-forwarded-proto')||'https'
+ if(host)return `${proto}://${host}`
+ return process.env.NEXT_PUBLIC_SITE_URL||'http://localhost:3000'
 }
 
-async function siteOrigin() {
-  const h = await headers()
-  const host = h.get('x-forwarded-host') || h.get('host')
-  const proto = h.get('x-forwarded-proto') || 'https'
-  if (host) return `${proto}://${host}`
-  return process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+export async function login(formData:FormData){
+ const email=String(formData.get('email')||'').trim()
+ const password=String(formData.get('password')||'')
+ const next=safeNext(formData.get('next'))
+ if(!email||!password)redirect(loginUrl('error','Email and password are required.',next))
+ try{
+  const supabase=await createClient()
+  const {error}=await supabase.auth.signInWithPassword({email,password})
+  if(error)redirect(loginUrl('error',error.message,next))
+ }catch(error:any){
+  if(error?.digest)throw error
+  redirect(loginUrl('error','Sign in is temporarily unavailable. Please try again.',next))
+ }
+ redirect(next)
 }
 
-export async function login(formData: FormData) {
-  const supabase = await createClient()
-  const email = String(formData.get('email') || '').trim()
-  const password = String(formData.get('password') || '')
-  const next = safeNext(formData.get('next'))
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) redirect(`/login?error=${encodeURIComponent(error.message)}&next=${encodeURIComponent(next)}`)
-  redirect(next)
-}
-
-export async function signup(formData: FormData) {
-  const supabase = await createClient()
-  const email = String(formData.get('email') || '').trim()
-  const password = String(formData.get('password') || '')
-  const displayName = String(formData.get('display_name') || '').trim()
-  const next = safeNext(formData.get('next'))
-  const origin = await siteOrigin()
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { display_name: displayName },
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`
-    }
-  })
-  if (error) redirect(`/login?error=${encodeURIComponent(error.message)}&next=${encodeURIComponent(next)}`)
-  if (data.session) redirect(next)
-  redirect(`/login?message=${encodeURIComponent('Check your email to confirm your account, then sign in.')}&next=${encodeURIComponent(next)}`)
+export async function signup(formData:FormData){
+ const email=String(formData.get('email')||'').trim()
+ const password=String(formData.get('password')||'')
+ const displayName=String(formData.get('display_name')||'').trim()
+ const next=safeNext(formData.get('next'))
+ if(!email||!password)redirect(loginUrl('error','Email and password are required.',next))
+ if(password.length<6)redirect(loginUrl('error','Password must be at least 6 characters.',next))
+ try{
+  const supabase=await createClient()
+  const origin=await siteOrigin()
+  const {data,error}=await supabase.auth.signUp({email,password,options:{data:{display_name:displayName},emailRedirectTo:`${origin}/auth/callback?next=${encodeURIComponent(next)}`}})
+  if(error)redirect(loginUrl('error',error.message,next))
+  if(data.session)redirect(next)
+ }catch(error:any){
+  if(error?.digest)throw error
+  redirect(loginUrl('error','Account creation is temporarily unavailable. Please try again.',next))
+ }
+ redirect(loginUrl('message','Check your email to confirm your account, then sign in.',next))
 }
