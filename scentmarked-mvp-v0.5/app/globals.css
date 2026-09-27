@@ -54,3 +54,12 @@
 
 /* Review controls + fragrance reviews */
 .rating-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.rating-actions .danger-link{padding:10px 0}.profile-reviews{max-width:1180px;margin:0 auto 38px;padding:26px}.profile-reviews .review-grid{margin-top:16px}@media(max-width:600px){.rating-actions{align-items:stretch;flex-direction:column}.rating-actions .danger-link{text-align:left}}
+
+
+/* Community comparison consensus */
+.community-consensus{margin:28px 0;padding:24px;border:1px solid var(--line,#e7ddd0);border-radius:22px;background:rgba(255,255,255,.48)}
+.community-consensus h2{margin:4px 0 10px}
+.consensus-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.consensus-grid span{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:16px;background:rgba(255,255,255,.65)}
+.consensus-grid b{font-size:1.35rem}
+@media(max-width:600px){.consensus-grid{grid-template-columns:1fr}.community-consensus{padding:20px}}
