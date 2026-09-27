@@ -5,7 +5,7 @@ import ComparisonVote from '@/components/comparison-vote';
 function names(p:any){return(p?.perfume_notes||[]).map((n:any)=>n.notes?.name).filter(Boolean)}
 function group(p:any,pos:string){return(p?.perfume_notes||[]).filter((n:any)=>n.position===pos).map((n:any)=>n.notes?.name).filter(Boolean)}
 
-export const metadata={title:'Compare Fragrances',description:'Compare verified fragrance notes and community similarity votes side by side.'}
+export const metadata={title:'Compare Fragrances',description:'Compare verified fragrance notes and community similarity votes side by side.',alternates:{canonical:'/compare'},openGraph:{title:'Compare Fragrances | Scentmarked',description:'Compare fragrance notes and community similarity data side by side.',url:'/compare',type:'website'}}
 
 export default async function Compare({searchParams}:{searchParams:Promise<{a?:string,b?:string}>}){
  const q=await searchParams;
