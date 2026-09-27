@@ -5,7 +5,7 @@ type Search={q?:string;brand?:string;type?:string;note?:string;accord?:string;so
 const middleEastern=['Lattafa','Maison Alhambra','Paris Corner','French Avenue','Khadlaj','Swiss Arabian','Armaf','Afnan','Rasasi','Al Haramain']
 const niche=['Giardini di Toscana','Maison Francis Kurkdjian','Parfums de Marly','Xerjoff','Mancera','Montale','Kilian Paris','Nishane','Initio']
 const segment=(brand:string)=>middleEastern.includes(brand)?'Middle Eastern':niche.includes(brand)?'Niche':'Designer'
-export const metadata={title:'Discover Fragrances',description:'Search and filter the Scentmarked fragrance catalog by brand, note and fragrance collection.'}
+export const metadata={title:'Discover Fragrances',description:'Search and filter the Scentmarked fragrance catalog by brand, note and fragrance collection.',alternates:{canonical:'/discover'},openGraph:{title:'Discover Fragrances | Scentmarked',description:'Search designer, Middle Eastern and niche fragrances by brand, note and accord.',url:'/discover',type:'website'}}
 
 export default async function Discover({searchParams}:{searchParams:Promise<Search>}){
  const p=await searchParams;let all:any[]=[],loadError=false
