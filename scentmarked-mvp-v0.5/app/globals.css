@@ -45,3 +45,6 @@
 
 /* Admin accord management */
 .admin-accord-list{display:grid;margin:12px 0}.admin-accord-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}.admin-accord-row form{display:flex;gap:6px;align-items:center}.admin-accord-row input{width:86px}.admin-accord-row input,.admin-accord-row select,.admin-accord-row button{padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--paper)}.accord-form{grid-template-columns:1fr 100px 150px auto}@media(max-width:700px){.admin-accord-row{grid-template-columns:1fr}.admin-accord-row form{flex-wrap:wrap}.accord-form{grid-template-columns:1fr}}
+
+/* Accord discovery */
+.discover-tools{grid-template-columns:repeat(6,minmax(0,1fr)) auto!important}.note-chips .accord-chip{border-style:dashed;font-weight:700}@media(max-width:900px){.discover-tools{grid-template-columns:repeat(2,minmax(0,1fr))!important}}@media(max-width:600px){.discover-tools{grid-template-columns:1fr!important}}
