@@ -1,18 +1,11 @@
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+
+export const metadata={title:'Fragrance Brands',description:'Browse designer, niche and Middle Eastern fragrance houses in the Scentmarked catalog.'}
 
 export default async function Brands(){
- let brands:any[]=[];
- let loadError=false;
- try{
-  const s=await createClient();
-  const result=await s.from('brands').select('id,name,slug,country').order('name');
-  if(result.error) loadError=true; else brands=result.data||[];
- }catch{loadError=true}
-
- return <main><section className="index-page">
-  <div className="index-hero"><p className="eyebrow">FRAGRANCE HOUSES</p><h1>Explore Brands</h1><p>Browse the designer, niche and Middle Eastern houses in the growing Scentmarked catalog.</p></div>
-  {loadError?<div className="empty-state"><h2>Brands are temporarily unavailable.</h2><p>Please refresh in a moment.</p></div>:
-  <div className="brand-index">{brands.map(b=><Link href={'/discover?brand='+encodeURIComponent(b.name)} key={b.id}><div className="brand-monogram">{b.name.slice(0,2).toUpperCase()}</div><h3>{b.name}</h3><p>{b.country||'Fragrance house'}</p><span>Explore scents →</span></Link>)}</div>}
- </section></main>
+ let brands:any[]=[];let loadError=false
+ try{const s=await createClient();const result=await s.from('brands').select('id,name,slug,country').order('name');if(result.error)loadError=true;else brands=result.data||[]}catch{loadError=true}
+ return <main><section className="index-page"><div className="index-hero"><p className="eyebrow">FRAGRANCE HOUSES</p><h1>Explore Brands</h1><p>Browse the designer, niche and Middle Eastern houses in the growing Scentmarked catalog.</p></div>
+ {loadError?<div className="empty-state"><h2>Brands are temporarily unavailable.</h2><p>Please refresh in a moment.</p></div>:<div className="brand-index">{brands.map(b=><Link href={'/brand/'+b.slug} key={b.id}><div className="brand-monogram">{b.name.slice(0,2).toUpperCase()}</div><h3>{b.name}</h3><p>{b.country||'Fragrance house'}</p><span>Explore scents →</span></Link>)}</div>}</section></main>
 }
