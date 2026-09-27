@@ -21,7 +21,7 @@ export default function ComparisonVote({aId,bId,aName,bName}:{aId:string;bId:str
    if(stronger)payload.stronger=stronger
    if(longer)payload.longer=longer
    if(gourmand)payload.more_gourmand=gourmand
-   const {error}=await supabase.from('comparison_votes').insert(payload)
+   const {error}=await supabase.from('comparison_votes').upsert(payload,{onConflict:'user_id,perfume_a_id,perfume_b_id'})
    if(error)throw error
    setMessage('Comparison marked. Thank you for adding your wear experience.')
   }catch{setMessage('Could not save your comparison. Please try again.')}
