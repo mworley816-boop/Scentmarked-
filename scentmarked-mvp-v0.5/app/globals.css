@@ -132,3 +132,7 @@ button,.button,a,select{touch-action:manipulation}
 .footer-legal{display:flex;gap:16px;white-space:nowrap}
 .footer-legal a{color:var(--muted);text-decoration:none}
 @media(max-width:600px){.footer-bottom{align-items:flex-start;flex-direction:column}.footer-legal{flex-wrap:wrap}}
+
+/* Linked brand discovery */
+.brand-strip a{font:20px Georgia,serif;color:var(--ink);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:3px}
+.brand-strip a:hover,.brand-strip a:focus-visible{border-bottom-color:var(--gold)}
