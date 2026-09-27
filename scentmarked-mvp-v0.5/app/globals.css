@@ -136,3 +136,8 @@ button,.button,a,select{touch-action:manipulation}
 /* Linked brand discovery */
 .brand-strip a{font:20px Georgia,serif;color:var(--ink);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:3px}
 .brand-strip a:hover,.brand-strip a:focus-visible{border-bottom-color:var(--gold)}
+
+/* Account recovery */
+.forgot-password{border:0;background:transparent;color:var(--gold);padding:2px 0;text-align:left;cursor:pointer;font:600 11px Arial,sans-serif;width:max-content}
+.forgot-password:hover,.forgot-password:focus-visible{text-decoration:underline}
+.reset-shell .auth-buttons{grid-template-columns:1fr}
