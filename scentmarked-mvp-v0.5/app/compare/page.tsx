@@ -14,7 +14,7 @@ export default async function Compare({searchParams}:{searchParams:Promise<{a?:s
  }catch{loadError=true}
  const a=perfumes.find(p=>p.slug===q.a)||perfumes[0];
  const b=perfumes.find(p=>p.slug===q.b)||perfumes[1];
- const shared=a&&b?[...new Set(names(a).filter((x:string)=>names(b).includes(x)))]:[];
+ const shared:string[]=a&&b?Array.from(new Set<string>((names(a) as string[]).filter((x:string)=>(names(b) as string[]).includes(x)))):[];
  const card=(p:any)=><div className="compare-profile"><div className="compare-bottle">{p.name.slice(0,1)}</div><small>{p.brands?.name}</small><h3>{p.name}</h3><p>{p.concentration||'Fragrance'}{p.release_year?' · '+p.release_year:''}</p><Link className="text-link" href={'/perfume/'+p.slug}>VIEW PROFILE →</Link></div>;
 
  return <main><section className="compare-page"><p className="eyebrow">SIDE BY SIDE</p><h1 className="page-title">Compare Scents</h1><p className="lede">Compare verified fragrance details without the guesswork.</p>
