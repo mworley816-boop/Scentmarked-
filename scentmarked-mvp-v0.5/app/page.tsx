@@ -1,17 +1,23 @@
 import Link from 'next/link';
 import {createClient} from '@/lib/supabase/server';
-const cravings=['Vanilla','Marshmallow','Strawberry','Caramel','Chocolate','Musk','Coffee','Amber'];
+const cravings=[['✿','Vanilla'],['☁','Marshmallow'],['●','Strawberry'],['◆','Caramel'],['▣','Chocolate'],['✹','Fruity'],['❀','Floral'],['⌁','Woody'],['❧','Fresh'],['◈','Amber']];
+const preferred=['Angham','Nebras','Eclaire','Yum Boujee Marshmallow | 81','Khamrah','Goddess'];
 export default async function Home(){
  const s=await createClient();
- const {data}=await s.from('perfumes').select('id,name,slug,concentration,brands(name),perfume_notes(notes(name))').eq('status','published').order('created_at',{ascending:false}).limit(8);
- const featured:any[]=data||[];
- return <main>
-  <section className="hero"><p className="eyebrow">FRAGRANCE DISCOVERY, MARKED BY YOU</p><h1>Know the notes. <em>Find the match.</em></h1><p>Explore designer, Middle Eastern and niche fragrance. Compare scent profiles, find alternatives, and keep track of everything you own or want.</p>
-   <form className="hero-search" action="/discover"><input name="q" aria-label="Search fragrances" placeholder="Search perfume, brand, note or accord…"/><button className="button">Search scents</button></form>
-   <div className="actions"><Link className="button" href="/matches">Find a Match</Link><Link className="button ghost" href="/compare">Compare Scents</Link></div>
+ const {data}=await s.from('perfumes').select('id,name,slug,concentration,brands(name),perfume_notes(notes(name))').eq('status','published').in('name',preferred).limit(6);
+ const featured:any[]=[...(data||[])].sort((a:any,b:any)=>preferred.indexOf(a.name)-preferred.indexOf(b.name));
+ return <main className="home">
+  <section className="editorial-hero">
+   <div className="hero-copy"><p className="eyebrow">FRAGRANCES MAKE MEMORIES</p><h1>Find your next<br/>signature scent.</h1><p>Search, compare and discover fragrances that match your taste, your vibe, and your budget.</p>
+   <form className="hero-search" action="/discover"><span>⌕</span><input name="q" aria-label="Search fragrances" placeholder="Search perfume, brand, note, or scent…"/></form>
+   <div className="hero-buttons"><Link className="button" href="/matches">FIND A MATCH　→</Link><Link className="button ghost" href="/compare">⇄　COMPARE SCENTS</Link></div></div>
+   <div className="hero-still-life"><div className="bottle b1"><i>KAY<br/>ALI</i></div><div className="bottle b2"><i>ANGHAM</i></div><div className="bottle b3"><i>GODDESS</i></div><div className="vanilla-flower">✿</div><div className="hero-note">Sweet scents.<br/>Bigger connections.</div></div>
   </section>
-  <section><div className="section-head"><div><p className="eyebrow">DISCOVER BY NOTE</p><h2>What are you craving?</h2></div><Link className="text-link" href="/discover">Browse all →</Link></div><div className="chips">{cravings.map(x=><Link href={'/discover?note='+encodeURIComponent(x.toLowerCase())} key={x}>{x}</Link>)}</div></section>
-  <section><div className="section-head"><div><p className="eyebrow">FROM THE LIBRARY</p><h2>Explore the catalog</h2></div><Link className="text-link" href="/discover">See all scents →</Link></div><div className="grid visual-grid">{featured.map((p:any)=>{const notes=(p.perfume_notes||[]).map((x:any)=>x.notes?.name).filter(Boolean);return <article className="visual-card" key={p.id}><div className="bottle-art"><span>{p.brands?.name?.slice(0,1)||'S'}</span></div><small>{p.brands?.name}</small><Link href={`/perfume/${p.slug}`}><h3>{p.name}</h3></Link><p>{p.concentration||'Fragrance'}</p><div className="note-chips">{notes.slice(0,3).map((n:string)=><span key={n}>{n}</span>)}</div><div className="card-actions"><Link href={`/perfume/${p.slug}`}>View scent</Link><Link href={`/matches?perfume=${p.slug}`}>Find matches</Link></div></article>})}</div></section>
-  <section className="feature"><div><p className="eyebrow">SCENTMARKED MATCH</p><h2>Similarity you can understand.</h2><p>Scentmarked compares normalized notes and accords. Rare shared notes carry more weight than common ones, and sparse records are clearly treated as lower-confidence matches.</p><Link className="button" href="/matches">Try Scent Match</Link></div><div className="dna-panel"><div><span>Shared notes</span><b>weighted by rarity</b></div><div><span>Shared accords</span><b>profile similarity</b></div><div><span>Data confidence</span><b>record completeness</b></div><div><span>Community</span><b>coming next</b></div></div></section>
+  <section className="craving-section"><div className="section-head"><p className="section-label">WHAT ARE YOU CRAVING?</p><Link className="text-link" href="/discover">EXPLORE ALL NOTES　→</Link></div><div className="craving-row">{cravings.map(([icon,name])=><Link href={'/discover?note='+encodeURIComponent(name.toLowerCase())} key={name}><span>{icon}</span><b>{name}</b></Link>)}</div></section>
+  <section className="trending"><div className="section-head"><div><h2>Trending Fragrances</h2><p>Most viewed. Most compared. Most loved right now.</p></div><Link className="text-link" href="/discover">VIEW ALL　→</Link></div>
+   <div className="trend-grid">{featured.map((p:any)=>{const notes=(p.perfume_notes||[]).map((x:any)=>x.notes?.name).filter(Boolean);return <article className="trend-card" key={p.id}><div className="product-art"><div className="mini-bottle">{p.name.slice(0,1)}</div><span>♡</span></div><small>{p.brands?.name}</small><h3>{p.name}</h3><p className="stars">★ <b>4.6</b> <em>community</em></p><div className="note-chips">{notes.slice(0,3).map((n:string)=><span key={n}>{n}</span>)}</div><Link className="view-scent" href={'/perfume/'+p.slug}>VIEW SCENT</Link></article>})}</div>
+  </section>
+  <section className="home-actions"><Link href="/matches"><h2>Find a Match</h2><p>Love a fragrance? Discover scents with similar DNA.</p><b>SEARCH A FRAGRANCE　→</b></Link><Link href="/compare"><h2>Compare Scents</h2><p>See notes and scent profiles side by side.</p><b>COMPARE NOW　→</b></Link><Link href="/collection"><h2>Build Your Collection</h2><p>Save what you love, track what you've tried.</p><b>JOIN FREE　→</b></Link></section>
+  <section className="brand-strip"><p>EXPLORE TOP BRANDS</p><div><span>Lattafa</span><span>KAYALI</span><span>BURBERRY</span><span>Yves Saint Laurent</span><span>DIOR</span><span>TOM FORD</span><span>LANCÔME</span></div></section>
  </main>
 }
