@@ -33,7 +33,7 @@ export default async function Discover({searchParams}:{searchParams:Promise<Sear
    <select name="brand" defaultValue={p.brand||''}><option value="">All Brands</option>{brands.map(brand=><option key={brand} value={brand}>{brand}</option>)}</select>
    <input name="q" type="hidden" value={p.q||''}/><input name="note" defaultValue={p.note} placeholder="Filter by note"/><button type="submit">Apply</button><span>{data.length} scents</span>
   </form>
-  {loadError?<div className="empty-state"><h2>The scent library is temporarily unavailable.</h2><p>Please refresh in a moment.</p></div>:
+  {loadError?<div className="empty-state"><h2>The scent library is temporarily unavailable.</h2><p>Please refresh in a moment.</p></div>:!data.length?<div className="empty-state"><h2>No fragrances match those filters.</h2><p>Try a broader search, another brand, or clear the note filter.</p><Link className="button" href="/discover">Clear Filters</Link></div>:
    <div className="discover-grid">{data.map(x=>{const brand=x.brands?.name||'',notes=(x.perfume_notes||[]).map((y:any)=>y.notes?.name).filter(Boolean);return <article key={x.id}>
     <div className="discover-bottle">{x.name.slice(0,1)}<i>♡</i></div><small>{brand}</small><Link href={'/perfume/'+x.slug}><h3>{x.name}</h3></Link>
     <p className="meta-line">{segment(brand)} · {x.concentration||'Fragrance'}</p><div className="note-chips">{notes.slice(0,4).map((n:string)=><span key={n}>{n}</span>)}</div>
