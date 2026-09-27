@@ -7,7 +7,7 @@ export default async function Notes(){
  let notes:any[]=[],loadError=false
  try{
   const s=await createClient()
-  const r=await s.from('notes').select('id,name,slug,perfume_notes(perfume_id)').order('name')
+  const r=await s.from('notes').select('id,name,slug,perfume_notes!inner(perfume_id,perfumes!inner(status))').eq('perfume_notes.perfumes.status','published').order('name')
   if(r.error)loadError=true
   else notes=(r.data||[]).filter((x:any)=>(x.perfume_notes||[]).length).sort((a:any,b:any)=>(b.perfume_notes?.length||0)-(a.perfume_notes?.length||0)||a.name.localeCompare(b.name))
  }catch{loadError=true}
