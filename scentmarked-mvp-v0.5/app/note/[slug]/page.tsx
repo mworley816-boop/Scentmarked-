@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params
- try{const s=await createClient();const {data}=await s.from('notes').select('name,description').eq('slug',slug).maybeSingle();if(data?.name)return{title:`${data.name} Fragrance Note`,description:data.description||`Explore fragrances with ${data.name} and discover their verified scent profiles on Scentmarked.`}}catch{}
+ try{const s=await createClient();const {data}=await s.from('notes').select('name,description').eq('slug',slug).maybeSingle();if(data?.name)return{title:`${data.name} Fragrance Note`,description:data.description||`Explore fragrances with ${data.name} and discover their verified scent profiles on Scentmarked.`,alternates:{canonical:'/note/'+slug},openGraph:{title:`${data.name} Fragrance Note`,description:data.description||`Explore fragrances with ${data.name} on Scentmarked.`,url:'/note/'+slug,type:'website'}}}catch{}
  return{title:'Fragrance Note'}
 }
 export default async function NotePage({params}:{params:Promise<{slug:string}>}){
