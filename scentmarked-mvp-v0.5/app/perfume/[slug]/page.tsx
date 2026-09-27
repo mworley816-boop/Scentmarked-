@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import MarkScent from '@/components/mark-scent'
 import RateScent from '@/components/rate-scent'
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params
  try{const s=await createClient();const {data}=await s.from('perfumes').select('name,description,brands(name)').eq('slug',slug).eq('status','published').maybeSingle();if(data?.name){const brand=(data.brands as any)?.name;return{title:`${data.name}${brand?' by '+brand:''}`,description:data.description||`Explore verified notes, scent DNA, ratings and similar fragrances for ${data.name} on Scentmarked.`,alternates:{canonical:'/perfume/'+slug},openGraph:{title:`${data.name}${brand?' by '+brand:''}`,description:data.description||`Explore ${data.name} fragrance notes and scent profile on Scentmarked.`,type:'website',url:'/perfume/'+slug}}}}catch{}
