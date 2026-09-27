@@ -147,3 +147,10 @@ button,.button,a,select{touch-action:manipulation}
 .skip-link:focus{transform:translateY(0)}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* Catalog pagination */
+.pagination{display:flex;align-items:center;justify-content:center;gap:18px;margin:38px 0 8px}
+.pagination a{min-width:110px;padding:10px 14px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-align:center;text-decoration:none;background:#fff}
+.pagination span{color:var(--muted);font-size:14px}
+.pagination a.disabled{pointer-events:none;opacity:.4}
+@media(max-width:520px){.pagination{gap:8px}.pagination a{min-width:auto;padding:9px 12px}.pagination span{font-size:12px}}
