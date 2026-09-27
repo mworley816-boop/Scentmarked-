@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export default async function sitemap():Promise<MetadataRoute.Sitemap>{
  const base='https://scentmarked.m-worley816.workers.dev',now=new Date()
- const staticRoutes=['','/discover','/matches','/compare','/notes','/accords','/brands','/community','/about','/privacy','/terms','/community-guidelines']
+ const staticRoutes=['','/discover','/matches','/compare','/notes','/accords','/brands','/community','/about','/privacy','/terms','/community-guidelines','/methodology']
  const entries:MetadataRoute.Sitemap=staticRoutes.map(route=>({url:base+route,lastModified:now,changeFrequency:'weekly',priority:route===''?1:.8}))
  try{
   const s=await createClient()
