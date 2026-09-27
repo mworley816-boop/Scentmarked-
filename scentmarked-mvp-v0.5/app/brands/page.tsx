@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
-export const metadata={title:'Fragrance Brands',description:'Browse designer, niche and Middle Eastern fragrance houses in the Scentmarked catalog.'}
+export const metadata={title:'Fragrance Brands',description:'Browse designer, niche and Middle Eastern fragrance houses in the Scentmarked catalog.',alternates:{canonical:'/brands'},openGraph:{title:'Fragrance Brands | Scentmarked',description:'Browse designer, niche and Middle Eastern fragrance houses in the Scentmarked catalog.',url:'/brands',type:'website'}}
 
 export default async function Brands(){
  let brands:any[]=[];let loadError=false
