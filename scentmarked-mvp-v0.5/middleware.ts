@@ -1,4 +1,11 @@
-import { type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
-export async function middleware(request: NextRequest) { return updateSession(request) }
-export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'] }
+import { NextResponse, type NextRequest } from 'next/server'
+
+// Keep public catalog/static requests out of Supabase auth middleware on Cloudflare.
+// Protected account pages can perform their own server-side auth checks.
+export function middleware(_request: NextRequest) {
+  return NextResponse.next()
+}
+
+export const config = {
+  matcher: ['/collection/:path*', '/admin/:path*'],
+}
