@@ -7,7 +7,7 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
  try{
   const s=await createClient()
   const {data}=await s.from('brands').select('name').eq('slug',slug).maybeSingle()
-  if(data?.name)return{title:`${data.name} Fragrances`,description:`Explore ${data.name} fragrances, verified notes and scent profiles on Scentmarked.`}
+  if(data?.name)return{title:`${data.name} Fragrances`,description:`Explore ${data.name} fragrances, verified notes and scent profiles on Scentmarked.`,alternates:{canonical:'/brand/'+slug},openGraph:{title:`${data.name} Fragrances`,description:`Explore ${data.name} fragrances and verified scent profiles on Scentmarked.`,url:'/brand/'+slug,type:'website'}}
  }catch{}
  return{title:'Fragrance Brand'}
 }
