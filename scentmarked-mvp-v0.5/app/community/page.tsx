@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
-export const metadata={title:'Fragrance Community',description:'Read community fragrance reviews and scent comparisons from Scentmarked members.'}
+export const metadata={title:'Fragrance Community',description:'Read community fragrance reviews and scent comparisons from Scentmarked members.',alternates:{canonical:'/community'},openGraph:{title:'Fragrance Community | Scentmarked',description:'Read fragrance reviews and scent comparisons from Scentmarked members.',url:'/community',type:'website'}}
 
 export default async function Community(){
  let ratings:any[]=[],votes:any[]=[],top:any[]=[],loadError=false
