@@ -5,7 +5,7 @@ export const metadata={title:'Fragrance Brands',description:'Browse designer, ni
 
 export default async function Brands(){
  let brands:any[]=[];let loadError=false
- try{const s=await createClient();const result=await s.from('brands').select('id,name,slug,country').order('name');if(result.error)loadError=true;else brands=result.data||[]}catch{loadError=true}
+ try{const s=await createClient();const result=await s.from('brands').select('id,name,slug,country,perfumes(id)').order('name');if(result.error)loadError=true;else brands=(result.data||[]).filter((b:any)=>(b.perfumes||[]).length).sort((a:any,b:any)=>(b.perfumes?.length||0)-(a.perfumes?.length||0)||a.name.localeCompare(b.name))}catch{loadError=true}
  return <main><section className="index-page"><div className="index-hero"><p className="eyebrow">FRAGRANCE HOUSES</p><h1>Explore Brands</h1><p>Browse the designer, niche and Middle Eastern houses in the growing Scentmarked catalog.</p></div>
- {loadError?<div className="empty-state"><h2>Brands are temporarily unavailable.</h2><p>Please refresh in a moment.</p></div>:<div className="brand-index">{brands.map(b=><Link href={'/brand/'+b.slug} key={b.id}><div className="brand-monogram">{b.name.slice(0,2).toUpperCase()}</div><h3>{b.name}</h3><p>{b.country||'Fragrance house'}</p><span>Explore scents →</span></Link>)}</div>}</section></main>
+ {loadError?<div className="empty-state"><h2>Brands are temporarily unavailable.</h2><p>Please refresh in a moment.</p></div>:<div className="brand-index">{brands.map(b=><Link href={'/brand/'+b.slug} key={b.id}><div className="brand-monogram">{b.name.slice(0,2).toUpperCase()}</div><h3>{b.name}</h3><p>{b.country?b.country+' · ':''}{b.perfumes.length} fragrance{b.perfumes.length===1?'':'s'}</p><span>Explore scents →</span></Link>)}</div>}</section></main>
 }
