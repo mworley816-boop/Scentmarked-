@@ -4,6 +4,18 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-09-25",
   "compatibility_flags": ["nodejs_compat"],
-  "assets": {"directory": ".open-next/assets", "binding": "ASSETS"},
-  "observability": {"enabled": true}
+
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://qnlqdkctfmfagsvbwiis.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_DhzPVepdeQt-1Xt00CBOsw_cl30TcYp"
+  },
+
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  "observability": {
+    "enabled": true
+  }
 }
