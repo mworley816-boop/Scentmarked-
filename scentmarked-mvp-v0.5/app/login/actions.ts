@@ -34,6 +34,22 @@ export async function login(formData:FormData){
  redirect(next)
 }
 
+export async function requestPasswordReset(formData:FormData){
+ const email=String(formData.get('email')||'').trim()
+ const next=safeNext(formData.get('next'))
+ if(!email)redirect(loginUrl('error','Enter your email address first.',next))
+ try{
+  const supabase=await createClient()
+  const origin=await siteOrigin()
+  const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:`${origin}/auth/callback?next=${encodeURIComponent('/reset-password')}`})
+  if(error)redirect(loginUrl('error',error.message,next))
+ }catch(error:any){
+  if(error?.digest)throw error
+  redirect(loginUrl('error','Password recovery is temporarily unavailable. Please try again.',next))
+ }
+ redirect(loginUrl('message','If an account exists for that email, a password reset link has been sent.',next))
+}
+
 export async function signup(formData:FormData){
  const email=String(formData.get('email')||'').trim()
  const password=String(formData.get('password')||'')
