@@ -30,3 +30,6 @@
 
 /* Community wear metrics */
 .community-performance{max-width:1100px;margin:22px auto;padding:26px 3.6vw}.community-performance h2{font:500 28px Georgia,serif}.community-performance>div{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.community-performance span{display:flex;flex-direction:column;gap:4px;padding:18px;background:var(--paper);border:1px solid var(--line);border-radius:12px;color:var(--muted)}.community-performance b{font:500 24px Georgia,serif;color:var(--ink)}@media(max-width:600px){.community-performance>div{grid-template-columns:1fr}}
+
+/* My Marks filters */
+.collection-tabs{display:flex;gap:8px;flex-wrap:wrap}.collection-tabs a{padding:9px 13px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;background:var(--paper)}.collection-tabs a.active{font-weight:700;border-color:#8f6547}.collection-page .empty-state{margin-top:24px}
