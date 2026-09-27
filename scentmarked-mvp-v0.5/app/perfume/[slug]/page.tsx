@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import MarkScent from '@/components/mark-scent';
+import RateScent from '@/components/rate-scent';
 
 export default async function PerfumePage({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
@@ -23,6 +24,7 @@ export default async function PerfumePage({params}:{params:Promise<{slug:string}
  <section className="profile-body"><div className="dna-side"><h2>Scentmarked DNA</h2><p>Verified accord data when available.</p>{accords.length?[...accords].sort((a:any,b:any)=>(b.strength||0)-(a.strength||0)).slice(0,8).map((a:any)=><div className="dna-bar" key={a.accords?.name}><span>{a.accords?.name}</span><i><b style={{width:(a.strength||0)+'%'}}/></i><em>{a.strength}%</em></div>):<p className="muted">Accord strength data has not been verified for this fragrance yet.</p>}</div>
   <div className="notes-side"><h3>Top Notes</h3><div className="note-cloud">{group('top').map((n:string)=><span key={n}>✦<b>{n}</b></span>)}</div><h3>Heart Notes</h3><div className="note-cloud">{group('heart').map((n:string)=><span key={n}>❀<b>{n}</b></span>)}</div><h3>Base Notes</h3><div className="note-cloud">{group('base').map((n:string)=><span key={n}>◆<b>{n}</b></span>)}</div></div>
  </section>
+ <RateScent perfumeId={p.id}/>
  <section className="source-card"><h2>Sources & verification</h2>{sources.length?sources.map((x:any)=><div className="source-row" key={x.source_url}><div><strong>{x.is_primary?'✓ Primary source':'Reference'} · {x.source_name}</strong><p>{(x.fields_verified||[]).join(' · ')}</p></div><a href={x.source_url} target="_blank" rel="noreferrer">View source ↗</a></div>):<p>Source provenance is being added to this record.</p>}</section>
  </main>
 }
