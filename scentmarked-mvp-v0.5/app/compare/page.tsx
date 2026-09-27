@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import ComparisonVote from '@/components/comparison-vote';
 
 function names(p:any){return(p?.perfume_notes||[]).map((n:any)=>n.notes?.name).filter(Boolean)}
 function group(p:any,pos:string){return(p?.perfume_notes||[]).filter((n:any)=>n.position===pos).map((n:any)=>n.notes?.name).filter(Boolean)}
@@ -22,6 +23,7 @@ export default async function Compare({searchParams}:{searchParams:Promise<{a?:s
    <form action="/compare" className="compare-picker"><select name="a" defaultValue={a?.slug}>{perfumes.map(p=><option key={p.id} value={p.slug}>{p.brands?.name} — {p.name}</option>)}</select><b>⇄</b><select name="b" defaultValue={b?.slug}>{perfumes.map(p=><option key={p.id} value={p.slug}>{p.brands?.name} — {p.name}</option>)}</select><button className="button">Compare</button></form>
    {a&&b&&<><div className="compare-head">{card(a)}{card(b)}</div><div className="shared-notes"><p className="eyebrow">OVERLAP</p><h2>{shared.length} Shared Note{shared.length===1?'':'s'}</h2><div className="note-cloud">{shared.length?shared.map((n:string)=><span key={n}>✦<b>{n}</b></span>):<p>No exact verified notes shared.</p>}</div></div>
     {['top','heart','base'].map(pos=><div className="compare-layer" key={pos}><h2>{pos==='heart'?'Heart':pos[0].toUpperCase()+pos.slice(1)} Notes</h2><div><article><h3>{a.name}</h3>{group(a,pos).length?group(a,pos).map((n:string)=><p key={n}>◆ {n}</p>):<p className="muted">Not verified</p>}</article><article><h3>{b.name}</h3>{group(b,pos).length?group(b,pos).map((n:string)=><p key={n}>◆ {n}</p>):<p className="muted">Not verified</p>}</article></div></div>)}
+    <ComparisonVote aId={a.id} bId={b.id} aName={a.name} bName={b.name}/>
    </>}
   </>}
  </section></main>
