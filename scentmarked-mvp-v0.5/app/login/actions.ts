@@ -1,10 +1,19 @@
 'use server'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 
 function safeNext(value: FormDataEntryValue | null) {
   const next = typeof value === 'string' ? value : '/collection'
   return next.startsWith('/') && !next.startsWith('//') ? next : '/collection'
+}
+
+async function siteOrigin() {
+  const h = await headers()
+  const host = h.get('x-forwarded-host') || h.get('host')
+  const proto = h.get('x-forwarded-proto') || 'https'
+  if (host) return `${proto}://${host}`
+  return process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 }
 
 export async function login(formData: FormData) {
@@ -23,10 +32,14 @@ export async function signup(formData: FormData) {
   const password = String(formData.get('password') || '')
   const displayName = String(formData.get('display_name') || '').trim()
   const next = safeNext(formData.get('next'))
+  const origin = await siteOrigin()
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { display_name: displayName }, emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=${encodeURIComponent(next)}` }
+    options: {
+      data: { display_name: displayName },
+      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`
+    }
   })
   if (error) redirect(`/login?error=${encodeURIComponent(error.message)}&next=${encodeURIComponent(next)}`)
   if (data.session) redirect(next)
