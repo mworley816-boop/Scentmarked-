@@ -12,7 +12,7 @@ export default async function Compare({searchParams}:{searchParams:Promise<{a?:s
  let perfumes:any[]=[];let loadError=false;
  try{
   const s=await createClient();
-  const result=await s.from('perfumes').select('id,name,slug,concentration,release_year,brands(name),perfume_notes(position,notes(name))').eq('status','published').order('name');
+  const result=await s.from('perfumes').select('id,name,slug,image_url,concentration,release_year,brands(name),perfume_notes(position,notes(name))').eq('status','published').order('name');
   if(result.error)loadError=true;else perfumes=result.data||[];
  }catch{loadError=true}
  const requestedA=q.a?perfumes.find(p=>p.slug===q.a):undefined;
@@ -25,7 +25,7 @@ export default async function Compare({searchParams}:{searchParams:Promise<{a?:s
  if(a&&b&&!same&&!loadError){try{const s=await createClient();const [first,second]=[a.id,b.id].sort();const votes=await s.from('comparison_votes').select('similarity,winner_perfume_id').eq('perfume_a_id',first).eq('perfume_b_id',second);community=votes.data||[]}catch{}}
  const communityCount=community.length,communityReady=communityCount>=3,avgSimilarity=communityReady?community.reduce((sum:number,v:any)=>sum+Number(v.similarity||0),0)/communityCount:0,winnerCounts=communityReady?community.reduce((m:Record<string,number>,v:any)=>{if(v.winner_perfume_id)m[v.winner_perfume_id]=(m[v.winner_perfume_id]||0)+1;return m},{}):{},aWins=winnerCounts[a?.id]||0,bWins=winnerCounts[b?.id]||0,draws=communityReady?communityCount-aWins-bWins:0;
  const shared:string[]=a&&b&&!same?Array.from(new Set<string>((names(a) as string[]).filter((x:string)=>(names(b) as string[]).includes(x)))):[];
- const card=(p:any)=><div className="compare-profile"><div className="compare-bottle">{p.name.slice(0,1)}</div><small>{p.brands?.name}</small><h3>{p.name}</h3><p>{p.concentration||'Fragrance'}{p.release_year?' · '+p.release_year:''}</p><Link className="text-link" href={'/perfume/'+p.slug}>VIEW PROFILE →</Link></div>;
+ const card=(p:any)=><div className="compare-profile"><div className="compare-bottle">{p.image_url?<img src={p.image_url} alt={p.name+" by "+(p.brands?.name||"Scentmarked")}/>:<div className="catalog-placeholder"><small>{p.brands?.name||"Scentmarked"}</small><b>{p.name}</b></div>}</div><small>{p.brands?.name}</small><h3>{p.name}</h3><p>{p.concentration||'Fragrance'}{p.release_year?' · '+p.release_year:''}</p><Link className="text-link" href={'/perfume/'+p.slug}>VIEW PROFILE →</Link></div>;
 
  return <main><section className="compare-page"><p className="eyebrow">SIDE BY SIDE</p><h1 className="page-title">Compare Scents</h1><p className="lede">Compare verified fragrance details without the guesswork.</p>
   {loadError?<div className="empty-state"><h2>Comparison data is temporarily unavailable.</h2><p>Please refresh in a moment.</p></div>:invalidSelection?<div className="empty-state"><h2>That comparison link is no longer available.</h2><p>One of the requested fragrances could not be found in the published catalog.</p><Link className="button" href="/compare">Start a new comparison</Link></div>:perfumes.length<2?<div className="empty-state"><h2>More fragrances are needed to compare.</h2></div>:<>
