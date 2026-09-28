@@ -71,7 +71,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
   <div className="admin-heading"><div><h1 className="page-title">Affiliate Performance</h1><p>Track outbound retailer interest without affecting scent recommendations.</p></div><Link className="button ghost" href="/admin">Catalog Studio</Link></div>
-  <form action="/admin/affiliates" className="admin-filters"><select name="period" defaultValue={period}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="all">All time</option></select><button className="button">Apply</button></form>
+  <form action="/admin/affiliates" className="admin-filters"><select name="period" defaultValue={period}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="all">All time</option></select><button className="button">Apply</button><a className="button ghost" href={'/admin/affiliates/export?period='+period}>Export CSV</a></form>
   <div className="admin-stats"><span><b>{periodClicks.length}</b>{periodLabel} clicks</span><span><b>{featured}</b>Featured retailer clicks</span><span><b>{more}</b>Additional retailer clicks</span><span><b>{merchantStats.length}</b>Active merchants</span></div>
   <h2>Placement performance</h2>
   <div className="admin-stats"><span><b>{featuredShare}%</b>Featured placement share</span><span><b>{moreShare}%</b>Additional retailer share</span></div>
