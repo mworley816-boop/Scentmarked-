@@ -228,3 +228,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Expanded Scent Profile preferences */
 .trait-fields{grid-template-columns:repeat(4,minmax(0,1fr))}.trait-fields select,.trait-fields input{width:100%;box-sizing:border-box}.preference-match-form{padding:16px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.82)}@media(max-width:800px){.trait-fields{grid-template-columns:1fr 1fr}}@media(max-width:520px){.trait-fields{grid-template-columns:1fr}}
+
+/* Saved member Scent Profile */
+.save-scent-profile{display:flex;align-items:center;gap:10px;max-width:720px;margin:8px 0 0}.save-scent-profile button{border:0;background:transparent;padding:0;color:var(--ink);font-size:10px;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer}.save-scent-profile span{font-size:9px;color:var(--muted)}.save-profile-prompt{margin:8px 0 0;font-size:10px;color:var(--muted)}.save-profile-prompt a{color:var(--ink);font-weight:700}
