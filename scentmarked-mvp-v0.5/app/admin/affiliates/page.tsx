@@ -31,21 +31,31 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
  const recent7=(x:any)=>Date.now()-new Date(x.clicked_at).getTime()<=7*24*60*60*1000
  const dayKey=(d:Date)=>d.toISOString().slice(0,10)
  const daily=Array.from({length:7},(_,i)=>{const d=new Date();d.setUTCHours(0,0,0,0);d.setUTCDate(d.getUTCDate()-(6-i));const key=dayKey(d);return {key,label:new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(d),count:clicks.filter((x:any)=>dayKey(new Date(x.clicked_at))===key).length}})
- const perfumeById=new Map(perfumes.map((p:any)=>[String(p.id),p]))
- const merchantStats=[...new Set(offers.filter((o:any)=>o.is_active).map((o:any)=>o.merchant_name))].map(name=>{
-  const ids=new Set(offers.filter((o:any)=>o.is_active&&o.merchant_name===name).map((o:any)=>String(o.id)))
-  const rows=clicks.filter((x:any)=>ids.has(String(x.offer_id)))
-  return {name,total:rows.length,recent:rows.filter(recent).length,recent7:rows.filter(recent7).length,offers:ids.size}
- }).sort((a:any,b:any)=>b.recent-a.recent||b.total-a.total||a.name.localeCompare(b.name))
- const perfumeStats=perfumes.map((p:any)=>{
-  const rows=clicks.filter((x:any)=>String(x.perfume_id)===String(p.id))
-  return {p,total:rows.length,recent:rows.filter(recent).length,recent7:rows.filter(recent7).length}
- }).filter((x:any)=>x.total>0).sort((a:any,b:any)=>b.recent-a.recent||b.total-a.total).slice(0,25)
+ const activeOffers=offers.filter((o:any)=>o.is_active)
+ const offerById=new Map(activeOffers.map((o:any)=>[String(o.id),o]))
+ const merchantMap=new Map<string,{name:string,total:number,recent:number,recent7:number,period:number,offers:Set<string>}>()
+ const perfumeMap=new Map<string,{total:number,recent:number,recent7:number,period:number}>()
+ for(const o of activeOffers){
+  const name=String(o.merchant_name||'Retailer')
+  if(!merchantMap.has(name))merchantMap.set(name,{name,total:0,recent:0,recent7:0,period:0,offers:new Set()})
+  merchantMap.get(name)!.offers.add(String(o.id))
+ }
+ const periodMatch=(x:any)=>period==='7'?recent7(x):period==='30'?recent(x):true
+ for(const x of clicks){
+  const pkey=String(x.perfume_id)
+  const ps=perfumeMap.get(pkey)||{total:0,recent:0,recent7:0,period:0}
+  ps.total++;if(recent(x))ps.recent++;if(recent7(x))ps.recent7++;if(periodMatch(x))ps.period++
+  perfumeMap.set(pkey,ps)
+  const offer=offerById.get(String(x.offer_id))
+  if(offer){
+   const ms=merchantMap.get(String(offer.merchant_name||'Retailer'))!
+   ms.total++;if(recent(x))ms.recent++;if(recent7(x))ms.recent7++;if(periodMatch(x))ms.period++
+  }
+ }
+ const merchantStats=[...merchantMap.values()].map(m=>({...m,offers:m.offers.size})).sort((a,b)=>b.period-a.period||b.total-a.total||a.name.localeCompare(b.name))
+ const perfumeStats=perfumes.map((p:any)=>({p,...(perfumeMap.get(String(p.id))||{total:0,recent:0,recent7:0,period:0})})).filter((x:any)=>x.total>0).sort((a:any,b:any)=>b.period-a.period||b.total-a.total).slice(0,25)
  const periodClicks=period==='7'?clicks.filter(recent7):period==='30'?clicks.filter(recent):clicks
  const periodLabel=period==='7'?'Last 7 days':period==='30'?'Last 30 days':'All time'
- const periodCount=(rows:any[])=>period==='7'?rows.filter(recent7).length:period==='30'?rows.filter(recent).length:rows.length
- merchantStats.sort((a:any,b:any)=>periodCount(clicks.filter((x:any)=>offers.some((o:any)=>o.is_active&&o.merchant_name===a.name&&String(o.id)===String(x.offer_id))))<periodCount(clicks.filter((x:any)=>offers.some((o:any)=>o.is_active&&o.merchant_name===b.name&&String(o.id)===String(x.offer_id))))?1:-1)
- perfumeStats.sort((a:any,b:any)=>periodCount(clicks.filter((x:any)=>String(x.perfume_id)===String(b.p.id)))-periodCount(clicks.filter((x:any)=>String(x.perfume_id)===String(a.p.id))))
  const featured=periodClicks.filter((x:any)=>x.placement==='profile_featured').length
  const more=periodClicks.filter((x:any)=>x.placement==='profile_more').length
  const placementTotal=featured+more
@@ -65,9 +75,9 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
   <div className="admin-stats">{daily.map((d:any)=><span key={d.key}><b>{d.count}</b>{d.label}</span>)}</div>
 
   <h2>Retailer performance</h2>
-  <div className="admin-list">{merchantStats.length?merchantStats.map((m:any)=><article key={m.name}><div><small>RETAILER</small><h2>{m.name}</h2><div className="admin-record-meta"><span>{periodCount(clicks.filter((x:any)=>offers.some((o:any)=>o.is_active&&o.merchant_name===m.name&&String(o.id)===String(x.offer_id))))} {periodLabel.toLowerCase()}</span><span>{m.total} all time</span><span>{m.recent} last 30d</span><span>{m.recent7} last 7d</span><span>{m.offers} active offer{m.offers===1?'':'s'}</span></div></div></article>):<div className="empty-state"><h2>No active retailer performance yet.</h2></div>}</div>
+  <div className="admin-list">{merchantStats.length?merchantStats.map((m:any)=><article key={m.name}><div><small>RETAILER</small><h2>{m.name}</h2><div className="admin-record-meta"><span>{m.period} {periodLabel.toLowerCase()}</span><span>{m.total} all time</span><span>{m.recent} last 30d</span><span>{m.recent7} last 7d</span><span>{m.offers} active offer{m.offers===1?'':'s'}</span></div></div></article>):<div className="empty-state"><h2>No active retailer performance yet.</h2></div>}</div>
 
   <h2>Top fragrances</h2>
-  <div className="admin-list">{perfumeStats.length?perfumeStats.map(({p,total,recent,recent7}:any)=><article key={p.id}><div><small>{p.brands?.name||'Brand'}</small><h2>{p.name}</h2><div className="admin-record-meta"><span>{periodCount(clicks.filter((x:any)=>String(x.perfume_id)===String(p.id)))} {periodLabel.toLowerCase()}</span><span>{total} all time</span><span>{recent} last 30d</span><span>{recent7} last 7d</span></div></div><div><Link className="button ghost" href={'/perfume/'+p.slug}>View</Link><Link className="button" href={'/admin/perfumes/'+p.id+'/edit#affiliate-offers'}>Retailers</Link></div></article>):<div className="empty-state"><h2>No retailer clicks have been recorded yet.</h2></div>}</div>
+  <div className="admin-list">{perfumeStats.length?perfumeStats.map(({p,total,recent,recent7,period:periodClicksForPerfume}:any)=><article key={p.id}><div><small>{p.brands?.name||'Brand'}</small><h2>{p.name}</h2><div className="admin-record-meta"><span>{periodClicksForPerfume} {periodLabel.toLowerCase()}</span><span>{total} all time</span><span>{recent} last 30d</span><span>{recent7} last 7d</span></div></div><div><Link className="button ghost" href={'/perfume/'+p.slug}>View</Link><Link className="button" href={'/admin/perfumes/'+p.id+'/edit#affiliate-offers'}>Retailers</Link></div></article>):<div className="empty-state"><h2>No retailer clicks have been recorded yet.</h2></div>}</div>
  </section></main>
 }
