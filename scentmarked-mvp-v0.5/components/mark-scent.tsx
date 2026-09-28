@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-const options=[['owned','Own It','✓'],['want','Want It','＋'],['tried','Tried It','◌'],['favorite','Favorite','♡']] as const
+const options=[['owned','Own It','✓'],['want','Want It','＋'],['tried','Tried It','◌']] as const
 
 export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initial?:string[]}){
  const [saved,setSaved]=useState<string[]>(initial)
