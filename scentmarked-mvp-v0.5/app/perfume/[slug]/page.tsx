@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params
- try{const s=await createClient();const {data}=await s.from('perfumes').select('name,description,brands(name)').eq('slug',slug).eq('status','published').maybeSingle();if(data?.name){const brand=(data.brands as any)?.name;return{title:`${data.name}${brand?' by '+brand:''}`,description:data.description||`Explore verified notes, scent DNA, ratings and similar fragrances for ${data.name} on Scentmarked.`,alternates:{canonical:'/perfume/'+slug},openGraph:{title:`${data.name}${brand?' by '+brand:''}`,description:data.description||`Explore ${data.name} fragrance notes and scent profile on Scentmarked.`,type:'website',url:'/perfume/'+slug}}}}catch{}
+ try{const s=await createClient();const {data}=await s.from('perfumes').select('name,description,image_url,brands(name)').eq('slug',slug).eq('status','published').maybeSingle();if(data?.name){const brand=(data.brands as any)?.name;return{title:`${data.name}${brand?' by '+brand:''}`,description:data.description||`Explore verified notes, scent DNA, ratings and similar fragrances for ${data.name} on Scentmarked.`,alternates:{canonical:'/perfume/'+slug},openGraph:{title:`${data.name}${brand?' by '+brand:''}`,description:data.description||`Explore ${data.name} fragrance notes and scent profile on Scentmarked.`,type:'website',url:'/perfume/'+slug,images:data.image_url?[{url:data.image_url,alt:`${data.name}${brand?' by '+brand:''}`}]:undefined}}}}catch{}
  return{title:'Fragrance Profile',robots:{index:false,follow:true}}
 }
 export default async function PerfumePage({params}:{params:Promise<{slug:string}>}){
