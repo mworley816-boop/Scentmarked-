@@ -4,7 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 
 export const metadata={title:'Affiliate Performance | ScentMarked Studio',robots:{index:false,follow:false}}
 
-export default async function AffiliatePerformance(){
+export default async function AffiliatePerformance({searchParams}:{searchParams:Promise<{period?:string}>}){
+ const params=await searchParams
+ const period=['7','30','all'].includes(params.period||'')?params.period||'30':'30'
  const s=await createClient()
  let user:any=null
  try{const auth=await s.auth.getUser();user=auth.data.user}catch{}
@@ -39,21 +41,27 @@ export default async function AffiliatePerformance(){
   const rows=clicks.filter((x:any)=>String(x.perfume_id)===String(p.id))
   return {p,total:rows.length,recent:rows.filter(recent).length,recent7:rows.filter(recent7).length}
  }).filter((x:any)=>x.total>0).sort((a:any,b:any)=>b.recent-a.recent||b.total-a.total).slice(0,25)
- const featured=clicks.filter((x:any)=>x.placement==='profile_featured').length
- const more=clicks.filter((x:any)=>x.placement==='profile_more').length
+ const periodClicks=period==='7'?clicks.filter(recent7):period==='30'?clicks.filter(recent):clicks
+ const periodLabel=period==='7'?'Last 7 days':period==='30'?'Last 30 days':'All time'
+ const periodCount=(rows:any[])=>period==='7'?rows.filter(recent7).length:period==='30'?rows.filter(recent).length:rows.length
+ merchantStats.sort((a:any,b:any)=>periodCount(clicks.filter((x:any)=>offers.some((o:any)=>o.is_active&&o.merchant_name===a.name&&String(o.id)===String(x.offer_id))))<periodCount(clicks.filter((x:any)=>offers.some((o:any)=>o.is_active&&o.merchant_name===b.name&&String(o.id)===String(x.offer_id))))?1:-1)
+ perfumeStats.sort((a:any,b:any)=>periodCount(clicks.filter((x:any)=>String(x.perfume_id)===String(b.p.id)))-periodCount(clicks.filter((x:any)=>String(x.perfume_id)===String(a.p.id))))
+ const featured=periodClicks.filter((x:any)=>x.placement==='profile_featured').length
+ const more=periodClicks.filter((x:any)=>x.placement==='profile_more').length
 
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
   <div className="admin-heading"><div><h1 className="page-title">Affiliate Performance</h1><p>Track outbound retailer interest without affecting scent recommendations.</p></div><Link className="button ghost" href="/admin">Catalog Studio</Link></div>
-  <div className="admin-stats"><span><b>{clicks.length}</b>Total retailer clicks</span><span><b>{clicks.filter(recent).length}</b>Last 30 days</span><span><b>{clicks.filter(recent7).length}</b>Last 7 days</span><span><b>{featured}</b>Featured retailer clicks</span><span><b>{more}</b>Additional retailer clicks</span><span><b>{merchantStats.length}</b>Active merchants</span></div>
+  <form action="/admin/affiliates" className="admin-filters"><select name="period" defaultValue={period}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="all">All time</option></select><button className="button">Apply</button></form>
+  <div className="admin-stats"><span><b>{periodClicks.length}</b>{periodLabel} clicks</span><span><b>{featured}</b>Featured retailer clicks</span><span><b>{more}</b>Additional retailer clicks</span><span><b>{merchantStats.length}</b>Active merchants</span></div>
 
   <h2>Last 7 days</h2>
   <div className="admin-stats">{daily.map((d:any)=><span key={d.key}><b>{d.count}</b>{d.label}</span>)}</div>
 
   <h2>Retailer performance</h2>
-  <div className="admin-list">{merchantStats.length?merchantStats.map((m:any)=><article key={m.name}><div><small>RETAILER</small><h2>{m.name}</h2><div className="admin-record-meta"><span>{m.total} click{m.total===1?'':'s'}</span><span>{m.recent} last 30d</span><span>{m.recent7} last 7d</span><span>{m.offers} active offer{m.offers===1?'':'s'}</span></div></div></article>):<div className="empty-state"><h2>No active retailer performance yet.</h2></div>}</div>
+  <div className="admin-list">{merchantStats.length?merchantStats.map((m:any)=><article key={m.name}><div><small>RETAILER</small><h2>{m.name}</h2><div className="admin-record-meta"><span>{periodCount(clicks.filter((x:any)=>offers.some((o:any)=>o.is_active&&o.merchant_name===m.name&&String(o.id)===String(x.offer_id))))} {periodLabel.toLowerCase()}</span><span>{m.total} all time</span><span>{m.recent} last 30d</span><span>{m.recent7} last 7d</span><span>{m.offers} active offer{m.offers===1?'':'s'}</span></div></div></article>):<div className="empty-state"><h2>No active retailer performance yet.</h2></div>}</div>
 
   <h2>Top fragrances</h2>
-  <div className="admin-list">{perfumeStats.length?perfumeStats.map(({p,total,recent,recent7}:any)=><article key={p.id}><div><small>{p.brands?.name||'Brand'}</small><h2>{p.name}</h2><div className="admin-record-meta"><span>{total} retailer click{total===1?'':'s'}</span><span>{recent} last 30d</span><span>{recent7} last 7d</span></div></div><div><Link className="button ghost" href={'/perfume/'+p.slug}>View</Link><Link className="button" href={'/admin/perfumes/'+p.id+'/edit#affiliate-offers'}>Retailers</Link></div></article>):<div className="empty-state"><h2>No retailer clicks have been recorded yet.</h2></div>}</div>
+  <div className="admin-list">{perfumeStats.length?perfumeStats.map(({p,total,recent,recent7}:any)=><article key={p.id}><div><small>{p.brands?.name||'Brand'}</small><h2>{p.name}</h2><div className="admin-record-meta"><span>{periodCount(clicks.filter((x:any)=>String(x.perfume_id)===String(p.id)))} {periodLabel.toLowerCase()}</span><span>{total} all time</span><span>{recent} last 30d</span><span>{recent7} last 7d</span></div></div><div><Link className="button ghost" href={'/perfume/'+p.slug}>View</Link><Link className="button" href={'/admin/perfumes/'+p.id+'/edit#affiliate-offers'}>Retailers</Link></div></article>):<div className="empty-state"><h2>No retailer clicks have been recorded yet.</h2></div>}</div>
  </section></main>
 }
