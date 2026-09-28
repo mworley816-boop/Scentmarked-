@@ -172,3 +172,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 @media(max-width:700px){.profile-facts{grid-template-columns:1fr}.profile-hero{gap:18px}.profile-body{gap:28px}.note-cloud a,.note-cloud span{width:calc(33.333% - 8px)}}
 
 .product-profile-link{color:inherit;text-decoration:none}.card-title-link{color:inherit;text-decoration:none}.card-title-link:hover{text-decoration:underline;text-underline-offset:3px}.product-profile-link:focus-visible,.card-title-link:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+.profile-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}.profile-title-row h1{margin-top:2px}.profile-quick-actions{display:flex;gap:8px}.profile-quick-actions button{width:42px;height:42px;border:1px solid var(--line);border-radius:50%;background:#fffaf4;color:var(--ink);font-size:20px;cursor:pointer}.profile-quick-actions button[aria-pressed=true]{color:#a33b35;background:#fff0ed}.profile-quick-actions button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}.profile-facts{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+@media(max-width:600px){.profile-title-row{gap:10px}.profile-quick-actions button{width:38px;height:38px}.profile-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
