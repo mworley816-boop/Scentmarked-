@@ -48,12 +48,18 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
  perfumeStats.sort((a:any,b:any)=>periodCount(clicks.filter((x:any)=>String(x.perfume_id)===String(b.p.id)))-periodCount(clicks.filter((x:any)=>String(x.perfume_id)===String(a.p.id))))
  const featured=periodClicks.filter((x:any)=>x.placement==='profile_featured').length
  const more=periodClicks.filter((x:any)=>x.placement==='profile_more').length
+ const placementTotal=featured+more
+ const featuredShare=placementTotal?Math.round(featured/placementTotal*100):0
+ const moreShare=placementTotal?Math.round(more/placementTotal*100):0
 
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
   <div className="admin-heading"><div><h1 className="page-title">Affiliate Performance</h1><p>Track outbound retailer interest without affecting scent recommendations.</p></div><Link className="button ghost" href="/admin">Catalog Studio</Link></div>
   <form action="/admin/affiliates" className="admin-filters"><select name="period" defaultValue={period}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="all">All time</option></select><button className="button">Apply</button></form>
   <div className="admin-stats"><span><b>{periodClicks.length}</b>{periodLabel} clicks</span><span><b>{featured}</b>Featured retailer clicks</span><span><b>{more}</b>Additional retailer clicks</span><span><b>{merchantStats.length}</b>Active merchants</span></div>
+  <h2>Placement performance</h2>
+  <div className="admin-stats"><span><b>{featuredShare}%</b>Featured placement share</span><span><b>{moreShare}%</b>Additional retailer share</span></div>
+  <p className="muted">Placement share describes where tracked outbound clicks occurred during the selected reporting period. It does not measure purchases or prove that placement caused the difference.</p>
 
   <h2>Last 7 days</h2>
   <div className="admin-stats">{daily.map((d:any)=><span key={d.key}><b>{d.count}</b>{d.label}</span>)}</div>
