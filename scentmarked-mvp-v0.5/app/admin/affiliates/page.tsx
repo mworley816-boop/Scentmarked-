@@ -17,14 +17,20 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
 
  let clicks:any[]=[],offers:any[]=[],perfumes:any[]=[]
  try{
-  const [c,o,p]=await Promise.all([
-   s.from('affiliate_clicks').select('offer_id,perfume_id,placement,clicked_at').order('clicked_at',{ascending:false}).limit(10000),
+  const [o,p]=await Promise.all([
    s.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name,is_active,priority').order('priority',{ascending:true}),
    s.from('perfumes').select('id,name,slug,brands(name)').eq('status','published')
   ])
-  if(!c.error)clicks=c.data||[]
   if(!o.error)offers=o.data||[]
   if(!p.error)perfumes=p.data||[]
+  const pageSize=1000
+  for(let from=0;;from+=pageSize){
+   const c=await s.from('affiliate_clicks').select('offer_id,perfume_id,placement,clicked_at').order('clicked_at',{ascending:false}).range(from,from+pageSize-1)
+   if(c.error)break
+   const rows=c.data||[]
+   clicks.push(...rows)
+   if(rows.length<pageSize)break
+  }
  }catch{}
 
  const recent=(x:any)=>Date.now()-new Date(x.clicked_at).getTime()<=30*24*60*60*1000
