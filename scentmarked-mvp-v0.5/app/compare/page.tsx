@@ -23,6 +23,8 @@ export default async function Compare({searchParams}:{searchParams:Promise<{a?:s
  const requestedB=q.b?perfumes.find(p=>p.slug===q.b):undefined;
  const a=requestedA;
  const b=requestedB;
+ let retailerIds=new Set<string>();
+ if((a||b)&&!loadError){try{const s=await createClient(),ids=[a?.id,b?.id].filter(Boolean);const offers=await s.from('perfume_affiliate_offers').select('perfume_id').in('perfume_id',ids).eq('is_active',true);retailerIds=new Set((offers.data||[]).map((x:any)=>String(x.perfume_id)))}catch{}}
  const invalidSelection=!!((q.a&&!requestedA)||(q.b&&!requestedB));
  const same=!!a&&!!b&&a.id===b.id;
  let community:any[]=[],relationship:any=null;
@@ -31,7 +33,7 @@ export default async function Compare({searchParams}:{searchParams:Promise<{a?:s
  const shared:string[]=a&&b&&!same?Array.from(new Set<string>((names(a) as string[]).filter((x:string)=>(names(b) as string[]).includes(x)))):[];
  const dnaTakeaway=a&&b&&!same?dnaSummary(a,b):{shared:[],differences:[]};
  const catalogScore=a&&b&&!same?catalogSimilarity(a,b):null;
- const card=(p:any)=><div className="compare-profile"><div className="compare-bottle">{p.image_url?<img src={p.image_url} alt={p.name+" by "+(p.brands?.name||"Scentmarked")}/>:<div className="catalog-placeholder"><small>{p.brands?.name||"Scentmarked"}</small><b>{p.name}</b></div>}</div><small>{p.brands?.name}</small><h3>{p.name}</h3><p>{p.concentration||'Fragrance'}{p.release_year?' · '+p.release_year:''}</p><Link className="text-link" href={'/perfume/'+p.slug}>VIEW PROFILE →</Link></div>;
+ const card=(p:any)=><div className="compare-profile"><div className="compare-bottle">{p.image_url?<img src={p.image_url} alt={p.name+" by "+(p.brands?.name||"Scentmarked")}/>:<div className="catalog-placeholder"><small>{p.brands?.name||"Scentmarked"}</small><b>{p.name}</b></div>}</div><small>{p.brands?.name}</small><h3>{p.name}</h3><p>{p.concentration||'Fragrance'}{p.release_year?' · '+p.release_year:''}</p><div className="result-actions"><Link className="text-link" href={'/perfume/'+p.slug}>VIEW PROFILE →</Link>{retailerIds.has(String(p.id))&&<Link className="text-link" href={'/perfume/'+p.slug+'#where-to-buy'}>WHERE TO BUY →</Link>}</div></div>;
 
  return <main><section className="compare-page"><p className="eyebrow">SIDE BY SIDE</p><h1 className="page-title">Compare Scents</h1><p className="lede">Compare verified fragrance details without the guesswork.</p>
   {loadError?<div className="empty-state"><h2>Comparison data is temporarily unavailable.</h2><p>Please refresh in a moment.</p></div>:invalidSelection?<div className="empty-state"><h2>That comparison link is no longer available.</h2><p>One of the requested fragrances could not be found in the published catalog.</p><Link className="button" href="/compare">Start a new comparison</Link></div>:perfumes.length<2?<div className="empty-state"><h2>More fragrances are needed to compare.</h2></div>:<>
