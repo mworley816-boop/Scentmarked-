@@ -17,7 +17,7 @@ export default async function PerfumePage({params}:{params:Promise<{slug:string}
  if(result.error)return <main className="profile-page"><section className="empty-state"><h1>Fragrance profile temporarily unavailable</h1><p>{result.error.message||'The fragrance data could not be loaded.'}</p><Link className="button" href="/discover">Discover Fragrances</Link></section></main>
  if(!result.data)notFound()
  const p:any=result.data,notes:any[]=p.perfume_notes||[],accords:any[]=p.perfume_accords||[],brand=p.brands?.name||'Scentmarked'
- let ratings:any[]=[];try{const rr=await s.from('ratings').select('overall,longevity,projection,sweetness,review,created_at').eq('perfume_id',p.id);if(!rr.error)ratings=rr.data||[]}catch{}
+ let ratings:any[]=[];try{const rr=await s.from('ratings').select('overall,longevity,projection,sweetness,review,created_at,profiles(display_name)').eq('perfume_id',p.id);if(!rr.error)ratings=rr.data||[]}catch{}
  const top=notes.filter((n:any)=>n.position==='top'),heart=notes.filter((n:any)=>n.position==='heart'),base=notes.filter((n:any)=>n.position==='base'),other=notes.filter((n:any)=>n.position==='unspecified')
  const avg=ratings.length?(ratings.reduce((a:number,r:any)=>a+Number(r.overall),0)/ratings.length).toFixed(1):null
  const metric=(key:string)=>{const rows=ratings.filter((r:any)=>Number(r[key])>0);return rows.length?(rows.reduce((a:number,r:any)=>a+Number(r[key]),0)/rows.length).toFixed(1):null}
