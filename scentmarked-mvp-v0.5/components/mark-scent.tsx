@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-const options=[['owned','Own It'],['want','Want It'],['tried','Tried It'],['favorite','Favorite']] as const
+const options=[['owned','Own It','✓'],['want','Want It','＋'],['tried','Tried It','◌'],['favorite','Favorite','♡']] as const
 
 export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initial?:string[]}){
  const [saved,setSaved]=useState<string[]>(initial)
@@ -28,5 +28,5 @@ export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initi
   }catch{setMessage('Could not update your Marks. Please try again.')}
   finally{setBusy(null)}
  }
- return <div><div className="mark-actions" aria-label="Mark this scent">{options.map(([value,label])=><button type="button" disabled={busy!==null} aria-pressed={saved.includes(value)} className={saved.includes(value)?'mark active':'mark'} onClick={()=>toggle(value)} key={value}>{busy===value?'Saving…':(saved.includes(value)?'✓ ':'')+label}</button>)}</div>{message&&<p className="muted" role="status">{message}</p>}</div>
+ return <div><div className="mark-actions" aria-label="Mark this scent">{options.map(([value,label,icon])=><button type="button" disabled={busy!==null} aria-pressed={saved.includes(value)} className={saved.includes(value)?'mark active':'mark'} onClick={()=>toggle(value)} key={value}><span aria-hidden="true">{saved.includes(value)?'✓':icon}</span>{busy===value?'Saving…':label}</button>)}</div>{message&&<p className="muted" role="status">{message}</p>}</div>
 }
