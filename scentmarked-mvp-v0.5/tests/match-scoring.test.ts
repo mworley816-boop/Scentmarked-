@@ -79,3 +79,28 @@ test('blocked candidates never appear in ranked matches even with higher scores'
  assert.equal(ranked.avoidExcluded,1)
  assert.equal(ranked.budgetExcluded,1)
 })
+
+test('missing wear ratings do not penalize a recommendation',()=>{
+ const p=perfume({id:'unrated',ratings:[]})
+ const candidate=buildMatchCandidate(p,undefined,new Map(),1,{love:[],avoid:[],sweetness:5,projection:5,longevity:5,maxPrice:0})
+ assert.equal(candidate.traitScore,null)
+ assert.equal(candidate.score,0)
+ assert.equal(candidate.scoreWeights.wear,0)
+})
+
+test('matching community wear ratings produce a strong wear-profile score',()=>{
+ const p=perfume({id:'wear-match',ratings:[
+  {sweetness:5,projection:4,longevity:5},
+  {sweetness:5,projection:4,longevity:5}
+ ]})
+ const candidate=buildMatchCandidate(p,undefined,new Map(),1,{love:[],avoid:[],sweetness:5,projection:4,longevity:5,maxPrice:0})
+ assert.equal(candidate.traitScore,100)
+ assert.equal(candidate.score,100)
+ assert.equal(candidate.scoreWeights.wear,1)
+})
+
+test('wear ratings outside the accepted one-to-five range are ignored',()=>{
+ const p=perfume({id:'bad-ratings',ratings:[{sweetness:9,projection:0,longevity:-1}]})
+ const candidate=buildMatchCandidate(p,undefined,new Map(),1,{love:[],avoid:[],sweetness:5,projection:5,longevity:5,maxPrice:0})
+ assert.equal(candidate.traitScore,null)
+})
