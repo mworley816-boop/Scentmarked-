@@ -40,9 +40,15 @@ test('removing budget only drops maxPrice',()=>{
  assert.equal(q.get('perfume'),'lattafa-khamrah')
 })
 
-test('empty optional preferences are omitted from recovery URLs',()=>{
+test('empty recovery values explicitly override saved profile defaults',()=>{
  const href=buildMatchRecoveryHref({
   selectedSlug:undefined,love:[],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0
  },'budget')
- assert.equal(href,'/matches?')
+ const q=new URL(href,'https://scentmarked.test').searchParams
+ assert.equal(q.get('love'),'')
+ assert.equal(q.get('avoid'),'')
+ assert.equal(q.get('sweetness'),'')
+ assert.equal(q.get('projection'),'')
+ assert.equal(q.get('longevity'),'')
+ assert.equal(q.get('maxPrice'),'')
 })
