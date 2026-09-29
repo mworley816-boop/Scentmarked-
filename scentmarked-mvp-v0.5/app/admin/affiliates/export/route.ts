@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { affiliateExportLine } from '@/lib/affiliate-export'
+import { affiliateExportCutoff, affiliateExportLine, affiliateExportPeriod } from '@/lib/affiliate-export'
 
 export async function GET(request:Request){
  const s=await createClient()
@@ -9,8 +9,8 @@ export async function GET(request:Request){
  if(profile?.is_admin!==true)return new Response('Forbidden',{status:403})
 
  const url=new URL(request.url)
- const period=['7','30','all'].includes(url.searchParams.get('period')||'')?url.searchParams.get('period')||'30':'30'
- const cutoff=period==='7'?new Date(Date.now()-7*24*60*60*1000).toISOString():period==='30'?new Date(Date.now()-30*24*60*60*1000).toISOString():null
+ const period=affiliateExportPeriod(url.searchParams.get('period'))
+ const cutoff=affiliateExportCutoff(period)
  const rows:any[]=[]
  const pageSize=1000
  for(let from=0;;from+=pageSize){
