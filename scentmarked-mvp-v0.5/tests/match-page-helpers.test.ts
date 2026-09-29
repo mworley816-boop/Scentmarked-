@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildMatchCompareHref, buildMatchRecoveryHref, matchReasons } from '../lib/match-page-helpers.ts'
+import { buildMatchCompareHref, buildMatchRecoveryHref, buildRecommendationCriteriaKey, matchReasons } from '../lib/match-page-helpers.ts'
 
 const base={
  selectedSlug:'lattafa-khamrah',
@@ -88,4 +88,23 @@ test('preference-only reasons do not imply shared DNA with a baseline perfume',(
   preferenceScore:90,traitScore:95,sweet:5,proj:4,long:5,price:0,priceKnown:false,priceOk:true
  },false)
  assert.deepEqual(reasons,['Matches vanilla','Strong wear-profile fit'])
+})
+
+
+test('recommendation history keys ignore love and avoid term order',()=>{
+ const a=buildRecommendationCriteriaKey(base)
+ const b=buildRecommendationCriteriaKey({...base,love:['gourmand','vanilla'],avoid:['smoke','leather']})
+ assert.equal(a,b)
+})
+
+test('recommendation history keys normalize whitespace, case, and duplicate terms',()=>{
+ const a=buildRecommendationCriteriaKey(base)
+ const b=buildRecommendationCriteriaKey({...base,love:[' Vanilla ','GOURMAND','vanilla'],avoid:['SMOKE',' leather ']})
+ assert.equal(a,b)
+})
+
+test('recommendation history keys still distinguish meaningful preference changes',()=>{
+ const a=buildRecommendationCriteriaKey(base)
+ assert.notEqual(a,buildRecommendationCriteriaKey({...base,maxPrice:50}))
+ assert.notEqual(a,buildRecommendationCriteriaKey({...base,sweetness:4}))
 })
