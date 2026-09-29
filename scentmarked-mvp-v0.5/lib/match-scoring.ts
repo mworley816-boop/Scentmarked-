@@ -5,7 +5,7 @@ export type MatchRating={sweetness?:number|string|null;projection?:number|string
 export type MatchPerfume={id:string;name:string;slug:string;image_url?:string|null;price_low?:number|null;price_high?:number|null;brands?:MatchBrand|null;perfume_notes:MatchNoteRow[];perfume_accords:MatchAccordRow[];ratings?:MatchRating[]}
 
 export const noteNames=(p:MatchPerfume)=>(p.perfume_notes||[]).map(x=>x.notes?.name).filter((name):name is string=>Boolean(name))
-const positionWeight=(p?:string)=>p==='base'?1.25:p==='heart'?1.15:p==='top'?1.05:1
+const positionWeight=(p?:string|null)=>p==='base'?1.25:p==='heart'?1.15:p==='top'?1.05:1
 const noteMap=(p:MatchPerfume)=>{const m=new Map<string,{position:string;weight:number}>();for(const x of p?.perfume_notes||[]){const name=x.notes?.name;if(!name)continue;const w=positionWeight(x.position),old=m.get(name);if(!old||w>old.weight)m.set(name,{position:x.position||'unspecified',weight:w})}return m}
 export const accordRows=(p:MatchPerfume)=>(p?.perfume_accords||[]).filter(x=>x.accords?.name&&Number(x.strength)>0)
 export const preferenceTerms=(p:MatchPerfume)=>{const notes=noteNames(p).map(name=>({name,kind:'note',strength:100})),accords=accordRows(p).map(x=>({name:String(x.accords?.name),kind:'accord',strength:Number(x.strength)||0}));return [...notes,...accords]}
