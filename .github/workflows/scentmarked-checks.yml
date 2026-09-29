@@ -1,0 +1,30 @@
+name: ScentMarked checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scentmarked-mvp-v0.5/**'
+      - '.github/workflows/scentmarked-checks.yml'
+  pull_request:
+    paths:
+      - 'scentmarked-mvp-v0.5/**'
+      - '.github/workflows/scentmarked-checks.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scentmarked-mvp-v0.5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install
+      - name: Typecheck and build
+        run: npm run check
