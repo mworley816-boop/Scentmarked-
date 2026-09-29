@@ -24,7 +24,9 @@ export function buildMatchRecoveryHref(options:RecoveryOptions,remove:'love'|'av
  q.set('sweetness',sweetness>0?String(sweetness):'')
  q.set('projection',projection>0?String(projection):'')
  q.set('longevity',longevity>0?String(longevity):'')
- q.set('maxPrice',remove!=='budget'&&maxPrice>0?String(maxPrice):'')
+ if(remove==='budget'){
+  if(maxPrice===0)q.set('maxPrice','')
+ }else q.set('maxPrice',maxPrice>0?String(maxPrice):'')
  return '/matches?'+q.toString()
 }
 
