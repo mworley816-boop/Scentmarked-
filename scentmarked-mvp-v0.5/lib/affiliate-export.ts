@@ -23,3 +23,8 @@ export function affiliateClickWithinPeriod(clickedAt:string,period:AffiliateExpo
  const cutoff=now-(period==='7'?7:30)*24*60*60*1000
  return clicked>=cutoff&&clicked<=now
 }
+
+export function affiliateClickDayKey(clickedAt:string){
+ const date=new Date(clickedAt)
+ return Number.isFinite(date.getTime())?date.toISOString().slice(0,10):null
+}
