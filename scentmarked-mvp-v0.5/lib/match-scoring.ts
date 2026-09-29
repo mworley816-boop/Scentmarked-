@@ -30,7 +30,19 @@ export function buildMatchCandidate(p:MatchPerfume,selected:MatchPerfume|undefin
 export type RecommendationFeedback='more_like_this'|'less_like_this'
 export const feedbackAdjustment=(feedback?:RecommendationFeedback|null)=>feedback==='more_like_this'?5:feedback==='less_like_this'?-5:0
 
-export function rankMatchCandidates(candidates:MatchCandidate[],limit=12,feedbackByPerfume:Record<string,RecommendationFeedback>={}){
+export type PersonalRecommendationSignal={rating?:number|null;favorite?:boolean;owned?:boolean;want?:boolean;tried?:boolean}
+export function personalSignalAdjustment(signal?:PersonalRecommendationSignal|null){
+ if(!signal)return 0
+ let adjustment=0
+ if(signal.favorite)adjustment+=2
+ else if(signal.owned)adjustment+=1
+ if(signal.rating!=null&&Number.isFinite(signal.rating))adjustment+=signal.rating>=4?2:signal.rating<=2?-2:0
+ if(signal.want)adjustment+=1
+ if(signal.tried&&signal.rating==null&&!signal.favorite&&!signal.owned)adjustment+=0
+ return Math.max(-3,Math.min(3,adjustment))
+}
+
+export function rankMatchCandidates(candidates:MatchCandidate[],limit=12,feedbackByPerfume:Record<string,RecommendationFeedback>={},personalSignals:Record<string,PersonalRecommendationSignal>={}){
  let avoidExcluded=0,budgetExcluded=0
  const eligible=candidates.filter(candidate=>{
   if(candidate.avoided.length>0){avoidExcluded+=1;return false}
@@ -38,7 +50,7 @@ export function rankMatchCandidates(candidates:MatchCandidate[],limit=12,feedbac
   return true
  })
  eligible.sort((a,b)=>{
-  const scoreDifference=(b.score+feedbackAdjustment(feedbackByPerfume[b.id]))-(a.score+feedbackAdjustment(feedbackByPerfume[a.id]))
+  const scoreDifference=(b.score+feedbackAdjustment(feedbackByPerfume[b.id])+personalSignalAdjustment(personalSignals[b.id]))-(a.score+feedbackAdjustment(feedbackByPerfume[a.id])+personalSignalAdjustment(personalSignals[a.id]))
   if(scoreDifference!==0)return scoreDifference
   const lovedDifference=b.loved.length-a.loved.length
   if(lovedDifference!==0)return lovedDifference
