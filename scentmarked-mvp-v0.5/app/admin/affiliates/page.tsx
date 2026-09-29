@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { affiliateExportPeriod } from '@/lib/affiliate-export'
 
 export const metadata={title:'Affiliate Performance | ScentMarked Studio',robots:{index:false,follow:false}}
 
 export default async function AffiliatePerformance({searchParams}:{searchParams:Promise<{period?:string}>}){
  const params=await searchParams
- const period=['7','30','all'].includes(params.period||'')?params.period||'30':'30'
+ const period=affiliateExportPeriod(params.period??null)
  const s=await createClient()
  let user:any=null
  try{const auth=await s.auth.getUser();user=auth.data.user}catch{}
