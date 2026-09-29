@@ -104,3 +104,28 @@ test('wear ratings outside the accepted one-to-five range are ignored',()=>{
  const candidate=buildMatchCandidate(p,undefined,new Map(),1,{love:[],avoid:[],sweetness:5,projection:5,longevity:5,maxPrice:0})
  assert.equal(candidate.traitScore,null)
 })
+
+test('selected-perfume recommendations normalize DNA preference and wear weights',()=>{
+ const selected=perfume({id:'selected',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
+ const p=perfume({
+  id:'candidate',
+  perfume_notes:[{position:'base',notes:{name:'Vanilla'}}],
+  ratings:[{sweetness:5,projection:4,longevity:5}]
+ })
+ const candidate=buildMatchCandidate(p,selected,new Map([['Vanilla',2]]),2,{love:['vanilla'],avoid:[],sweetness:5,projection:4,longevity:5,maxPrice:0})
+ const total=candidate.scoreWeights.dna+candidate.scoreWeights.preferences+candidate.scoreWeights.wear
+ assert.ok(Math.abs(total-1)<1e-10)
+ assert.ok(candidate.scoreWeights.dna>0)
+ assert.ok(candidate.scoreWeights.preferences>0)
+ assert.ok(candidate.scoreWeights.wear>0)
+})
+
+test('selected perfume uses DNA as the full score when no other preference signal exists',()=>{
+ const selected=perfume({id:'selected',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
+ const p=perfume({id:'candidate',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
+ const candidate=buildMatchCandidate(p,selected,new Map([['Vanilla',2]]),2,{love:[],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0})
+ assert.equal(candidate.score,candidate.dnaScore)
+ assert.equal(candidate.scoreWeights.dna,1)
+ assert.equal(candidate.scoreWeights.preferences,0)
+ assert.equal(candidate.scoreWeights.wear,0)
+})
