@@ -1,11 +1,13 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 type Feedback='more_like_this'|'less_like_this'
 
-export default function RecommendationFeedback({perfumeId,initialFeedback=null,label='Was this recommendation useful?'}:{perfumeId:string;initialFeedback?:Feedback|null;label?:string}){
+export default function RecommendationFeedback({perfumeId,initialFeedback=null,label='Was this recommendation useful?',refreshAfterChange=false}:{perfumeId:string;initialFeedback?:Feedback|null;label?:string;refreshAfterChange?:boolean}){
  const supabase=useMemo(()=>createClient(),[])
+ const router=useRouter()
  const [feedback,setFeedback]=useState<Feedback|null>(initialFeedback)
  const [busy,setBusy]=useState<Feedback|null>(null)
  const [message,setMessage]=useState('')
@@ -19,11 +21,11 @@ export default function RecommendationFeedback({perfumeId,initialFeedback=null,l
    if(feedback===next){
     const {error}=await supabase.from('recommendation_feedback').delete().eq('user_id',user.id).eq('perfume_id',perfumeId)
     if(error)throw error
-    setFeedback(null);setMessage('Feedback cleared.')
+    setFeedback(null);setMessage('Feedback cleared.');if(refreshAfterChange)router.refresh()
    }else{
     const {error}=await supabase.from('recommendation_feedback').upsert({user_id:user.id,perfume_id:perfumeId,feedback:next,updated_at:new Date().toISOString()},{onConflict:'user_id,perfume_id'})
     if(error)throw error
-    setFeedback(next);setMessage(next==='more_like_this'?'We’ll remember that you want more recommendations like this.':'We’ll remember that you want fewer recommendations like this.')
+    setFeedback(next);setMessage(next==='more_like_this'?'We’ll remember that you want more recommendations like this.':'We’ll remember that you want fewer recommendations like this.');if(refreshAfterChange)router.refresh()
    }
   }catch{setMessage('Could not save your feedback. Please try again.')}
   finally{setBusy(null)}
