@@ -21,7 +21,7 @@ export default async function PerfumePage({params}:{params:Promise<{slug:string}
  const p:any=result.data,notes:any[]=p.perfume_notes||[],accords:any[]=(p.perfume_accords||[]).filter((a:any)=>a?.accords?.name&&Number(a.strength)>0),brand=p.brands?.name||'Scentmarked'
  const heroNotes=notes.map((n:any)=>n.notes).filter((n:any)=>n?.name).filter((n:any,i:number,list:any[])=>list.findIndex((x:any)=>x.name===n.name)===i).slice(0,5)
  let ratings:any[]=[];try{const rr=await s.from('ratings').select('overall,longevity,projection,sweetness,review,created_at,profiles(display_name)').eq('perfume_id',p.id);if(!rr.error)ratings=rr.data||[]}catch{}
- let initialMarks:string[]=[];try{const {data:{user}}=await s.auth.getUser();if(user){const marks=await s.from('collection_items').select('status').eq('user_id',user.id).eq('perfume_id',p.id);if(!marks.error)initialMarks=(marks.data||[]).map((x:any)=>x.status).filter((x:any):x is string=>typeof x==='string')}}catch{}
+ let initialMarks:string[]=[];try{const {data:{user}}=await s.auth.getUser();if(user){const [marks]=await Promise.all([s.from('collection_items').select('status').eq('user_id',user.id).eq('perfume_id',p.id),s.from('recently_viewed_perfumes').upsert({user_id:user.id,perfume_id:p.id,viewed_at:new Date().toISOString()},{onConflict:'user_id,perfume_id'})]);if(!marks.error)initialMarks=(marks.data||[]).map((x:any)=>x.status).filter((x:any):x is string=>typeof x==='string')}}catch{}
  const favorite=initialMarks.includes('favorite')
  const overallRatings=ratings.filter((r:any)=>Number(r.overall)>0)
  const avg=overallRatings.length?(overallRatings.reduce((a:number,r:any)=>a+Number(r.overall),0)/overallRatings.length).toFixed(1):null
