@@ -27,4 +27,19 @@ export function buildMatchCandidate(p:MatchPerfume,selected:MatchPerfume|undefin
  return {...p,...base,dnaScore:base.score,score:combined,scoreWeights,loved,lovedAccords,avoided,preferenceScore,traitScore,sweet,proj,long,price,priceKnown,priceOk,relationship}
 }
 
-export function rankMatchCandidates(candidates:MatchCandidate[],limit=12){const avoidExcluded=candidates.filter(p=>p.avoided.length).length,budgetExcluded=candidates.filter(p=>!p.avoided.length&&!p.priceOk).length,eligible=candidates.filter(p=>!p.avoided.length&&p.priceOk),matches=[...eligible].sort((a,b)=>b.score-a.score||b.loved.length-a.loved.length||a.name.localeCompare(b.name)).slice(0,limit);return{avoidExcluded,budgetExcluded,eligibleMatchCount:eligible.length,matches}}
+export function rankMatchCandidates(candidates:MatchCandidate[],limit=12){
+ let avoidExcluded=0,budgetExcluded=0
+ const eligible=candidates.filter(candidate=>{
+  if(candidate.avoided.length>0){avoidExcluded+=1;return false}
+  if(candidate.priceKnown&&!candidate.priceOk){budgetExcluded+=1;return false}
+  return true
+ })
+ eligible.sort((a,b)=>{
+  const scoreDifference=b.score-a.score
+  if(scoreDifference!==0)return scoreDifference
+  const lovedDifference=b.loved.length-a.loved.length
+  if(lovedDifference!==0)return lovedDifference
+  return a.name.localeCompare(b.name)
+ })
+ return{avoidExcluded,budgetExcluded,eligibleMatchCount:eligible.length,matches:eligible.slice(0,limit)}
+}
