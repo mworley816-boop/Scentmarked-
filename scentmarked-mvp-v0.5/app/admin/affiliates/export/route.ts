@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-
-const csv=(value:any)=>'"'+String(value??'').replaceAll('"','""')+'"'
+import { affiliateExportLine } from '@/lib/affiliate-export'
 
 export async function GET(request:Request){
  const s=await createClient()
@@ -29,10 +28,10 @@ export async function GET(request:Request){
  ])
  const offerMap=new Map((offers||[]).map((x:any)=>[String(x.id),x]))
  const perfumeMap=new Map((perfumes||[]).map((x:any)=>[String(x.id),x]))
- const lines=[['clicked_at','period','perfume','brand','slug','merchant','offer_label','placement','offer_id','perfume_id'].map(csv).join(',')]
+ const lines=[affiliateExportLine(['clicked_at','period','perfume','brand','slug','merchant','offer_label','placement','offer_id','perfume_id'])]
  for(const row of rows){
   const offer:any=offerMap.get(String(row.offer_id)),perfume:any=perfumeMap.get(String(row.perfume_id))
-  lines.push([row.clicked_at,period,perfume?.name,perfume?.brands?.name,perfume?.slug,offer?.merchant_name,offer?.label,row.placement,row.offer_id,row.perfume_id].map(csv).join(','))
+  lines.push(affiliateExportLine([row.clicked_at,period,perfume?.name,perfume?.brands?.name,perfume?.slug,offer?.merchant_name,offer?.label,row.placement,row.offer_id,row.perfume_id]))
  }
  return new Response('\uFEFF'+lines.join('\n'),{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':`attachment; filename="scentmarked-affiliate-clicks-${period}.csv"`,'Cache-Control':'private, no-store'}})
 }
