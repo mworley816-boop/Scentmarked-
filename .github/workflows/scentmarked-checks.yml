@@ -31,5 +31,12 @@ jobs:
           bun-version: '1.4.2'
       - name: Install dependencies
         run: bun install --save-text-lockfile
+      - name: Upload generated Bun lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: scentmarked-bun-lockfile
+          path: scentmarked-mvp-v0.5/bun.lock
+          if-no-files-found: error
+          retention-days: 1
       - name: Typecheck and build
         run: bun run check
