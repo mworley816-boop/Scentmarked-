@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildMatchCompareHref, buildMatchRecoveryHref, buildRecommendationCriteriaKey, matchReasons } from '../lib/match-page-helpers.ts'
+import { buildMatchCompareHref, buildMatchRecoveryHref, buildRecommendationCriteriaKey, uniqueRecommendationResultIds, matchReasons } from '../lib/match-page-helpers.ts'
 
 const base={
  selectedSlug:'lattafa-khamrah',
@@ -107,4 +107,13 @@ test('recommendation history keys still distinguish meaningful preference change
  const a=buildRecommendationCriteriaKey(base)
  assert.notEqual(a,buildRecommendationCriteriaKey({...base,maxPrice:50}))
  assert.notEqual(a,buildRecommendationCriteriaKey({...base,sweetness:4}))
+})
+
+
+test('recommendation history result ids preserve rank order while removing duplicates and blanks',()=>{
+ assert.deepEqual(uniqueRecommendationResultIds(['a','b','a','','c']),['a','b','c'])
+})
+
+test('recommendation history result ids respect the requested storage limit',()=>{
+ assert.deepEqual(uniqueRecommendationResultIds(['a','b','c','d'],2),['a','b'])
 })
