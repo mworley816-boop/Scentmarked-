@@ -27,7 +27,10 @@ export function buildMatchCandidate(p:MatchPerfume,selected:MatchPerfume|undefin
  return {...p,...base,dnaScore:base.score,score:combined,scoreWeights,loved,lovedAccords,avoided,preferenceScore,traitScore,sweet,proj,long,price,priceKnown,priceOk,relationship}
 }
 
-export function rankMatchCandidates(candidates:MatchCandidate[],limit=12){
+export type RecommendationFeedback='more_like_this'|'less_like_this'
+export const feedbackAdjustment=(feedback?:RecommendationFeedback|null)=>feedback==='more_like_this'?5:feedback==='less_like_this'?-5:0
+
+export function rankMatchCandidates(candidates:MatchCandidate[],limit=12,feedbackByPerfume:Record<string,RecommendationFeedback>={}){
  let avoidExcluded=0,budgetExcluded=0
  const eligible=candidates.filter(candidate=>{
   if(candidate.avoided.length>0){avoidExcluded+=1;return false}
@@ -35,7 +38,7 @@ export function rankMatchCandidates(candidates:MatchCandidate[],limit=12){
   return true
  })
  eligible.sort((a,b)=>{
-  const scoreDifference=b.score-a.score
+  const scoreDifference=(b.score+feedbackAdjustment(feedbackByPerfume[b.id]))-(a.score+feedbackAdjustment(feedbackByPerfume[a.id]))
   if(scoreDifference!==0)return scoreDifference
   const lovedDifference=b.loved.length-a.loved.length
   if(lovedDifference!==0)return lovedDifference
