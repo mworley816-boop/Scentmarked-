@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildMatchCandidate, rankMatchCandidates, scentSimilarityScore, type MatchPerfume } from '../lib/match-scoring.ts'
+import { buildMatchCandidate, rankMatchCandidates, feedbackAdjustment, scentSimilarityScore, type MatchPerfume } from '../lib/match-scoring.ts'
 
 const perfume=(overrides:Partial<MatchPerfume>={}):MatchPerfume=>({
  id:'p1',name:'Test Scent',slug:'test-scent',brands:{name:'Test House'},
@@ -147,4 +147,20 @@ test('rich shared note and accord data can produce high confidence',()=>{
  assert.equal(result.confidence,'High')
  assert.equal(result.usesAccords,true)
  assert.equal(result.sharedAccords.length,4)
+})
+
+
+test('recommendation feedback uses a bounded ranking adjustment',()=>{
+ assert.equal(feedbackAdjustment('more_like_this'),5)
+ assert.equal(feedbackAdjustment('less_like_this'),-5)
+ assert.equal(feedbackAdjustment(null),0)
+})
+
+test('feedback can reorder close matches without changing their core scores',()=>{
+ const lower={...buildMatchCandidate(perfume('lower',['Vanilla']),undefined,new Map(),2,{love:['Vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}),score:78}
+ const higher={...buildMatchCandidate(perfume('higher',['Vanilla']),undefined,new Map(),2,{love:['Vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}),score:82}
+ const ranked=rankMatchCandidates([higher,lower],12,{[higher.id]:'less_like_this',[lower.id]:'more_like_this'})
+ assert.equal(ranked.matches[0].id,lower.id)
+ assert.equal(lower.score,78)
+ assert.equal(higher.score,82)
 })
