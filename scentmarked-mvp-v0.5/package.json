@@ -15,7 +15,7 @@
     "test": "node --test --experimental-strip-types tests/*.test.ts"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "latest",
+    "@opennextjs/cloudflare": "1.20.7",
     "@supabase/ssr": "0.7.0",
     "@supabase/supabase-js": "2.57.0",
     "next": "15.5.26",
@@ -27,7 +27,7 @@
     "@types/react": "19.1.12",
     "@types/react-dom": "19.1.9",
     "typescript": "5.9.2",
-    "wrangler": "latest"
+    "wrangler": "4.143.0"
   },
   "packageManager": "npm@10.9.2",
   "engines": {
