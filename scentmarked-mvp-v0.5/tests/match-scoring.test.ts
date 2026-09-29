@@ -129,3 +129,22 @@ test('selected perfume uses DNA as the full score when no other preference signa
  assert.equal(candidate.scoreWeights.preferences,0)
  assert.equal(candidate.scoreWeights.wear,0)
 })
+
+test('sparse scent data keeps similarity confidence limited',()=>{
+ const a=perfume({id:'a',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
+ const b=perfume({id:'b',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
+ const result=scentSimilarityScore(a,b,new Map([['Vanilla',2]]),2)
+ assert.equal(result.confidence,'Limited')
+})
+
+test('rich shared note and accord data can produce high confidence',()=>{
+ const notes=['Vanilla','Caramel','Musk','Amber','Rose','Bergamot'].map((name,i)=>({position:i<2?'top':i<4?'heart':'base',notes:{name}}))
+ const accords=['Gourmand','Sweet','Warm','Vanilla'].map((name,i)=>({strength:100-i*10,accords:{name}}))
+ const a=perfume({id:'a',perfume_notes:notes,perfume_accords:accords})
+ const b=perfume({id:'b',perfume_notes:notes,perfume_accords:accords})
+ const freq=new Map(notes.map(x=>[x.notes.name,2]))
+ const result=scentSimilarityScore(a,b,freq,2)
+ assert.equal(result.confidence,'High')
+ assert.equal(result.usesAccords,true)
+ assert.equal(result.sharedAccords.length,4)
+})
