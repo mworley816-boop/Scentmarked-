@@ -1,5 +1,5 @@
 import type { MatchCandidate } from '@/lib/match-scoring'
-import { relationshipReason } from '@/lib/scent-relationships'
+import { relationshipReason } from './scent-relationships.ts'
 
 export function matchReasons(m:MatchCandidate,withBaseline:boolean){
  const reasons:string[]=[]
