@@ -1,5 +1,8 @@
 name: ScentMarked checks
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   push:
@@ -31,6 +34,14 @@ jobs:
           bun-version: '1.4.2'
       - name: Install dependencies
         run: bun install --save-text-lockfile
+      - name: Commit generated Bun lockfile
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bun.lock
+          git diff --cached --quiet || git commit -m "Commit Bun lockfile"
+          git diff --cached --quiet && git push || true
       - name: Upload generated Bun lockfile
         uses: actions/upload-artifact@v4
         with:
