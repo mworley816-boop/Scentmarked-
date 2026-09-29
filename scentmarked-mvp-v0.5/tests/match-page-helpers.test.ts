@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildMatchCompareHref, buildMatchRecoveryHref } from '../lib/match-page-helpers.ts'
+import { buildMatchCompareHref, buildMatchRecoveryHref, matchReasons } from '../lib/match-page-helpers.ts'
 
 const base={
  selectedSlug:'lattafa-khamrah',
@@ -65,4 +65,27 @@ test('compare links can start with only the recommendation candidate',()=>{
  const q=new URL(href,'https://scentmarked.test').searchParams
  assert.equal(q.get('a'),'candidate-scent')
  assert.equal(q.has('b'),false)
+})
+
+test('match reasons prioritize relationship and preference evidence',()=>{
+ const reasons=matchReasons({
+  id:'p',name:'Perfume',slug:'perfume',perfume_notes:[],perfume_accords:[],
+  dnaScore:80,score:85,scoreWeights:{dna:.45,preferences:.35,wear:.2},
+  shared:['Vanilla'],positionMatches:['Vanilla'],sharedAccords:['Gourmand'],usesAccords:true,
+  confidence:'High',loved:['vanilla'],lovedAccords:['gourmand'],avoided:[],
+  preferenceScore:90,traitScore:90,sweet:5,proj:4,long:5,price:40,priceKnown:true,priceOk:true,
+  relationship:{relationship_type:'possible_clone'}
+ },true)
+ assert.deepEqual(reasons,['Possible clone relationship','Matches vanilla','Shared DNA: Gourmand'])
+})
+
+test('preference-only reasons do not imply shared DNA with a baseline perfume',()=>{
+ const reasons=matchReasons({
+  id:'p',name:'Perfume',slug:'perfume',perfume_notes:[],perfume_accords:[],
+  dnaScore:0,score:90,scoreWeights:{dna:0,preferences:.65,wear:.35},
+  shared:['Vanilla'],positionMatches:['Vanilla'],sharedAccords:['Gourmand'],usesAccords:true,
+  confidence:'Limited',loved:['vanilla'],lovedAccords:['gourmand'],avoided:[],
+  preferenceScore:90,traitScore:95,sweet:5,proj:4,long:5,price:0,priceKnown:false,priceOk:true
+ },false)
+ assert.deepEqual(reasons,['Matches vanilla','Strong wear-profile fit'])
 })
