@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { affiliateExportCutoff, affiliateExportLine, affiliateExportPeriod, csvCell } from '../lib/affiliate-export.ts'
+import { affiliateClickWithinPeriod, affiliateExportCutoff, affiliateExportLine, affiliateExportPeriod, csvCell } from '../lib/affiliate-export.ts'
 
 test('csv cells quote commas and double embedded quotes',()=>{
  assert.equal(csvCell('Shop, Inc.'),'"Shop, Inc."')
@@ -33,4 +33,24 @@ test('affiliate export cutoffs are deterministic for 7 and 30 day periods',()=>{
  assert.equal(affiliateExportCutoff('7',now),'2026-09-22T12:00:00.000Z')
  assert.equal(affiliateExportCutoff('30',now),'2026-08-30T12:00:00.000Z')
  assert.equal(affiliateExportCutoff('all',now),null)
+})
+
+
+test('affiliate click period matching includes exact 7 and 30 day boundaries',()=>{
+ const now=Date.parse('2026-09-29T12:00:00.000Z')
+ assert.equal(affiliateClickWithinPeriod('2026-09-22T12:00:00.000Z','7',now),true)
+ assert.equal(affiliateClickWithinPeriod('2026-08-30T12:00:00.000Z','30',now),true)
+})
+
+test('affiliate click period matching excludes old, future, and invalid timestamps',()=>{
+ const now=Date.parse('2026-09-29T12:00:00.000Z')
+ assert.equal(affiliateClickWithinPeriod('2026-09-22T11:59:59.999Z','7',now),false)
+ assert.equal(affiliateClickWithinPeriod('2026-08-30T11:59:59.999Z','30',now),false)
+ assert.equal(affiliateClickWithinPeriod('2026-09-29T12:00:00.001Z','7',now),false)
+ assert.equal(affiliateClickWithinPeriod('not-a-date','30',now),false)
+})
+
+test('all-time affiliate matching accepts timestamps without a cutoff',()=>{
+ const now=Date.parse('2026-09-29T12:00:00.000Z')
+ assert.equal(affiliateClickWithinPeriod('2020-01-01T00:00:00.000Z','all',now),true)
 })
