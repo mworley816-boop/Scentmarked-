@@ -4,12 +4,12 @@ import { createClient } from '@/lib/supabase/client'
 
 type Feedback='more_like_this'|'less_like_this'
 
-export default function RecommendationFeedback({perfumeId}:{perfumeId:string}){
+export default function RecommendationFeedback({perfumeId,initialFeedback=null,label='Was this recommendation useful?'}:{perfumeId:string;initialFeedback?:Feedback|null;label?:string}){
  const supabase=useMemo(()=>createClient(),[])
- const [feedback,setFeedback]=useState<Feedback|null>(null)
+ const [feedback,setFeedback]=useState<Feedback|null>(initialFeedback)
  const [busy,setBusy]=useState<Feedback|null>(null)
  const [message,setMessage]=useState('')
- useEffect(()=>{let live=true;(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data}=await supabase.from('recommendation_feedback').select('feedback').eq('user_id',user.id).eq('perfume_id',perfumeId).maybeSingle();if(live&&data?.feedback)setFeedback(data.feedback as Feedback)})();return()=>{live=false}},[supabase,perfumeId])
+ useEffect(()=>{let live=true;(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user||initialFeedback)return;const {data}=await supabase.from('recommendation_feedback').select('feedback').eq('user_id',user.id).eq('perfume_id',perfumeId).maybeSingle();if(live&&data?.feedback)setFeedback(data.feedback as Feedback)})();return()=>{live=false}},[supabase,perfumeId,initialFeedback])
  async function choose(next:Feedback){
   if(busy)return
   setBusy(next);setMessage('')
@@ -28,5 +28,5 @@ export default function RecommendationFeedback({perfumeId}:{perfumeId:string}){
   }catch{setMessage('Could not save your feedback. Please try again.')}
   finally{setBusy(null)}
  }
- return <div className="recommendation-feedback" aria-label="Recommendation feedback"><span>Was this recommendation useful?</span><div><button type="button" className={feedback==='more_like_this'?'active':''} aria-pressed={feedback==='more_like_this'} disabled={!!busy} onClick={()=>choose('more_like_this')}>{busy==='more_like_this'?'Saving…':'More Like This'}</button><button type="button" className={feedback==='less_like_this'?'active':''} aria-pressed={feedback==='less_like_this'} disabled={!!busy} onClick={()=>choose('less_like_this')}>{busy==='less_like_this'?'Saving…':'Less Like This'}</button></div>{message&&<small role="status">{message}</small>}</div>
+ return <div className="recommendation-feedback" aria-label="Recommendation feedback"><span>{label}</span><div><button type="button" className={feedback==='more_like_this'?'active':''} aria-pressed={feedback==='more_like_this'} disabled={!!busy} onClick={()=>choose('more_like_this')}>{busy==='more_like_this'?'Saving…':'More Like This'}</button><button type="button" className={feedback==='less_like_this'?'active':''} aria-pressed={feedback==='less_like_this'} disabled={!!busy} onClick={()=>choose('less_like_this')}>{busy==='less_like_this'?'Saving…':'Less Like This'}</button></div>{message&&<small role="status">{message}</small>}</div>
 }
