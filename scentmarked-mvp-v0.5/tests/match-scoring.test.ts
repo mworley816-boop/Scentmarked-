@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildMatchCandidate, rankMatchCandidates, feedbackAdjustment, scentSimilarityScore, type MatchPerfume } from '../lib/match-scoring.ts'
+import { buildMatchCandidate, rankMatchCandidates, feedbackAdjustment, personalSignalAdjustment, scentSimilarityScore, type MatchPerfume } from '../lib/match-scoring.ts'
 
 const perfume=(overrides:Partial<MatchPerfume>={}):MatchPerfume=>({
  id:'p1',name:'Test Scent',slug:'test-scent',brands:{name:'Test House'},
@@ -163,4 +163,30 @@ test('feedback can reorder close matches without changing their core scores',()=
  assert.equal(ranked.matches[0].id,lower.id)
  assert.equal(lower.score,78)
  assert.equal(higher.score,82)
+})
+
+
+test('personal recommendation signals stay tightly bounded',()=>{
+ assert.equal(personalSignalAdjustment({favorite:true,owned:true,want:true,rating:5}),3)
+ assert.equal(personalSignalAdjustment({rating:1}),-2)
+ assert.equal(personalSignalAdjustment({tried:true}),0)
+ assert.equal(personalSignalAdjustment(),0)
+})
+
+test('personal signals can reorder close matches without changing core match scores',()=>{
+ const prefs={love:['vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}
+ const lower={...buildMatchCandidate(perfume({id:'personal-lower',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,prefs),score:80}
+ const higher={...buildMatchCandidate(perfume({id:'personal-higher',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,prefs),score:82}
+ const ranked=rankMatchCandidates([higher,lower],12,{}, {[lower.id]:{favorite:true,rating:5}})
+ assert.equal(ranked.matches[0].id,lower.id)
+ assert.equal(lower.score,80)
+ assert.equal(higher.score,82)
+})
+
+test('bounded personal signals cannot overpower a clearly stronger core match',()=>{
+ const prefs={love:['vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}
+ const lower={...buildMatchCandidate(perfume({id:'bounded-lower'}),undefined,new Map(),2,prefs),score:70}
+ const higher={...buildMatchCandidate(perfume({id:'bounded-higher'}),undefined,new Map(),2,prefs),score:85}
+ const ranked=rankMatchCandidates([higher,lower],12,{}, {[lower.id]:{favorite:true,rating:5},[higher.id]:{rating:1}})
+ assert.equal(ranked.matches[0].id,higher.id)
 })
