@@ -44,3 +44,8 @@ const canonicalTerms=(terms:string[])=>[...new Set(terms.map(term=>term.trim().t
 export function buildRecommendationCriteriaKey(options:RecommendationCriteria){
  return [options.selectedSlug?.trim().toLocaleLowerCase()||'',canonicalTerms(options.love).join(','),canonicalTerms(options.avoid).join(','),options.sweetness||'',options.projection||'',options.longevity||'',options.maxPrice||''].join('|')
 }
+
+
+export function uniqueRecommendationResultIds(ids:string[],limit=12){
+ return [...new Set(ids.filter(Boolean))].slice(0,limit)
+}
