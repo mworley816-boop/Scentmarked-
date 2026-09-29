@@ -63,7 +63,7 @@ test('relationship metadata does not increase recommendation score',()=>{
 
 test('eligible candidates rank by score before loved-term tie breakers',()=>{
  const prefs={love:['vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}
- const lower=buildMatchCandidate(perfume({id:'lower',perfume_notes:[{position:'top',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,prefs)
+ const lower={...buildMatchCandidate(perfume({id:'lower',perfume_notes:[{position:'top',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,prefs),score:20}
  const higher={...buildMatchCandidate(perfume({id:'higher',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,prefs),score:99}
  const ranked=rankMatchCandidates([lower,higher])
  assert.equal(ranked.matches[0].id,'higher')
