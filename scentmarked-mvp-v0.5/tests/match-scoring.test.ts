@@ -60,3 +60,22 @@ test('relationship metadata does not increase recommendation score',()=>{
  const withRelationship=buildMatchCandidate(p,undefined,new Map(),1,prefs,{relationship_type:'possible_clone',confidence:95})
  assert.equal(withRelationship.score,withoutRelationship.score)
 })
+
+test('eligible candidates rank by score before loved-term tie breakers',()=>{
+ const prefs={love:['vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}
+ const lower=buildMatchCandidate(perfume({id:'lower',perfume_notes:[{position:'top',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,prefs)
+ const higher={...buildMatchCandidate(perfume({id:'higher',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,prefs),score:99}
+ const ranked=rankMatchCandidates([lower,higher])
+ assert.equal(ranked.matches[0].id,'higher')
+})
+
+test('blocked candidates never appear in ranked matches even with higher scores',()=>{
+ const prefs={love:['vanilla'],avoid:['leather'],sweetness:0,projection:0,longevity:0,maxPrice:50}
+ const eligible={...buildMatchCandidate(perfume({id:'eligible',price_low:40,perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map(),3,prefs),score:20}
+ const avoided={...buildMatchCandidate(perfume({id:'avoided',price_low:40,perfume_notes:[{position:'base',notes:{name:'Vanilla'}},{position:'heart',notes:{name:'Leather'}}]}),undefined,new Map(),3,prefs),score:100}
+ const overBudget={...buildMatchCandidate(perfume({id:'over-budget',price_low:90,perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map(),3,prefs),score:100}
+ const ranked=rankMatchCandidates([avoided,overBudget,eligible])
+ assert.deepEqual(ranked.matches.map(x=>x.id),['eligible'])
+ assert.equal(ranked.avoidExcluded,1)
+ assert.equal(ranked.budgetExcluded,1)
+})
