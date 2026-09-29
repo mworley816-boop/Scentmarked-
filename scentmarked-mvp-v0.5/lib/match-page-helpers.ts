@@ -35,3 +35,12 @@ export function buildMatchCompareHref(candidateSlug:string,selectedSlug?:string)
  if(selectedSlug)q.set('b',candidateSlug)
  return '/compare?'+q.toString()
 }
+
+
+type RecommendationCriteria={selectedSlug?:string;love:string[];avoid:string[];sweetness:number;projection:number;longevity:number;maxPrice:number}
+
+const canonicalTerms=(terms:string[])=>[...new Set(terms.map(term=>term.trim().toLocaleLowerCase()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))
+
+export function buildRecommendationCriteriaKey(options:RecommendationCriteria){
+ return [options.selectedSlug?.trim().toLocaleLowerCase()||'',canonicalTerms(options.love).join(','),canonicalTerms(options.avoid).join(','),options.sweetness||'',options.projection||'',options.longevity||'',options.maxPrice||''].join('|')
+}
