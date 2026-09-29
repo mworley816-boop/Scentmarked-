@@ -15,3 +15,11 @@ export function affiliateExportCutoff(period:AffiliateExportPeriod,now=Date.now(
  const days=period==='7'?7:30
  return new Date(now-days*24*60*60*1000).toISOString()
 }
+
+export function affiliateClickWithinPeriod(clickedAt:string,period:AffiliateExportPeriod,now=Date.now()){
+ if(period==='all')return true
+ const clicked=new Date(clickedAt).getTime()
+ if(!Number.isFinite(clicked))return false
+ const cutoff=now-(period==='7'?7:30)*24*60*60*1000
+ return clicked>=cutoff&&clicked<=now
+}
