@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { relationshipCopy, relationshipLabel } from '@/lib/scent-relationships'
+import type { MatchCandidate } from '@/lib/match-scoring'
 
 type Props={
- m:any
+ m:MatchCandidate
  mode:'similarity'|'preferences'
  love:string[]
  maxPrice:number
