@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { affiliateExportPeriod } from '@/lib/affiliate-export'
+import { affiliateClickWithinPeriod, affiliateExportPeriod } from '@/lib/affiliate-export'
 
 export const metadata={title:'Affiliate Performance | ScentMarked Studio',robots:{index:false,follow:false}}
 
@@ -34,8 +34,9 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
   }
  }catch{}
 
- const recent=(x:any)=>Date.now()-new Date(x.clicked_at).getTime()<=30*24*60*60*1000
- const recent7=(x:any)=>Date.now()-new Date(x.clicked_at).getTime()<=7*24*60*60*1000
+ const reportingNow=Date.now()
+ const recent=(x:any)=>affiliateClickWithinPeriod(x.clicked_at,'30',reportingNow)
+ const recent7=(x:any)=>affiliateClickWithinPeriod(x.clicked_at,'7',reportingNow)
  const dayKey=(d:Date)=>d.toISOString().slice(0,10)
  const daily=Array.from({length:7},(_,i)=>{const d=new Date();d.setUTCHours(0,0,0,0);d.setUTCDate(d.getUTCDate()-(6-i));const key=dayKey(d);return {key,label:new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(d),count:clicks.filter((x:any)=>dayKey(new Date(x.clicked_at))===key).length}})
  const activeOffers=offers.filter((o:any)=>o.is_active)
