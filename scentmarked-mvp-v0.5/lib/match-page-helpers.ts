@@ -1,8 +1,9 @@
 import type { MatchCandidate } from '@/lib/match-scoring'
+import { relationshipReason } from './scent-relationship-labels.ts'
 
 export function matchReasons(m:MatchCandidate,withBaseline:boolean){
  const reasons:string[]=[]
- if(m.relationship)reasons.push(m.relationship.relationship_type==='possible_clone'?'Possible clone relationship':m.relationship.relationship_type==='manufacturer_inspired_by'?'Documented inspiration':m.relationship.relationship_type==='similar_dna'?'Similar scent DNA':m.relationship.relationship_type==='flanker'?'Same fragrance family':'Known scent comparison')
+ if(m.relationship)reasons.push(relationshipReason(m.relationship.relationship_type))
  if(m.loved?.length)reasons.push('Matches '+m.loved.slice(0,3).join(', '))
  if(withBaseline&&m.sharedAccords?.length)reasons.push('Shared DNA: '+m.sharedAccords.slice(0,3).join(', '))
  if(withBaseline&&m.shared?.length)reasons.push('Shared notes: '+m.shared.slice(0,3).join(', '))
