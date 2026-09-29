@@ -4,6 +4,12 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const scale=[1,2,3,4,5]
+const labels:Record<string,string[]>={
+ overall:['Poor','Fair','Good','Very good','Excellent'],
+ longevity:['Short','Light','Moderate','Long lasting','Very long lasting'],
+ projection:['Intimate','Soft','Moderate','Strong','Room filling'],
+ sweetness:['Dry','Low sweetness','Balanced','Sweet','Very sweet'],
+}
 type Rating={overall:number;longevity:number|null;projection:number|null;sweetness:number|null;review:string|null}
 export default function RateScent({perfumeId}:{perfumeId:string}){
  const supabase=useMemo(()=>createClient(),[]),router=useRouter()
@@ -25,6 +31,6 @@ export default function RateScent({perfumeId}:{perfumeId:string}){
   }catch{setMessage('Could not save your rating. Please try again.')}
   finally{setBusy(false)}
  }
- const picker=(name:string,label:string,current?:number|null,required=false)=><label><span>{label}</span><select name={name} required={required} defaultValue={current||''} key={name+'-'+(current||'')}><option value="">Not rated</option>{scale.map(n=><option key={n} value={n}>{n}/5</option>)}</select></label>
- return <section className="rating-card"><div className="rating-card-head"><div><p className="eyebrow">YOUR EXPERIENCE</p><h2>{rating?'Update your rating':'Rate this scent'}</h2></div><span className="rating-scale">1–5</span></div><p>Share your own wear experience. Your ratings stay separate from verified fragrance facts.</p><form action={submit} className="rating-form" aria-busy={busy}>{picker('overall','Overall rating',rating?.overall,true)}{picker('longevity','Longevity',rating?.longevity)}{picker('projection','Projection',rating?.projection)}{picker('sweetness','Sweetness',rating?.sweetness)}<label className="rating-review"><span>Review</span><textarea name="review" rows={4} maxLength={1000} placeholder="What did it smell like on you?" defaultValue={rating?.review||''} key={'review-'+(rating?.review||'')}/></label><div className="rating-actions"><button type="submit" className="button" disabled={busy}>{busy?'Saving…':rating?'Update Rating':'Submit Rating'}</button>{rating&&<button type="button" className="danger-link" disabled={busy} onClick={remove}>Delete my rating</button>}</div></form>{message&&<p className="muted" role="status">{message}</p>}</section>
+ const picker=(name:string,label:string,current?:number|null,required=false)=><label><span>{label}</span><select name={name} required={required} defaultValue={current||''} key={name+'-'+(current||'')}><option value="">{required?'Choose a rating':'Not rated'}</option>{scale.map(n=><option key={n} value={n}>{n}/5 — {labels[name]?.[n-1]||n}</option>)}</select></label>
+ return <section className="rating-card"><div className="rating-card-head"><div><p className="eyebrow">YOUR EXPERIENCE</p><h2>{rating?'Update your rating':'Rate this scent'}</h2></div><span className="rating-scale">1–5</span></div><p>Share your own wear experience. Use the descriptions beside each 1–5 score so community ratings stay consistent. Your ratings stay separate from verified fragrance facts.</p><form action={submit} className="rating-form" aria-busy={busy}>{picker('overall','Overall rating',rating?.overall,true)}{picker('longevity','Longevity',rating?.longevity)}{picker('projection','Projection',rating?.projection)}{picker('sweetness','Sweetness',rating?.sweetness)}<label className="rating-review"><span>Review</span><textarea name="review" rows={4} maxLength={1000} placeholder="What did it smell like on you?" defaultValue={rating?.review||''} key={'review-'+(rating?.review||'')}/></label><div className="rating-actions"><button type="submit" className="button" disabled={busy}>{busy?'Saving…':rating?'Update Rating':'Submit Rating'}</button>{rating&&<button type="button" className="danger-link" disabled={busy} onClick={remove}>Delete my rating</button>}</div></form>{message&&<p className="muted" role="status">{message}</p>}</section>
 }
