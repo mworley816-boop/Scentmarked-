@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildMatchRecoveryHref } from '../lib/match-page-helpers.ts'
+import { buildMatchCompareHref, buildMatchRecoveryHref } from '../lib/match-page-helpers.ts'
 
 const base={
  selectedSlug:'lattafa-khamrah',
@@ -51,4 +51,18 @@ test('empty recovery values explicitly override saved profile defaults',()=>{
  assert.equal(q.get('projection'),'')
  assert.equal(q.get('longevity'),'')
  assert.equal(q.get('maxPrice'),'')
+})
+
+test('compare links preserve the selected perfume as side A',()=>{
+ const href=buildMatchCompareHref('candidate-scent','selected-scent')
+ const q=new URL(href,'https://scentmarked.test').searchParams
+ assert.equal(q.get('a'),'selected-scent')
+ assert.equal(q.get('b'),'candidate-scent')
+})
+
+test('compare links can start with only the recommendation candidate',()=>{
+ const href=buildMatchCompareHref('candidate-scent')
+ const q=new URL(href,'https://scentmarked.test').searchParams
+ assert.equal(q.get('a'),'candidate-scent')
+ assert.equal(q.has('b'),false)
 })
