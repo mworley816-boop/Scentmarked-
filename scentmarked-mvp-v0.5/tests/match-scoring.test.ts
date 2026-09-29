@@ -40,3 +40,23 @@ test('preferred accords contribute to preference matching',()=>{
  assert.deepEqual(c.lovedAccords,['gourmand'])
  assert.ok(c.preferenceScore>0)
 })
+
+test('same-position shared notes score higher than cross-position matches',()=>{
+ const base=perfume({id:'base',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
+ const samePosition=perfume({id:'same',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
+ const differentPosition=perfume({id:'different',perfume_notes:[{position:'top',notes:{name:'Vanilla'}}]})
+ const freq=new Map([['Vanilla',3]])
+ const same=scentSimilarityScore(base,samePosition,freq,3)
+ const different=scentSimilarityScore(base,differentPosition,freq,3)
+ assert.ok(same.score>different.score)
+ assert.deepEqual(same.positionMatches,['Vanilla'])
+ assert.deepEqual(different.positionMatches,[])
+})
+
+test('relationship metadata does not increase recommendation score',()=>{
+ const p=perfume({perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
+ const prefs={love:['vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}
+ const withoutRelationship=buildMatchCandidate(p,undefined,new Map(),1,prefs)
+ const withRelationship=buildMatchCandidate(p,undefined,new Map(),1,prefs,{relationship_type:'possible_clone',confidence:95})
+ assert.equal(withRelationship.score,withoutRelationship.score)
+})
