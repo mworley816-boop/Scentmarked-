@@ -29,6 +29,7 @@ async function saveContent(formData:FormData){
   mobile_image_url:optional(formData.get('mobile_image_url')),alt_text:optional(formData.get('alt_text')),
   cta_label:optional(formData.get('cta_label')),cta_url:optional(formData.get('cta_url')),
   placement:optional(formData.get('placement')),sort_order:Number(formData.get('sort_order')||100),
+  starts_at:optional(formData.get('starts_at')),ends_at:optional(formData.get('ends_at')),
   is_active:formData.get('is_active')==='on',updated_at:new Date().toISOString()
  }
  const result=id
@@ -69,6 +70,9 @@ export default async function SiteContent({searchParams}:{searchParams:Promise<{
     <label>Button text<input name="cta_label" defaultValue={editing?.cta_label||''}/></label>
     <label>Button URL<input name="cta_url" defaultValue={editing?.cta_url||''}/></label>
     <label>Display order<input type="number" name="sort_order" defaultValue={editing?.sort_order??(heroPreset?10:bannerPreset?20:100)}/></label>
+    <label>Start date/time<input type="datetime-local" name="starts_at" defaultValue={editing?.starts_at?String(editing.starts_at).slice(0,16):""}/></label>
+    <label>End date/time<input type="datetime-local" name="ends_at" defaultValue={editing?.ends_at?String(editing.ends_at).slice(0,16):""}/></label>
+    <p>Leave scheduling blank to keep this content available whenever it is active.</p>
     <label><input type="checkbox" name="is_active" defaultChecked={editing?.is_active??true}/> Active</label>
     <div className="result-actions"><button className="button" type="submit">{editing?'Save Changes':'Add Content'}</button>{(editing||preset)&&<Link className="button ghost" href="/admin/site-content">Cancel</Link>}</div>
    </form>
