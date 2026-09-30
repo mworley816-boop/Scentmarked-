@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { siteUrl } from '@/lib/site'
 
 export default function robots():MetadataRoute.Robots{
  return {
@@ -7,6 +8,6 @@ export default function robots():MetadataRoute.Robots{
    allow:'/',
    disallow:['/admin/','/collection/','/login','/reset-password']
   },
-  sitemap:'https://scentmarked.m-worley816.workers.dev/sitemap.xml'
+  sitemap:siteUrl+'/sitemap.xml'
  }
 }
