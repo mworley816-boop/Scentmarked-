@@ -25,8 +25,6 @@ export async function deleteAccount(formData:FormData){
  const serviceKey=process.env.SUPABASE_SERVICE_ROLE_KEY
  if(!url||!serviceKey)redirect(accountUrl('error','Account deletion is not configured yet. Please contact Scentmarked.'))
  const admin=createAdminClient(url,serviceKey,{auth:{autoRefreshToken:false,persistSession:false}})
- const {error:profileError}=await admin.from('profiles').delete().eq('id',user.id)
- if(profileError)redirect(accountUrl('error','Account data could not be deleted: '+profileError.message))
  const {error}=await admin.auth.admin.deleteUser(user.id)
  if(error)redirect(accountUrl('error','Account deletion could not be completed: '+error.message))
  try{await supabase.auth.signOut()}catch{}
