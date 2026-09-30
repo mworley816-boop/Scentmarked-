@@ -56,7 +56,7 @@ export async function signup(formData:FormData){
  const displayName=String(formData.get('display_name')||'').trim()
  const next=safeNext(formData.get('next'))
  if(!email||!password)redirect(loginUrl('error','Email and password are required.',next))
- if(password.length<6)redirect(loginUrl('error','Password must be at least 6 characters.',next))
+ if(password.length<12)redirect(loginUrl('error','Password must be at least 12 characters.',next))
  try{
   const supabase=await createClient()
   const origin=await siteOrigin()
