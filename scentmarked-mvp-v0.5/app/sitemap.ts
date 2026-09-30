@@ -1,8 +1,9 @@
 import type { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import { siteUrl } from '@/lib/site'
 
 export default async function sitemap():Promise<MetadataRoute.Sitemap>{
- const base='https://scentmarked.m-worley816.workers.dev',now=new Date()
+ const base=siteUrl,now=new Date()
  const staticRoutes=['','/discover','/matches','/compare','/notes','/accords','/brands','/community','/about','/privacy','/terms','/affiliate-disclosure','/community-guidelines','/methodology','/contact']
  const entries:MetadataRoute.Sitemap=staticRoutes.map(route=>({url:base+route,lastModified:now,changeFrequency:'weekly',priority:route===''?1:.8}))
  try{
