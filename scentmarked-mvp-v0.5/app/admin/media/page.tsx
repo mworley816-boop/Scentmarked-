@@ -21,7 +21,7 @@ async function removeMedia(formData:FormData){'use server';const s=await admin()
 export default async function MediaLibrary({searchParams}:{searchParams:Promise<{error?:string;deleted?:string;uploaded?:string}>}){const params=await searchParams;
  const s=await admin()
  const {data,error}=await s.storage.from('site-media').list('content',{limit:100,sortBy:{column:'created_at',order:'desc'}})
- const files=(data||[]).filter((file:any)=>file.name&&file.name!=='.emptyFolderPlaceholder')
+ const files=(data||[]).filter((file:any)=>file.name&&file.name!=='.emptyFolderPlaceholder');const [{data:siteRefs},{data:brandRefs}]=await Promise.all([s.from('site_content').select('id,content_key,title,image_url,mobile_image_url'),s.from('brands').select('id,name,slug,logo_url,banner_url')]);const contentNames:Record<string,string>={homepage_hero:'Homepage Hero',homepage_banner:'Homepage Banner',discover_banner:'Discover Banner',compare_banner:'Compare Banner',global_brand:'Global Brand',announcement_bar:'Announcement Bar',footer_copy:'Footer Copy',social_image:'Social Share Image',perfume_fallback:'Default Perfume Image',favicon:'Site Icon / Favicon',brand_logo_fallback:'Default Brand Logo',brand_banner_fallback:'Default Brand Banner'};const usage=(url:string)=>{const uses:{label:string;href:string}[]=[];(siteRefs||[]).forEach((x:any)=>{if(x.image_url===url)uses.push({label:(x.title||contentNames[x.content_key]||x.content_key)+' · desktop',href:'/admin/site-content?edit='+x.id});if(x.mobile_image_url===url)uses.push({label:(x.title||contentNames[x.content_key]||x.content_key)+' · mobile',href:'/admin/site-content?edit='+x.id})});(brandRefs||[]).forEach((x:any)=>{if(x.logo_url===url)uses.push({label:x.name+' · logo',href:'/admin/brands?edit='+x.id});if(x.banner_url===url)uses.push({label:x.name+' · banner',href:'/admin/brands?edit='+x.id})});return uses}
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
   <div className="admin-heading"><div><h1 className="page-title">Media Library</h1><p>Reusable backgrounds, banners, hero images and promotional artwork.</p></div><div className="result-actions"><Link className="button ghost" href="/admin">Catalog Studio</Link><Link className="button" href="/admin/site-content">Site Content</Link></div></div>
@@ -30,11 +30,11 @@ export default async function MediaLibrary({searchParams}:{searchParams:Promise<
   <div className="admin-card"><h2>{files.length} media {files.length===1?'file':'files'}</h2><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:18}}>
    {files.map((file:any)=>{
     const path='content/'+file.name
-    const url=s.storage.from('site-media').getPublicUrl(path).data.publicUrl
+    const url=s.storage.from('site-media').getPublicUrl(path).data.publicUrl,uses=usage(url)
     return <article key={file.id||file.name} className="admin-row" style={{display:'block'}}>
      <img src={url} alt="" style={{width:'100%',height:160,objectFit:'cover',borderRadius:12,marginBottom:10}}/>
      <b style={{display:'block',overflowWrap:'anywhere'}}>{file.name}</b>
-     <p>{file.metadata?.size?Math.round(file.metadata.size/1024)+' KB':'Site media'}</p>
+     <p>{file.metadata?.size?Math.round(file.metadata.size/1024)+' KB':'Site media'} · {uses.length?uses.length+' active use'+(uses.length===1?'':'s'):'Unused'}</p>{uses.length?<div className="profile-tags">{uses.map((use:any,i:number)=><Link key={use.href+i} href={use.href}>{use.label}</Link>)}</div>:<p className="muted">Safe to delete if you no longer need this asset.</p>}
      <div className="result-actions"><a className="button ghost" href={url} target="_blank" rel="noreferrer">Open Image</a><form action={removeMedia}><input type="hidden" name="path" value={path}/><button className="button ghost" type="submit">Delete</button></form></div>
     </article>
    })}</div></div>}
