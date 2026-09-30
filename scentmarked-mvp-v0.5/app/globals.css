@@ -231,3 +231,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Saved member Scent Profile */
 .save-scent-profile{display:flex;align-items:center;gap:10px;max-width:720px;margin:8px 0 0}.save-scent-profile button{border:0;background:transparent;padding:0;color:var(--ink);font-size:10px;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer}.save-scent-profile span{font-size:9px;color:var(--muted)}.save-profile-prompt{margin:8px 0 0;font-size:10px;color:var(--muted)}.save-profile-prompt a{color:var(--ink);font-weight:700}
+
+
+/* Admin-managed responsive site artwork */
+.site-content-bg{background-image:linear-gradient(90deg,rgba(255,250,247,.94),rgba(255,250,247,.5)),var(--desktop-bg);background-size:cover;background-position:center}@media(max-width:700px){.site-content-bg{background-image:linear-gradient(90deg,rgba(255,250,247,.94),rgba(255,250,247,.58)),var(--mobile-bg)}}
