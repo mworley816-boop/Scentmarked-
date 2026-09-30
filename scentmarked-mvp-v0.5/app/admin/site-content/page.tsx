@@ -45,21 +45,21 @@ async function removeContent(formData:FormData){
  redirect('/admin/site-content?deleted=1')
 }
 
-export default async function SiteContent({searchParams}:{searchParams:Promise<{edit?:string;saved?:string;deleted?:string;error?:string}>}){
+export default async function SiteContent({searchParams}:{searchParams:Promise<{edit?:string;preset?:string;saved?:string;deleted?:string;error?:string}>}){
  const params=await searchParams,s=await admin()
  const {data,error}=await s.from('site_content').select('*').order('sort_order').order('content_key')
- const items=data||[],editing=params.edit?items.find((x:any)=>String(x.id)===params.edit):null
+ const items=data||[],editing=params.edit?items.find((x:any)=>String(x.id)===params.edit):null,preset=params.preset==='homepage-hero'
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
   <div className="admin-heading"><div><h1 className="page-title">Site Content</h1><p>Manage hero sections, backgrounds, banners and promotional content.</p></div><div className="result-actions"><Link className="button ghost" href="/admin">Catalog Studio</Link></div></div>
   {(params.error||error)&&<p className="notice error">{params.error||error?.message}</p>}
   {params.saved&&<p className="notice">Site content saved.</p>}{params.deleted&&<p className="notice">Site content removed.</p>}
-  <div className="admin-card"><h2>{editing?'Edit content':'Add site content'}</h2>
+  <div className="admin-card"><div className="admin-heading"><div><h2>{editing?'Edit content':preset?'Homepage Hero':'Add site content'}</h2>{!editing&&<p>{preset?'Controls the main hero shown at the top of the public homepage.':'Choose a preset or create a custom site content block.'}</p>}</div>{!editing&&!preset&&<Link className="button ghost" href="/admin/site-content?preset=homepage-hero">Homepage Hero</Link>}</div>
    <form action={saveContent} className="admin-form">
     {editing&&<input type="hidden" name="content_id" value={editing.id}/>}
-    <label>Content key<input name="content_key" required defaultValue={editing?.content_key||''} placeholder="homepage-hero"/></label>
-    <label>Type<select name="content_type" defaultValue={editing?.content_type||'hero'}><option value="hero">Hero</option><option value="banner">Banner</option><option value="background">Background</option><option value="section">Section</option><option value="global">Global</option></select></label>
-    <label>Placement<input name="placement" defaultValue={editing?.placement||''} placeholder="homepage, discover, compare"/></label>
+    <label>Content key<input name="content_key" required defaultValue={editing?.content_key||(preset?'homepage_hero':'')} placeholder="homepage_hero"/></label>
+    <label>Type<select name="content_type" defaultValue={editing?.content_type||(preset?'hero':'hero')}><option value="hero">Hero</option><option value="banner">Banner</option><option value="background">Background</option><option value="section">Section</option><option value="global">Global</option></select></label>
+    <label>Placement<input name="placement" defaultValue={editing?.placement||(preset?'homepage':'')} placeholder="homepage, discover, compare"/></label>
     <label>Title<input name="title" defaultValue={editing?.title||''}/></label>
     <label>Subtitle<input name="subtitle" defaultValue={editing?.subtitle||''}/></label>
     <label>Body<textarea name="body" defaultValue={editing?.body||''}/></label>
@@ -68,9 +68,9 @@ export default async function SiteContent({searchParams}:{searchParams:Promise<{
     <label>Image alt text<input name="alt_text" defaultValue={editing?.alt_text||''}/></label>
     <label>Button text<input name="cta_label" defaultValue={editing?.cta_label||''}/></label>
     <label>Button URL<input name="cta_url" defaultValue={editing?.cta_url||''}/></label>
-    <label>Display order<input type="number" name="sort_order" defaultValue={editing?.sort_order??100}/></label>
+    <label>Display order<input type="number" name="sort_order" defaultValue={editing?.sort_order??(preset?10:100)}/></label>
     <label><input type="checkbox" name="is_active" defaultChecked={editing?.is_active??true}/> Active</label>
-    <div className="result-actions"><button className="button" type="submit">{editing?'Save Changes':'Add Content'}</button>{editing&&<Link className="button ghost" href="/admin/site-content">Cancel</Link>}</div>
+    <div className="result-actions"><button className="button" type="submit">{editing?'Save Changes':'Add Content'}</button>{(editing||preset)&&<Link className="button ghost" href="/admin/site-content">Cancel</Link>}</div>
    </form>
   </div>
   <div className="admin-card"><h2>Content library</h2>
