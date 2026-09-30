@@ -6,7 +6,7 @@ export default function robots():MetadataRoute.Robots{
   rules:{
    userAgent:'*',
    allow:'/',
-   disallow:['/admin/','/collection/','/login','/reset-password']
+   disallow:['/admin/','/account','/collection/','/login','/reset-password']
   },
   sitemap:siteUrl+'/sitemap.xml'
  }
