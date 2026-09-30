@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import SiteMediaUpload from '@/components/site-media-upload'
 
 export const dynamic='force-dynamic'
 export const metadata={title:'Site Content | ScentMarked Studio',robots:{index:false,follow:false}}
@@ -62,8 +63,8 @@ export default async function SiteContent({searchParams}:{searchParams:Promise<{
     <label>Title<input name="title" defaultValue={editing?.title||''}/></label>
     <label>Subtitle<input name="subtitle" defaultValue={editing?.subtitle||''}/></label>
     <label>Body<textarea name="body" defaultValue={editing?.body||''}/></label>
-    <label>Desktop image URL<input type="url" name="image_url" defaultValue={editing?.image_url||''} placeholder="Media upload will be added next"/></label>
-    <label>Mobile image URL<input type="url" name="mobile_image_url" defaultValue={editing?.mobile_image_url||''}/></label>
+    <SiteMediaUpload name="image_url" label="Desktop image" initialUrl={editing?.image_url||''}/>
+    <SiteMediaUpload name="mobile_image_url" label="Mobile image" initialUrl={editing?.mobile_image_url||''}/>
     <label>Image alt text<input name="alt_text" defaultValue={editing?.alt_text||''}/></label>
     <label>Button text<input name="cta_label" defaultValue={editing?.cta_label||''}/></label>
     <label>Button URL<input name="cta_url" defaultValue={editing?.cta_url||''}/></label>
