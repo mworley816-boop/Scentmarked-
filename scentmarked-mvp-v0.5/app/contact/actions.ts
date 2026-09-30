@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 export async function submitContact(formData:FormData){
+ const website=String(formData.get('website')||'').trim()
+ if(website)redirect('/contact?sent=1')
  const name=String(formData.get('name')||'').trim().slice(0,100)
  const email=String(formData.get('email')||'').trim().slice(0,254)
  const category=String(formData.get('category')||'general')
