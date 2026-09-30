@@ -50,6 +50,7 @@ export default async function SiteContent({searchParams}:{searchParams:Promise<{
  const params=await searchParams,s=await admin()
  const {data,error}=await s.from('site_content').select('*').order('sort_order').order('content_key')
  const items=data||[],editing=params.edit?items.find((x:any)=>String(x.id)===params.edit):null,heroPreset=params.preset==='homepage-hero',bannerPreset=params.preset==='homepage-banner',preset=heroPreset||bannerPreset
+ const contentStatus=(item:any)=>{const now=Date.now();if(!item.is_active)return 'Inactive';if(item.starts_at&&new Date(item.starts_at).getTime()>now)return 'Scheduled';if(item.ends_at&&new Date(item.ends_at).getTime()<now)return 'Expired';return 'Live'}
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
   <div className="admin-heading"><div><h1 className="page-title">Site Content</h1><p>Manage hero sections, backgrounds, banners and promotional content.</p></div><div className="result-actions"><Link className="button ghost" href="/admin">Catalog Studio</Link></div></div>
@@ -80,7 +81,7 @@ export default async function SiteContent({searchParams}:{searchParams:Promise<{
   <div className="admin-card"><h2>Content library</h2>
    {!items.length?<p>No site content yet. Add your first hero, banner or background above.</p>:
     <div className="admin-list">{items.map((item:any)=><article key={item.id} className="admin-row">
-     <div><b>{item.title||item.content_key}</b><p>{item.content_key} · {item.content_type}{item.placement?' · '+item.placement:''} · {item.is_active?'Active':'Hidden'}</p>{item.image_url&&<p>Desktop image configured</p>}{item.mobile_image_url&&<p>Mobile image configured</p>}</div>
+     <div><b>{item.title||item.content_key}</b><p>{item.content_key} · {item.content_type}{item.placement?' · '+item.placement:''} · {contentStatus(item)} · {item.is_active?'Active':'Hidden'}</p>{item.image_url&&<p>Desktop image configured</p>}{item.mobile_image_url&&<p>Mobile image configured</p>}</div>
      <div className="result-actions"><Link className="button ghost" href={'/admin/site-content?edit='+item.id}>Edit</Link><form action={removeContent}><input type="hidden" name="content_id" value={item.id}/><button className="button ghost" type="submit">Delete</button></form></div>
     </article>)}</div>}
   </div>
