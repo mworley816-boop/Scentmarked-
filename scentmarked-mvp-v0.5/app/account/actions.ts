@@ -11,7 +11,7 @@ export async function updateProfile(formData:FormData){
  const {data:{user}}=await supabase.auth.getUser()
  if(!user)redirect('/login?next='+encodeURIComponent('/account'))
  const {error}=await supabase.from('profiles').update({display_name:displayName||null}).eq('id',user.id)
- if(error)redirect(accountUrl('error',error.message))
+ if(error)redirect(accountUrl('error','Profile changes could not be saved. Please try again.'))
  redirect(accountUrl('message','Profile updated.'))
 }
 
