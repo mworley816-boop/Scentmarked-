@@ -26,7 +26,8 @@ async function uploadMedia(formData:FormData){'use server'
  const extensions:Record<string,string>={'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/avif':'avif'},extension=extensions[file.type]
  if(!extension)redirect(destination('error','Unsupported image type.'))
  const safe=file.name.replace(/\.[^.]+$/,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,60)||'site-media'
- const path='content/'+Date.now().toString(36)+'-'+safe+'.'+extension
+ const unique=crypto.randomUUID().slice(0,8)
+ const path='content/'+Date.now().toString(36)+'-'+unique+'-'+safe+'.'+extension
  const {error}=await s.storage.from('site-media').upload(path,file,{contentType:file.type,upsert:false})
  if(error)redirect(destination('error',error.message))
  redirect(destination('uploaded','1'))
