@@ -245,3 +245,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 }
 .admin-panel,.admin-list article,.brand-fragrance-card,.match-results article,.discover-grid article,.review-grid article,.comparison-vote,.rating-card{min-width:0}
 .admin-panel a,.admin-source a,.brand-fragrance-card,.match-results article p,.discover-grid article p,.review-grid article p,.comparison-vote p,.rating-card p{overflow-wrap:anywhere}
+
+/* Keep the phone header focused; Collection already lives in the bottom nav. */
+@media(max-width:600px){.site-header .nav-mobile-redundant{display:none}.nav-signout-error{position:absolute;right:14px;top:100%;max-width:min(280px,calc(100vw - 28px));padding:7px 9px;background:#fffaf4;border:1px solid var(--line);border-radius:7px;font-size:9px;overflow-wrap:anywhere}}
