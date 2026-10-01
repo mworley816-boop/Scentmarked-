@@ -2,6 +2,7 @@
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
+import { siteUrl } from '@/lib/site'
 
 function safeNext(value:FormDataEntryValue|null){
  const next=typeof value==='string'?value:'/collection'
@@ -15,7 +16,7 @@ async function siteOrigin(){
  const host=h.get('x-forwarded-host')||h.get('host')
  const proto=h.get('x-forwarded-proto')||'https'
  if(host)return `${proto}://${host}`
- return process.env.NEXT_PUBLIC_SITE_URL||'http://localhost:3000'
+ return siteUrl
 }
 
 export async function login(formData:FormData){
