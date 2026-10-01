@@ -53,8 +53,9 @@ async function removeMedia(formData:FormData){'use server'
  if(perfumeRefs?.length)redirect(failureUrl('This image is still used by '+(perfumeRefs[0] as any).name+'. Remove it from the fragrance first.'))
  if(noteRefs?.length)redirect(failureUrl('This image is still used by the '+(noteRefs[0] as any).name+' note. Remove it from the note first.'))
  if(provenanceRefs?.length)redirect(failureUrl('This image is still referenced by a fragrance image-rights record. Remove or replace that provenance record first.'))
- const {error}=await s.storage.from('site-media').remove([path])
+ const {data:deleted,error}=await s.storage.from('site-media').remove([path])
  if(error)redirect(failureUrl(error.message))
+ if(!deleted?.length)redirect(failureUrl('The media file was not found in Storage. Nothing was deleted.'))
  redirect(withMediaStatus(returnTo,'deleted','1'))
 }
 
@@ -83,9 +84,11 @@ async function removeSelectedUnused(formData:FormData){'use server'
  ;(provenance||[]).forEach((x:any)=>{if(x.asset_url)used.add(x.asset_url)})
  const safe=paths.filter((_,i)=>!used.has(urls[i])),skipped=paths.length-safe.length
  if(!safe.length)redirect(withMediaStatus(returnTo,'error','Nothing was deleted. The selected images are now in use.'))
- const {error}=await s.storage.from('site-media').remove(safe)
+ const {data:deleted,error}=await s.storage.from('site-media').remove(safe)
  if(error)redirect(withMediaStatus(returnTo,'error',error.message))
- let destination=withMediaStatus(returnTo,'bulkDeleted',String(safe.length))
+ const deletedCount=deleted?.length||0
+ if(!deletedCount)redirect(withMediaStatus(returnTo,'error','No selected media files were found in Storage. Nothing was deleted.'))
+ let destination=withMediaStatus(returnTo,'bulkDeleted',String(deletedCount))
  if(skipped)destination=withMediaStatus(destination,'skipped',String(skipped))
  redirect(destination)
 }
