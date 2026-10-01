@@ -24,7 +24,7 @@ async function removeMedia(formData:FormData){'use server';const s=await admin()
 
 async function removeSelectedUnused(formData:FormData){'use server'
  const s=await admin(),returnTo=mediaReturnTo(formData),paths=formData.getAll('paths').map(String).filter((x)=>x.startsWith('content/')&&!x.includes('..')).slice(0,100)
- if(!paths.length)redirect('/admin/media?view=unused&error='+encodeURIComponent('Select at least one unused image.'))
+ if(!paths.length){const join=returnTo.includes('?')?'&':'?';redirect(returnTo+join+'error='+encodeURIComponent('Select at least one unused image.'))}
  const urls=paths.map((path)=>s.storage.from('site-media').getPublicUrl(path).data.publicUrl)
  const [{data:site},{data:brands},{data:perfumes},{data:notes},{data:provenance}]=await Promise.all([
   s.from('site_content').select('image_url,mobile_image_url'),
@@ -40,9 +40,9 @@ async function removeSelectedUnused(formData:FormData){'use server'
  ;(notes||[]).forEach((x:any)=>{if(x.image_url)used.add(x.image_url)})
  ;(provenance||[]).forEach((x:any)=>{if(x.asset_url)used.add(x.asset_url)})
  const safe=paths.filter((_,i)=>!used.has(urls[i])),skipped=paths.length-safe.length
- if(!safe.length)redirect('/admin/media?view=unused&error='+encodeURIComponent('Nothing was deleted. The selected images are now in use.'))
+ if(!safe.length){const join=returnTo.includes('?')?'&':'?';redirect(returnTo+join+'error='+encodeURIComponent('Nothing was deleted. The selected images are now in use.'))}
  const {error}=await s.storage.from('site-media').remove(safe)
- if(error)redirect('/admin/media?view=unused&error='+encodeURIComponent(error.message))
+ if(error){const join=returnTo.includes('?')?'&':'?';redirect(returnTo+join+'error='+encodeURIComponent(error.message))}
  const join=returnTo.includes('?')?'&':'?';redirect(returnTo+join+'bulkDeleted='+safe.length+(skipped?'&skipped='+skipped:''))
 }
 
