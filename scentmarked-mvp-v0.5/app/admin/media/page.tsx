@@ -50,7 +50,8 @@ async function removeMedia(formData:FormData){'use server'
  if(provenanceRefs?.length)redirect(failureUrl('This image is still referenced by a fragrance image-rights record. Remove or replace that provenance record first.'))
  const {error}=await s.storage.from('site-media').remove([path])
  if(error)redirect(failureUrl(error.message))
- redirect(withMediaStatus(returnTo,'deleted','1'))
+ const destination=withMediaStatus(returnTo,'deleted','1')
+ redirect(destination)
 }
 
 
@@ -81,6 +82,12 @@ async function removeSelectedUnused(formData:FormData){'use server'
 }
 
 function withMediaStatus(returnTo:string,key:string,value:string){const join=returnTo.includes('?')?'&':'?';return returnTo+join+key+'='+encodeURIComponent(value)}
+function previousMediaPage(returnTo:string){
+ const [pathname,query='']=returnTo.split('?'),params=new URLSearchParams(query),page=Math.max(1,Number.parseInt(params.get('page')||'1',10)||1)
+ if(page<=1)return returnTo
+ if(page===2)params.delete('page');else params.set('page',String(page-1))
+ return pathname+(params.size?'?'+params.toString():'')
+}
 
 function viewFromParams(value?:string){return value==='unused'?'unused':'all'}
 function mediaReturnTo(formData:FormData){
