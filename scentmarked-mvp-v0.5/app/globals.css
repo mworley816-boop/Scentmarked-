@@ -235,3 +235,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Admin-managed responsive site artwork */
 .site-content-bg{background-image:linear-gradient(90deg,rgba(255,250,247,.94),rgba(255,250,247,.5)),var(--desktop-bg);background-size:cover;background-position:center}@media(max-width:700px){.site-content-bg{background-image:linear-gradient(90deg,rgba(255,250,247,.94),rgba(255,250,247,.58)),var(--mobile-bg)}}
+
+
+/* Narrow-screen overflow hardening */
+@media(max-width:520px){
+ .rating-form{grid-template-columns:1fr}
+ .rating-review{grid-column:1}
+ .rating-form .button{width:100%;justify-self:stretch}
+}
+.admin-panel,.admin-list article,.brand-fragrance-card,.match-results article,.discover-grid article,.review-grid article,.comparison-vote,.rating-card{min-width:0}
+.admin-panel a,.admin-source a,.brand-fragrance-card,.match-results article p,.discover-grid article p,.review-grid article p,.comparison-vote p,.rating-card p{overflow-wrap:anywhere}
