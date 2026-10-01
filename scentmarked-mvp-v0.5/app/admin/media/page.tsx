@@ -18,17 +18,17 @@ async function admin(){
 
 async function uploadMedia(formData:FormData){'use server'
  const s=await admin(),file=formData.get('image'),returnTo=mediaReturnTo(formData)
- const finish=(key:string,value:string)=>{const join=returnTo.includes('?')?'&':'?';redirect(returnTo+join+key+'='+encodeURIComponent(value))}
- if(!(file instanceof File)||file.size===0)finish('error','Choose an image to upload.')
+ const destination=(key:string,value:string)=>{const join=returnTo.includes('?')?'&':'?';return returnTo+join+key+'='+encodeURIComponent(value)}
+ if(!(file instanceof File)||file.size===0)redirect(destination('error','Choose an image to upload.'))
  const allowed=['image/jpeg','image/png','image/webp','image/avif']
- if(!allowed.includes(file.type))finish('error','Use a JPEG, PNG, WebP, or AVIF image.')
- if(file.size>5242880)finish('error','Image must be 5 MB or smaller.')
+ if(!allowed.includes(file.type))redirect(destination('error','Use a JPEG, PNG, WebP, or AVIF image.'))
+ if(file.size>5242880)redirect(destination('error','Image must be 5 MB or smaller.'))
  const ext:Record<string,string>={'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/avif':'avif'}
  const safe=file.name.replace(/\.[^.]+$/,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,60)||'site-media'
  const path='content/'+Date.now().toString(36)+'-'+safe+'.'+ext[file.type]
  const {error}=await s.storage.from('site-media').upload(path,file,{contentType:file.type,upsert:false})
- if(error)finish('error',error.message)
- finish('uploaded','1')
+ if(error)redirect(destination('error',error.message))
+ redirect(destination('uploaded','1'))
 }
 
 async function removeMedia(formData:FormData){'use server'
