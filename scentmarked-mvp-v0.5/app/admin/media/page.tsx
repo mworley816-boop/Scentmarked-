@@ -37,7 +37,7 @@ async function removeMedia(formData:FormData){'use server'
  const s=await admin(),path=String(formData.get('path')||''),returnTo=mediaReturnTo(formData)
  const failureUrl=(message:string)=>withMediaStatus(returnTo,'error',message)
  if(!path)redirect(failureUrl('Missing media path.'))
- if(!path.startsWith('content/')||path.includes('..'))redirect(failureUrl('Invalid media path.'))
+ if(!/^content\/[^/]+$/.test(path))redirect(failureUrl('Invalid media path.'))
  const url=s.storage.from('site-media').getPublicUrl(path).data.publicUrl
  const [{data:refs},{data:brandRefs},{data:perfumeRefs},{data:noteRefs},{data:provenanceRefs}]=await Promise.all([
   s.from('site_content').select('id').or('image_url.eq.'+url+',mobile_image_url.eq.'+url).limit(1),
@@ -58,7 +58,7 @@ async function removeMedia(formData:FormData){'use server'
 
 
 async function removeSelectedUnused(formData:FormData){'use server'
- const s=await admin(),returnTo=mediaReturnTo(formData),paths=formData.getAll('paths').map(String).filter((x)=>x.startsWith('content/')&&!x.includes('..')).slice(0,100)
+ const s=await admin(),returnTo=mediaReturnTo(formData),paths=formData.getAll('paths').map(String).filter((x)=>/^content\/[^/]+$/.test(x)).slice(0,100)
  if(!paths.length)redirect(withMediaStatus(returnTo,'error','Select at least one unused image.'))
  const urls=paths.map((path)=>s.storage.from('site-media').getPublicUrl(path).data.publicUrl)
  const [{data:site},{data:brands},{data:perfumes},{data:notes},{data:provenance}]=await Promise.all([
