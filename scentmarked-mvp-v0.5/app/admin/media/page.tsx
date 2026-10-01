@@ -18,7 +18,7 @@ async function admin(){
 
 async function uploadMedia(formData:FormData){'use server'
  const s=await admin(),file=formData.get('image'),returnTo=mediaReturnTo(formData)
- const destination=(key:string,value:string)=>{const join=returnTo.includes('?')?'&':'?';return returnTo+join+key+'='+encodeURIComponent(value)}
+ const destination=(key:string,value:string)=>withMediaStatus(returnTo,key,value)
  if(!(file instanceof File)||file.size===0)redirect(destination('error','Choose an image to upload.'))
  const allowed=['image/jpeg','image/png','image/webp','image/avif']
  if(!allowed.includes(file.type))redirect(destination('error','Use a JPEG, PNG, WebP, or AVIF image.'))
@@ -33,7 +33,7 @@ async function uploadMedia(formData:FormData){'use server'
 
 async function removeMedia(formData:FormData){'use server'
  const s=await admin(),path=String(formData.get('path')||''),returnTo=mediaReturnTo(formData)
- const failureUrl=(message:string)=>{const join=returnTo.includes('?')?'&':'?';return returnTo+join+'error='+encodeURIComponent(message)}
+ const failureUrl=(message:string)=>withMediaStatus(returnTo,'error',message)
  if(!path)redirect(failureUrl('Missing media path.'))
  const url=s.storage.from('site-media').getPublicUrl(path).data.publicUrl
  const [{data:refs},{data:brandRefs},{data:perfumeRefs},{data:noteRefs},{data:provenanceRefs}]=await Promise.all([
@@ -57,7 +57,7 @@ async function removeMedia(formData:FormData){'use server'
 
 async function removeSelectedUnused(formData:FormData){'use server'
  const s=await admin(),returnTo=mediaReturnTo(formData),paths=formData.getAll('paths').map(String).filter((x)=>x.startsWith('content/')&&!x.includes('..')).slice(0,100)
- if(!paths.length){const join=returnTo.includes('?')?'&':'?';redirect(returnTo+join+'error='+encodeURIComponent('Select at least one unused image.'))}
+ if(!paths.length)redirect(withMediaStatus(returnTo,'error','Select at least one unused image.'))
  const urls=paths.map((path)=>s.storage.from('site-media').getPublicUrl(path).data.publicUrl)
  const [{data:site},{data:brands},{data:perfumes},{data:notes},{data:provenance}]=await Promise.all([
   s.from('site_content').select('image_url,mobile_image_url'),
@@ -73,11 +73,13 @@ async function removeSelectedUnused(formData:FormData){'use server'
  ;(notes||[]).forEach((x:any)=>{if(x.image_url)used.add(x.image_url)})
  ;(provenance||[]).forEach((x:any)=>{if(x.asset_url)used.add(x.asset_url)})
  const safe=paths.filter((_,i)=>!used.has(urls[i])),skipped=paths.length-safe.length
- if(!safe.length){const join=returnTo.includes('?')?'&':'?';redirect(returnTo+join+'error='+encodeURIComponent('Nothing was deleted. The selected images are now in use.'))}
+ if(!safe.length)redirect(withMediaStatus(returnTo,'error','Nothing was deleted. The selected images are now in use.'))
  const {error}=await s.storage.from('site-media').remove(safe)
- if(error){const join=returnTo.includes('?')?'&':'?';redirect(returnTo+join+'error='+encodeURIComponent(error.message))}
+ if(error)redirect(withMediaStatus(returnTo,'error',error.message))
  const join=returnTo.includes('?')?'&':'?';redirect(returnTo+join+'bulkDeleted='+safe.length+(skipped?'&skipped='+skipped:''))
 }
+
+function withMediaStatus(returnTo:string,key:string,value:string){const join=returnTo.includes('?')?'&':'?';return returnTo+join+key+'='+encodeURIComponent(value)}
 
 function viewFromParams(value?:string){return value==='unused'?'unused':'all'}
 function mediaReturnTo(formData:FormData){
