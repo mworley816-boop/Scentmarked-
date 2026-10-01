@@ -9,7 +9,7 @@ const PAGE_SIZE=100
 export default function SiteMediaUpload({name,label,initialUrl=''}:{name:string;label:string;initialUrl?:string}){
  const [url,setUrl]=useState(initialUrl),[busy,setBusy]=useState(false),[error,setError]=useState('')
  const [library,setLibrary]=useState<MediaItem[]>([]),[showLibrary,setShowLibrary]=useState(false),[libraryLoaded,setLibraryLoaded]=useState(false)
- const [hasMore,setHasMore]=useState(false),[search,setSearch]=useState('')
+ const [hasMore,setHasMore]=useState(false),[storageOffset,setStorageOffset]=useState(0),[search,setSearch]=useState('')
  async function upload(file:File){
   setError('')
   if(file.size>5*1024*1024){setError('Image must be 5 MB or smaller.');return}
@@ -21,7 +21,7 @@ export default function SiteMediaUpload({name,label,initialUrl=''}:{name:string;
    const result=await s.storage.from('site-media').upload(path,file,{contentType:file.type,cacheControl:'3600'})
    if(result.error)throw result.error
    const publicUrl=s.storage.from('site-media').getPublicUrl(result.data.path).data.publicUrl
-   setUrl(publicUrl);setLibrary([]);setLibraryLoaded(false);setHasMore(false)
+   setUrl(publicUrl);setLibrary([]);setLibraryLoaded(false);setHasMore(false);setStorageOffset(0)
   }catch(e){setError(e instanceof Error?e.message:'Upload failed.')}
   finally{setBusy(false)}
  }
@@ -35,7 +35,7 @@ export default function SiteMediaUpload({name,label,initialUrl=''}:{name:string;
     name:file.name,url:s.storage.from('site-media').getPublicUrl('content/'+file.name).data.publicUrl
    }))
    setLibrary(current=>offset===0?items:[...current,...items.filter(item=>!current.some(existing=>existing.name===item.name))])
-   setHasMore((result.data||[]).length===PAGE_SIZE);setLibraryLoaded(true)
+   setHasMore((result.data||[]).length===PAGE_SIZE);setStorageOffset(offset+(result.data||[]).length);setLibraryLoaded(true)
   }catch(e){setError(e instanceof Error?e.message:'Could not load media library.')}
   finally{setBusy(false)}
  }
@@ -63,7 +63,7 @@ export default function SiteMediaUpload({name,label,initialUrl=''}:{name:string;
      <img src={item.url} alt="" style={{display:'block',width:'100%',height:90,objectFit:'cover'}}/>
     </button>):libraryLoaded?<p>{query?'No loaded media matches that filename.':'No media uploaded yet.'}</p>:null}
    </div>
-   {hasMore&&<div className="result-actions" style={{marginTop:12}}><button className="button ghost" type="button" disabled={busy} onClick={()=>void loadLibrary(library.length)}>{busy?'Loading…':'Load more media'}</button><span className="muted">Loads the next {PAGE_SIZE} files.</span></div>}
+   {hasMore&&<div className="result-actions" style={{marginTop:12}}><button className="button ghost" type="button" disabled={busy} onClick={()=>void loadLibrary(storageOffset)}>{busy?'Loading…':'Load more media'}</button><span className="muted">Loads the next {PAGE_SIZE} files.</span></div>}
   </div>}
   {error&&<p className="notice error">{error}</p>}
  </div>
