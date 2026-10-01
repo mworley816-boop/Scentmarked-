@@ -27,7 +27,7 @@ export async function login(formData:FormData){
  try{
   const supabase=await createClient()
   const {error}=await supabase.auth.signInWithPassword({email,password})
-  if(error)redirect(loginUrl('error',error.message,next))
+  if(error)redirect(loginUrl('error','Email or password is incorrect.',next))
  }catch(error:any){
   if(error?.digest)throw error
   redirect(loginUrl('error','Sign in is temporarily unavailable. Please try again.',next))
@@ -43,7 +43,7 @@ export async function requestPasswordReset(formData:FormData){
   const supabase=await createClient()
   const origin=await siteOrigin()
   const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:`${origin}/auth/callback?next=${encodeURIComponent('/reset-password')}`})
-  if(error)redirect(loginUrl('error',error.message,next))
+  if(error)redirect(loginUrl('error','Password recovery could not be started. Please try again.',next))
  }catch(error:any){
   if(error?.digest)throw error
   redirect(loginUrl('error','Password recovery is temporarily unavailable. Please try again.',next))
@@ -62,7 +62,7 @@ export async function signup(formData:FormData){
   const supabase=await createClient()
   const origin=await siteOrigin()
   const {data,error}=await supabase.auth.signUp({email,password,options:{data:{display_name:displayName},emailRedirectTo:`${origin}/auth/callback?next=${encodeURIComponent(next)}`}})
-  if(error)redirect(loginUrl('error',error.message,next))
+  if(error)redirect(loginUrl('error','Account creation could not be completed. Please check your details and try again.',next))
   if(data.session)redirect(next)
  }catch(error:any){
   if(error?.digest)throw error
