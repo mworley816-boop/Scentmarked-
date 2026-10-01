@@ -76,7 +76,7 @@
 .footer-bottom{max-width:1180px;margin:32px auto 0;padding-top:18px;border-top:1px solid var(--line);font-size:10px}
 button,.button,a,select{touch-action:manipulation}
 @media(max-width:900px){
- body{padding-bottom:68px}
+ body{padding-bottom:calc(68px + env(safe-area-inset-bottom))}
  .site-header{gap:18px}
  .site-header nav{display:none}
  .header-actions{margin-left:auto}
