@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import MediaBulkSelect from '@/components/media-bulk-select'
+import ConfirmMediaDeleteButton from '@/components/confirm-media-delete-button'
 
 export const dynamic='force-dynamic'
 export const metadata={title:'Media Library | ScentMarked Studio',robots:{index:false,follow:false}}
@@ -63,7 +64,7 @@ export default async function MediaLibrary({searchParams}:{searchParams:Promise<
      <img src={url} alt="" style={{width:'100%',height:160,objectFit:'cover',borderRadius:12,marginBottom:10}}/>
      <b style={{display:'block',overflowWrap:'anywhere'}}>{file.name}</b>
      <p>{file.metadata?.size?Math.round(file.metadata.size/1024)+' KB':'Site media'} · {uses.length?uses.length+' active use'+(uses.length===1?'':'s'):'Unused'}</p>{uses.length?<div className="profile-tags">{uses.map((use:any,i:number)=><Link key={use.href+i} href={use.href}>{use.label}</Link>)}</div>:<p className="muted">Safe to delete if you no longer need this asset.</p>}
-     <div className="result-actions"><a className="button ghost" href={url} target="_blank" rel="noreferrer">Open Image</a><form action={removeMedia}><input type="hidden" name="path" value={path}/><button className="button ghost" type="submit">Delete</button></form></div>
+     <div className="result-actions"><a className="button ghost" href={url} target="_blank" rel="noreferrer">Open Image</a><form action={removeMedia}><input type="hidden" name="path" value={path}/><ConfirmMediaDeleteButton/></form></div>
     </article>
    })}</div>{(page>1||files.length===pageSize)&&<div className="result-actions" style={{marginTop:18}}>{page>1&&<Link className="button ghost" href={'/admin/media?'+new URLSearchParams({...(view!=='all'?{view}:{}),...(search?{q:params.q||''}:{}),page:String(page-1)}).toString()}>← Previous</Link>}{files.length===pageSize&&<Link className="button ghost" href={'/admin/media?'+new URLSearchParams({...(view!=='all'?{view}:{}),...(search?{q:params.q||''}:{}),page:String(page+1)}).toString()}>Next →</Link>}</div>}</div>}
  </section></main>
