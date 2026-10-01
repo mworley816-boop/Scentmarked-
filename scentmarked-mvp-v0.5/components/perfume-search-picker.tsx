@@ -38,9 +38,13 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
       e.preventDefault()
       setOpen(true)
       setActiveIndex(i=>!expanded||i<0?(e.key==='ArrowDown'?0:matches.length-1):Math.max(0,Math.min(matches.length-1,i+(e.key==='ArrowDown'?1:-1))))
-     }else if(e.key==='Enter'&&expanded&&matches[activeIndex]){
-      e.preventDefault()
-      choose(matches[activeIndex])
+     }else if(e.key==='Enter'&&expanded){
+      const exact=matches.find(x=>(x.brand+' — '+x.name).toLowerCase()===query.trim().toLowerCase()||x.name.toLowerCase()===query.trim().toLowerCase())
+      const choice=matches[activeIndex]||exact
+      if(choice){
+       e.preventDefault()
+       choose(choice)
+      }
      }else if(e.key==='Escape'&&expanded){
       e.preventDefault()
       setOpen(false)
