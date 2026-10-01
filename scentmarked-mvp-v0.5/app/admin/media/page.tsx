@@ -33,8 +33,8 @@ async function uploadMedia(formData:FormData){'use server'
 
 async function removeMedia(formData:FormData){'use server'
  const s=await admin(),path=String(formData.get('path')||''),returnTo=mediaReturnTo(formData)
- const fail=(message:string)=>{const join=returnTo.includes('?')?'&':'?';redirect(returnTo+join+'error='+encodeURIComponent(message))}
- if(!path)fail('Missing media path.')
+ const failureUrl=(message:string)=>{const join=returnTo.includes('?')?'&':'?';return returnTo+join+'error='+encodeURIComponent(message)}
+ if(!path)redirect(failureUrl('Missing media path.')
  const url=s.storage.from('site-media').getPublicUrl(path).data.publicUrl
  const [{data:refs},{data:brandRefs},{data:perfumeRefs},{data:noteRefs},{data:provenanceRefs}]=await Promise.all([
   s.from('site_content').select('id').or('image_url.eq.'+url+',mobile_image_url.eq.'+url).limit(1),
@@ -43,13 +43,13 @@ async function removeMedia(formData:FormData){'use server'
   s.from('notes').select('id,name').eq('image_url',url).limit(1),
   s.from('perfume_image_provenance').select('perfume_id').eq('asset_url',url).limit(1)
  ])
- if(refs?.length)fail('This image is still used by Site Content. Remove it there first.')
- if(brandRefs?.length)fail('This image is still used by '+(brandRefs[0] as any).name+' in Brand Studio. Remove it there first.')
- if(perfumeRefs?.length)fail('This image is still used by '+(perfumeRefs[0] as any).name+'. Remove it from the fragrance first.')
- if(noteRefs?.length)fail('This image is still used by the '+(noteRefs[0] as any).name+' note. Remove it from the note first.')
- if(provenanceRefs?.length)fail('This image is still referenced by a fragrance image-rights record. Remove or replace that provenance record first.')
+ if(refs?.length)redirect(failureUrl('This image is still used by Site Content. Remove it there first.'))
+ if(brandRefs?.length)redirect(failureUrl('This image is still used by '+(brandRefs[0] as any).name+' in Brand Studio. Remove it there first.'))
+ if(perfumeRefs?.length)redirect(failureUrl('This image is still used by '+(perfumeRefs[0] as any).name+'. Remove it from the fragrance first.'))
+ if(noteRefs?.length)redirect(failureUrl('This image is still used by the '+(noteRefs[0] as any).name+' note. Remove it from the note first.'))
+ if(provenanceRefs?.length)redirect(failureUrl('This image is still referenced by a fragrance image-rights record. Remove or replace that provenance record first.'))
  const {error}=await s.storage.from('site-media').remove([path])
- if(error)fail(error.message)
+ if(error)redirect(failureUrl(error.message))
  const join=returnTo.includes('?')?'&':'?'
  redirect(returnTo+join+'deleted=1')
 }
