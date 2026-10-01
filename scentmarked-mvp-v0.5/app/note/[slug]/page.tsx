@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getDefaultPerfumeImage } from '@/lib/site-content'
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params
@@ -9,9 +10,10 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
 }
 export default async function NotePage({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params
- let note:any=null,perfumes:any[]=[],loadError=false
+ let note:any=null,perfumes:any[]=[],defaultPerfumeImage:any=null,loadError=false
  try{
   const s=await createClient()
+  defaultPerfumeImage=await getDefaultPerfumeImage()
   const n=await s.from('notes').select('id,name,slug,category,description').eq('slug',slug).maybeSingle()
   if(n.error)loadError=true;else if(!n.data)notFound();else{
    note=n.data
@@ -22,6 +24,6 @@ export default async function NotePage({params}:{params:Promise<{slug:string}>})
  }catch{loadError=true}
  if(loadError&&!note)return <main><section className="empty-state"><h1>Note page temporarily unavailable</h1><Link className="button" href="/notes">Browse Notes</Link></section></main>
  return <main><section className="index-page"><div className="index-hero"><p className="eyebrow">{note.category?note.category.toUpperCase()+' · ':''}FRAGRANCE NOTE</p><h1>{note.name}</h1><p>{note.description||`Explore published fragrances in Scentmarked with verified ${note.name} note data.`}</p></div>
- {loadError?<div className="empty-state"><h2>Fragrances are temporarily unavailable.</h2></div>:perfumes.length?<div className="brand-fragrance-grid">{perfumes.map((x:any)=>{const p=x.perfumes;return <Link className="brand-fragrance-card" href={'/perfume/'+p.slug} key={p.id}><div className="mini-bottle">{p.image_url?<img src={p.image_url} alt={p.name+" by "+(p.brands?.name||"Scentmarked")} loading="lazy"/>:<div className="catalog-placeholder"><small>{p.brands?.name||"Scentmarked"}</small><b>{p.name}</b></div>}</div><small>{p.brands?.name}</small><h2>{p.name}</h2><p>{x.position?x.position[0].toUpperCase()+x.position.slice(1)+' note · ':''}{p.concentration||'Fragrance'}{p.release_year?' · '+p.release_year:''}</p></Link>})}</div>:<div className="empty-state"><h2>No published fragrances linked yet.</h2><p>This note is in the Scentmarked library and its verified fragrance links are still being expanded.</p></div>}
+ {loadError?<div className="empty-state"><h2>Fragrances are temporarily unavailable.</h2></div>:perfumes.length?<div className="brand-fragrance-grid">{perfumes.map((x:any)=>{const p=x.perfumes;return <Link className="brand-fragrance-card" href={'/perfume/'+p.slug} key={p.id}><div className="mini-bottle">{(p.image_url||defaultPerfumeImage?.image_url)?<img src={p.image_url||defaultPerfumeImage.image_url} alt={p.image_url?p.name+" by "+(p.brands?.name||"Scentmarked"):(defaultPerfumeImage?.alt_text||"ScentMarked fragrance image")} loading="lazy"/>:<div className="catalog-placeholder"><small>{p.brands?.name||"Scentmarked"}</small><b>{p.name}</b></div>}</div><small>{p.brands?.name}</small><h2>{p.name}</h2><p>{x.position?x.position[0].toUpperCase()+x.position.slice(1)+' note · ':''}{p.concentration||'Fragrance'}{p.release_year?' · '+p.release_year:''}</p></Link>})}</div>:<div className="empty-state"><h2>No published fragrances linked yet.</h2><p>This note is in the Scentmarked library and its verified fragrance links are still being expanded.</p></div>}
  </section></main>
 }
