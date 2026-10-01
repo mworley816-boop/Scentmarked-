@@ -4,7 +4,7 @@ import {useEffect,useId,useMemo,useRef,useState} from 'react'
 
 type PerfumeOption={id:string;name:string;slug:string;brand:string}
 
-export default function PerfumeSearchPicker({name,label,options,selectedSlug}:{name:string;label:string;options:PerfumeOption[];selectedSlug?:string}){
+export default function PerfumeSearchPicker({name,label,options,selectedSlug,required=false}:{name:string;label:string;options:PerfumeOption[];selectedSlug?:string;required?:boolean}){
  const selected=options.find(x=>x.slug===selectedSlug)
  const [query,setQuery]=useState(selected?selected.brand+' — '+selected.name:'')
  const [value,setValue]=useState(selected?.slug||'')
@@ -25,7 +25,7 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug}:{n
  function choose(x:PerfumeOption){setQuery(x.brand+' — '+x.name);setValue(x.slug);setOpen(false);setActiveIndex(-1)}
  return <div className="perfume-search-picker">
   <label htmlFor={inputId}>{label}</label>
-  <input type="hidden" name={name} value={value}/>
+  <input type="hidden" name={name} value={value} required={required}/>
   <div className="perfume-search-box">
    <input id={inputId} role="combobox" value={query} placeholder="Search perfume or brand…" autoComplete="off" aria-autocomplete="list" aria-controls={expanded?listId:undefined} aria-expanded={expanded} aria-activedescendant={expanded&&matches[activeIndex]?listId+'-'+activeIndex:undefined}
     onFocus={()=>setOpen(true)}
