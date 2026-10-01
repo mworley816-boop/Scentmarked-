@@ -34,7 +34,7 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug}:{n
      }else if(e.key==='Enter'&&expanded&&matches[activeIndex]){
       e.preventDefault()
       choose(matches[activeIndex])
-     }else if(e.key==='Escape'){
+     }else if(e.key==='Escape'&&expanded){
       e.preventDefault()
       setOpen(false)
       setActiveIndex(-1)
