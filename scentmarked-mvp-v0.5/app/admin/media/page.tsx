@@ -34,7 +34,7 @@ async function uploadMedia(formData:FormData){'use server'
 async function removeMedia(formData:FormData){'use server'
  const s=await admin(),path=String(formData.get('path')||''),returnTo=mediaReturnTo(formData)
  const failureUrl=(message:string)=>{const join=returnTo.includes('?')?'&':'?';return returnTo+join+'error='+encodeURIComponent(message)}
- if(!path)redirect(failureUrl('Missing media path.')
+ if(!path)redirect(failureUrl('Missing media path.'))
  const url=s.storage.from('site-media').getPublicUrl(path).data.publicUrl
  const [{data:refs},{data:brandRefs},{data:perfumeRefs},{data:noteRefs},{data:provenanceRefs}]=await Promise.all([
   s.from('site_content').select('id').or('image_url.eq.'+url+',mobile_image_url.eq.'+url).limit(1),
