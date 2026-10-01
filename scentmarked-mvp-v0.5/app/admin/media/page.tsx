@@ -39,13 +39,15 @@ async function removeMedia(formData:FormData){'use server'
  if(!path)redirect(failureUrl('Missing media path.'))
  if(!isMediaPath(path))redirect(failureUrl('Invalid media path.'))
  const url=s.storage.from('site-media').getPublicUrl(path).data.publicUrl
- const [{data:refs},{data:brandRefs},{data:perfumeRefs},{data:noteRefs},{data:provenanceRefs}]=await Promise.all([
+ const usageChecks=await Promise.all([
   s.from('site_content').select('id').or('image_url.eq.'+url+',mobile_image_url.eq.'+url).limit(1),
   s.from('brands').select('id,name').or('logo_url.eq.'+url+',banner_url.eq.'+url).limit(1),
   s.from('perfumes').select('id,name').eq('image_url',url).limit(1),
   s.from('notes').select('id,name').eq('image_url',url).limit(1),
   s.from('perfume_image_provenance').select('perfume_id').eq('asset_url',url).limit(1)
  ])
+ if(usageChecks.some((result)=>result.error))redirect(failureUrl('Unable to verify media usage. Nothing was deleted.'))
+ const [refs,brandRefs,perfumeRefs,noteRefs,provenanceRefs]=usageChecks.map((result)=>result.data)
  if(refs?.length)redirect(failureUrl('This image is still used by Site Content. Remove it there first.'))
  if(brandRefs?.length)redirect(failureUrl('This image is still used by '+(brandRefs[0] as any).name+' in Brand Studio. Remove it there first.'))
  if(perfumeRefs?.length)redirect(failureUrl('This image is still used by '+(perfumeRefs[0] as any).name+'. Remove it from the fragrance first.'))
