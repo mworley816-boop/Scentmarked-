@@ -89,8 +89,7 @@ function mediaReturnTo(formData:FormData){
  const view=viewFromParams(String(formData.get('view')||''))
  const q=String(formData.get('q')||'').trim().slice(0,200)
  const rawPage=Number.parseInt(String(formData.get('page')||'1'),10),page=Number.isFinite(rawPage)&&rawPage>1?rawPage:1
- const params=new URLSearchParams({...(view!=='all'?{view}:{}),...(q?{q}:{}),...(page>1?{page:String(page)}:{})})
- return '/admin/media'+(params.size?'?'+params.toString():'')
+ return mediaPageUrl(view,q,page)
 }
 
 export default async function MediaLibrary({searchParams}:{searchParams:Promise<{error?:string;deleted?:string;uploaded?:string;view?:string;page?:string;q?:string;bulkDeleted?:string;skipped?:string}>}){const params=await searchParams;
