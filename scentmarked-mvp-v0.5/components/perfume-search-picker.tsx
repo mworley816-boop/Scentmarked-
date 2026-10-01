@@ -15,6 +15,13 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug}:{n
  const activeOption=useRef<HTMLButtonElement>(null)
  const matches=useMemo(()=>{const q=query.trim().toLowerCase();if(!q)return[];return options.filter(x=>(x.name+' '+x.brand).toLowerCase().includes(q)).slice(0,8)},[options,query])
  const expanded=open&&query.trim().length>0
+ useEffect(()=>{
+  const next=options.find(x=>x.slug===selectedSlug)
+  setQuery(next?next.brand+' — '+next.name:'')
+  setValue(next?.slug||'')
+  setOpen(false)
+  setActiveIndex(-1)
+ },[selectedSlug,options])
  useEffect(()=>{if(expanded)activeOption.current?.scrollIntoView({block:'nearest'})},[activeIndex,expanded])
  function choose(x:PerfumeOption){setQuery(x.brand+' — '+x.name);setValue(x.slug);setOpen(false);setActiveIndex(-1)}
  return <div className="perfume-search-picker">
