@@ -8,6 +8,7 @@ export default function AccountNav(){
  const [isAdmin,setIsAdmin]=useState(false)
  const [ready,setReady]=useState(false)
  const [busy,setBusy]=useState(false)
+ const [signOutError,setSignOutError]=useState(false)
 
  useEffect(()=>{
   let active=true
@@ -28,7 +29,14 @@ export default function AccountNav(){
  async function signOut(){
   if(busy)return
   setBusy(true)
-  try{await supabase.auth.signOut();setUser(null);setIsAdmin(false);window.location.href='/'}
+  setSignOutError(false)
+  try{
+   const {error}=await supabase.auth.signOut()
+   if(error){setSignOutError(true);return}
+   setUser(null)
+   setIsAdmin(false)
+   window.location.assign('/')
+  }catch{setSignOutError(true)}
   finally{setBusy(false)}
  }
 
@@ -38,6 +46,7 @@ export default function AccountNav(){
   <a className="nav-signin" href="/account">Account</a>
   <a className="nav-signin" href="/collection">My Marks</a>
   <button className="nav-join nav-signout" type="button" onClick={signOut} disabled={busy}>{busy?'Signing Out…':'Sign Out'}</button>
+  {signOutError&&<span className="nav-signout-error" role="status">Sign out failed. Please try again.</span>}
  </>
  return <><a className="nav-signin" href="/login">Sign In</a><a className="nav-join" href="/login">Join Free</a></>
 }
