@@ -42,9 +42,9 @@ export default function AccountNav(){
 
  if(!ready)return <span className="nav-account-placeholder" aria-hidden="true"/>
  if(user)return <>
-  {isAdmin&&<a className="nav-signin nav-admin" href="/admin">Admin</a>}
+  {isAdmin&&<a className="nav-signin nav-admin nav-mobile-redundant" href="/admin">Admin</a>}
   <a className="nav-signin" href="/account">Account</a>
-  <a className="nav-signin" href="/collection">My Marks</a>
+  <a className="nav-signin nav-mobile-redundant" href="/collection">My Marks</a>
   <button className="nav-join nav-signout" type="button" onClick={signOut} disabled={busy}>{busy?'Signing Out…':'Sign Out'}</button>
   {signOutError&&<span className="nav-signout-error" role="status">Sign out failed. Please try again.</span>}
  </>
