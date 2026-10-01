@@ -12,6 +12,7 @@ export async function submitContact(formData:FormData){
  const message=String(formData.get('message')||'').trim().slice(0,4000)
  const allowed=new Set(['general','catalog','missing_fragrance','community','privacy','rights'])
  if(!name||!email||!subject||!message||!allowed.has(category))redirect('/contact?error='+encodeURIComponent('Complete all required fields.'))
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))redirect('/contact?error='+encodeURIComponent('Enter a valid email address.'))
  const s=await createClient();const {data:{user}}=await s.auth.getUser()
  const {error}=await s.from('contact_messages').insert({name,email,category,subject,message,user_id:user?.id||null})
  if(error)redirect('/contact?error='+encodeURIComponent('Your message could not be sent. Please try again.'))
