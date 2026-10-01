@@ -50,8 +50,8 @@ async function removeMedia(formData:FormData){'use server'
  if(provenanceRefs?.length)redirect(failureUrl('This image is still referenced by a fragrance image-rights record. Remove or replace that provenance record first.'))
  const {error}=await s.storage.from('site-media').remove([path])
  if(error)redirect(failureUrl(error.message))
- const destination=withMediaStatus(returnTo,'deleted','1')
- redirect(destination)
+ const successReturnTo=previousMediaPage(returnTo)
+ redirect(withMediaStatus(successReturnTo,'deleted','1'))
 }
 
 
