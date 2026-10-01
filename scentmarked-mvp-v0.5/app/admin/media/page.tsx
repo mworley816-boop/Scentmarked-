@@ -76,7 +76,9 @@ async function removeSelectedUnused(formData:FormData){'use server'
  if(!safe.length)redirect(withMediaStatus(returnTo,'error','Nothing was deleted. The selected images are now in use.'))
  const {error}=await s.storage.from('site-media').remove(safe)
  if(error)redirect(withMediaStatus(returnTo,'error',error.message))
- const join=returnTo.includes('?')?'&':'?';redirect(returnTo+join+'bulkDeleted='+safe.length+(skipped?'&skipped='+skipped:''))
+ let destination=withMediaStatus(returnTo,'bulkDeleted',String(safe.length))
+ if(skipped)destination=withMediaStatus(destination,'skipped',String(skipped))
+ redirect(destination)
 }
 
 function withMediaStatus(returnTo:string,key:string,value:string){const join=returnTo.includes('?')?'&':'?';return returnTo+join+key+'='+encodeURIComponent(value)}
