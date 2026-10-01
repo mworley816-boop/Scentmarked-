@@ -66,13 +66,15 @@ async function removeSelectedUnused(formData:FormData){'use server'
  const paths=[...new Set(submittedPaths)]
  if(paths.length>100)redirect(withMediaStatus(returnTo,'error','Delete up to 100 images at a time.'))
  const urls=paths.map((path)=>s.storage.from('site-media').getPublicUrl(path).data.publicUrl)
- const [{data:site},{data:brands},{data:perfumes},{data:notes},{data:provenance}]=await Promise.all([
+ const usageChecks=await Promise.all([
   s.from('site_content').select('image_url,mobile_image_url'),
   s.from('brands').select('logo_url,banner_url'),
   s.from('perfumes').select('image_url'),
   s.from('notes').select('image_url'),
   s.from('perfume_image_provenance').select('asset_url')
  ])
+ if(usageChecks.some((result)=>result.error))redirect(withMediaStatus(returnTo,'error','Unable to verify selected media usage. Nothing was deleted.'))
+ const [site,brands,perfumes,notes,provenance]=usageChecks.map((result)=>result.data)
  const used=new Set<string>()
  ;(site||[]).forEach((x:any)=>{if(x.image_url)used.add(x.image_url);if(x.mobile_image_url)used.add(x.mobile_image_url)})
  ;(brands||[]).forEach((x:any)=>{if(x.logo_url)used.add(x.logo_url);if(x.banner_url)used.add(x.banner_url)})
