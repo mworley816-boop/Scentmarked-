@@ -88,13 +88,13 @@ function viewFromParams(value?:string){return value==='unused'?'unused':'all'}
 function mediaReturnTo(formData:FormData){
  const view=viewFromParams(String(formData.get('view')||''))
  const q=String(formData.get('q')||'').trim().slice(0,200)
- const rawPage=Number.parseInt(String(formData.get('page')||'1'),10),page=Number.isFinite(rawPage)&&rawPage>1?rawPage:1
+ const rawPage=Number.parseInt(String(formData.get('page')||'1'),10),page=Number.isSafeInteger(rawPage)&&rawPage>1?Math.min(rawPage,10000):1
  return mediaPageUrl(view,q,page)
 }
 
 export default async function MediaLibrary({searchParams}:{searchParams:Promise<{error?:string;deleted?:string;uploaded?:string;view?:string;page?:string;q?:string;bulkDeleted?:string;skipped?:string}>}){const params=await searchParams;
  const s=await admin()
- const page=Math.max(1,Number.parseInt(params.page||'1',10)||1),pageSize=100,search=(params.q||'').trim().slice(0,200)
+ const rawPage=Number.parseInt(params.page||'1',10),page=Number.isSafeInteger(rawPage)?Math.min(Math.max(1,rawPage),10000):1,pageSize=100,search=(params.q||'').trim().slice(0,200)
  const {data,error}=await s.storage.from('site-media').list('content',{limit:pageSize,offset:(page-1)*pageSize,sortBy:{column:'created_at',order:'desc'},...(search?{search}:{})})
  const files=(data||[]).filter((file:any)=>file.name&&file.name!=='.emptyFolderPlaceholder')
  if(page>1&&!error&&files.length===0){const resetParams=new URLSearchParams({...(params.view==='unused'?{view:'unused'}:{}),...(search?{q:search}:{})});redirect('/admin/media'+(resetParams.size?'?'+resetParams.toString():''))}
