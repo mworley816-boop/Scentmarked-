@@ -12,6 +12,7 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
  const [activeIndex,setActiveIndex]=useState(-1)
  const inputId=useId()
  const listId=useId()
+ const hintId=useId()
  const activeOption=useRef<HTMLButtonElement>(null)
  const matches=useMemo(()=>{const q=query.trim().toLowerCase();if(!q)return[];return options.filter(x=>(x.name+' '+x.brand).toLowerCase().includes(q)).slice(0,8)},[options,query])
  const expanded=open&&query.trim().length>0
@@ -27,7 +28,7 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
   <label htmlFor={inputId}>{label}</label>
   <input type="hidden" name={name} value={value}/>
   <div className="perfume-search-box">
-   <input id={inputId} role="combobox" value={query} required={required} pattern={required&&value?undefined:"(?!)"} title={required&&!value?"Choose a fragrance from the search results.":undefined} placeholder="Search perfume or brand…" autoComplete="off" aria-autocomplete="list" aria-controls={expanded?listId:undefined} aria-expanded={expanded} aria-activedescendant={expanded&&matches[activeIndex]?listId+'-'+activeIndex:undefined}
+   <input id={inputId} role="combobox" value={query} required={required} pattern={required&&value?undefined:"(?!)"} title={required&&!value?"Choose a fragrance from the search results.":undefined} placeholder="Search perfume or brand…" autoComplete="off" aria-autocomplete="list" aria-describedby={required?hintId:undefined} aria-controls={expanded?listId:undefined} aria-expanded={expanded} aria-activedescendant={expanded&&matches[activeIndex]?listId+'-'+activeIndex:undefined}
     onFocus={()=>setOpen(true)}
     onBlur={()=>{setOpen(false);setActiveIndex(-1)}}
     onChange={e=>{setQuery(e.target.value);setValue('');setOpen(true);setActiveIndex(-1)}}
@@ -46,6 +47,7 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
       setActiveIndex(-1)
      }
     }}/>
+   {required&&<span id={hintId} className="sr-only">Choose a fragrance from the search results.</span>}
    {expanded&&<div className="perfume-search-results" id={listId} role="listbox" aria-label={label}>{matches.length?matches.map((x,index)=><button type="button" role="option" id={listId+'-'+index} tabIndex={-1} ref={index===activeIndex?activeOption:undefined} aria-selected={index===activeIndex} key={x.id} onMouseDown={e=>e.preventDefault()} onClick={()=>choose(x)}><b>{x.name}</b><span>{x.brand}</span></button>):<p role="status">No matching fragrances.</p>}</div>}
   </div>
  </div>
