@@ -58,8 +58,11 @@ async function removeMedia(formData:FormData){'use server'
 
 
 async function removeSelectedUnused(formData:FormData){'use server'
- const s=await admin(),returnTo=mediaReturnTo(formData),paths=formData.getAll('paths').map(String).filter(isMediaPath).slice(0,100)
- if(!paths.length)redirect(withMediaStatus(returnTo,'error','Select at least one unused image.'))
+ const s=await admin(),returnTo=mediaReturnTo(formData),submittedPaths=formData.getAll('paths').map(String)
+ if(!submittedPaths.length)redirect(withMediaStatus(returnTo,'error','Select at least one unused image.'))
+ if(submittedPaths.length>100)redirect(withMediaStatus(returnTo,'error','Delete up to 100 images at a time.'))
+ if(submittedPaths.some((path)=>!isMediaPath(path)))redirect(withMediaStatus(returnTo,'error','Invalid media selection.'))
+ const paths=submittedPaths
  const urls=paths.map((path)=>s.storage.from('site-media').getPublicUrl(path).data.publicUrl)
  const [{data:site},{data:brands},{data:perfumes},{data:notes},{data:provenance}]=await Promise.all([
   s.from('site_content').select('image_url,mobile_image_url'),
