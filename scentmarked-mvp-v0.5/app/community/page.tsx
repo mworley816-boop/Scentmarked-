@@ -9,14 +9,19 @@ export default async function Community(){
  let ratings:any[]=[],votes:any[]=[],top:any[]=[],loadError=false
  try{
   const s=await createClient()
-  const reviews=await s.from('ratings').select('id,overall,longevity,projection,sweetness,review,created_at,perfumes(name,slug,brands(name)),profiles(display_name)').not('review','is',null).order('created_at',{ascending:false}).limit(12)
-  if(reviews.error)loadError=true;else ratings=reviews.data||[]
-  const comparisons=await s.from('comparison_votes').select('id,similarity,created_at,perfume_a:perfumes!comparison_votes_perfume_a_id_fkey(name,slug),perfume_b:perfumes!comparison_votes_perfume_b_id_fkey(name,slug)').order('created_at',{ascending:false}).limit(8)
-  if(!comparisons.error)votes=comparisons.data||[]
-  const popular=await s.from('ratings').select('overall,perfumes(id,name,slug,brands(name))')
+  const reviews=await s.from('ratings').select('id,overall,longevity,projection,sweetness,review,created_at,perfume_id,profiles(display_name)').not('review','is',null).order('created_at',{ascending:false}).limit(50)
+  if(reviews.error)loadError=true
+  const comparisons=await s.from('comparison_votes').select('id,similarity,created_at,perfume_a_id,perfume_b_id').order('created_at',{ascending:false}).limit(50)
+  const popular=await s.from('ratings').select('overall,perfume_id')
+  const perfumeIds=[...new Set([...(reviews.data||[]).map((x:any)=>x.perfume_id),...(comparisons.data||[]).flatMap((x:any)=>[x.perfume_a_id,x.perfume_b_id]),...(popular.data||[]).map((x:any)=>x.perfume_id)].filter(Boolean))]
+  const published=perfumeIds.length?await s.from('perfumes').select('id,name,slug,brands(name)').in('id',perfumeIds).eq('status','published'):null
+  if(published?.error)loadError=true
+  const byId=new Map((published?.data||[]).map((p:any)=>[p.id,p]))
+  if(!reviews.error)ratings=(reviews.data||[]).map((r:any)=>({...r,perfumes:byId.get(r.perfume_id)})).filter((r:any)=>r.perfumes).slice(0,12)
+  if(!comparisons.error)votes=(comparisons.data||[]).map((v:any)=>({...v,perfume_a:byId.get(v.perfume_a_id),perfume_b:byId.get(v.perfume_b_id)})).filter((v:any)=>v.perfume_a&&v.perfume_b).slice(0,8)
   if(!popular.error){
    const map=new Map<string,any>()
-   for(const r of popular.data||[]){const p:any=r.perfumes;if(!p?.id)continue;const x=map.get(p.id)||{...p,total:0,count:0};x.total+=Number(r.overall)||0;x.count++;map.set(p.id,x)}
+   for(const r of popular.data||[]){const p:any=byId.get(r.perfume_id);if(!p?.id)continue;const x=map.get(p.id)||{...p,total:0,count:0};x.total+=Number(r.overall)||0;x.count++;map.set(p.id,x)}
    top=[...map.values()].filter(x=>x.count>0).sort((a,b)=>b.count-a.count||b.total/b.count-a.total/a.count).slice(0,6)
   }
  }catch{loadError=true}
