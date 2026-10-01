@@ -1,11 +1,12 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { updateSession } from '@/lib/supabase/middleware'
 
-// Keep public catalog/static requests out of Supabase auth middleware on Cloudflare.
-// Protected account pages can perform their own server-side auth checks.
-export function middleware(_request: NextRequest) {
-  return NextResponse.next()
+// Refresh Supabase auth cookies before protected account/admin pages render.
+// The pages themselves remain responsible for authorization and redirects.
+export async function middleware(request: NextRequest) {
+  return updateSession(request)
 }
 
 export const config = {
-  matcher: ['/collection/:path*', '/admin/:path*'],
+  matcher: ['/collection/:path*', '/account/:path*', '/admin/:path*'],
 }
