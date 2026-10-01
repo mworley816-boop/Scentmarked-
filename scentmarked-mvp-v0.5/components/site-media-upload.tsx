@@ -9,7 +9,7 @@ const PAGE_SIZE=100
 export default function SiteMediaUpload({name,label,initialUrl=''}:{name:string;label:string;initialUrl?:string}){
  const [url,setUrl]=useState(initialUrl),[busy,setBusy]=useState(false),[error,setError]=useState('')
  const [library,setLibrary]=useState<MediaItem[]>([]),[showLibrary,setShowLibrary]=useState(false),[libraryLoaded,setLibraryLoaded]=useState(false)
- const [hasMore,setHasMore]=useState(false),[storageOffset,setStorageOffset]=useState(0),[search,setSearch]=useState('')
+ const [hasMore,setHasMore]=useState(false),[storageOffset,setStorageOffset]=useState(0),[search,setSearch]=useState(''),[activeSearch,setActiveSearch]=useState('')
  async function upload(file:File){
   setError('')
   if(file.size>5*1024*1024){setError('Image must be 5 MB or smaller.');return}
@@ -25,11 +25,11 @@ export default function SiteMediaUpload({name,label,initialUrl=''}:{name:string;
   }catch(e){setError(e instanceof Error?e.message:'Upload failed.')}
   finally{setBusy(false)}
  }
- async function loadLibrary(offset=0){
+ async function loadLibrary(offset=0,term=activeSearch){
   setError('');setBusy(true)
   try{
    const s=createClient()
-   const result=await s.storage.from('site-media').list('content',{limit:PAGE_SIZE,offset,sortBy:{column:'created_at',order:'desc'}})
+   const result=await s.storage.from('site-media').list('content',{limit:PAGE_SIZE,offset,sortBy:{column:'created_at',order:'desc'},...(term?{search:term}:{})})
    if(result.error)throw result.error
    const items=(result.data||[]).filter(file=>file.name&&file.name!=='.emptyFolderPlaceholder').map(file=>({
     name:file.name,url:s.storage.from('site-media').getPublicUrl('content/'+file.name).data.publicUrl
@@ -44,7 +44,9 @@ export default function SiteMediaUpload({name,label,initialUrl=''}:{name:string;
   setShowLibrary(true)
   if(!libraryLoaded)await loadLibrary(0)
  }
- const query=search.trim().toLowerCase(),shown=query?library.filter(item=>item.name.toLowerCase().includes(query)):library
+ async function runSearch(){const term=search.trim();setActiveSearch(term);setLibrary([]);setStorageOffset(0);setHasMore(false);await loadLibrary(0,term)}
+ async function clearSearch(){setSearch('');setActiveSearch('');setLibrary([]);setStorageOffset(0);setHasMore(false);await loadLibrary(0,'')}
+ const shown=library
  return <div className="site-media-upload">
   <label>{label}</label>
   {url&&<img src={url} alt="" style={{display:'block',width:'100%',maxWidth:420,height:180,objectFit:'cover',borderRadius:12,marginBottom:10}}/>}
@@ -56,14 +58,14 @@ export default function SiteMediaUpload({name,label,initialUrl=''}:{name:string;
    {url&&<button className="button ghost" type="button" onClick={()=>setUrl('')}>Remove from content</button>}
   </div>
   {showLibrary&&<div style={{marginTop:12}}>
-   <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search loaded media filenames…" style={{width:'100%',marginBottom:10}}/>
-   <p className="muted">{library.length} media file{library.length===1?'':'s'} loaded{query?' · '+shown.length+' match'+(shown.length===1?'':'es'):''}.</p>
+   <form onSubmit={e=>{e.preventDefault();void runSearch()}} className="result-actions" style={{marginBottom:10}}><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search media filenames…" style={{flex:1}}/><button className="button ghost" type="submit" disabled={busy}>Search</button>{activeSearch&&<button className="button ghost" type="button" disabled={busy} onClick={()=>void clearSearch()}>Clear</button>}</form>
+   <p className="muted">{library.length} media file{library.length===1?'':'s'} loaded{activeSearch?' for “'+activeSearch+'”':''}.</p>
    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(110px,1fr))',gap:10}}>
     {shown.length?shown.map(item=><button key={item.name} type="button" title={item.name} onClick={()=>{setUrl(item.url);setShowLibrary(false)}} style={{padding:0,border:url===item.url?'3px solid currentColor':'1px solid #ccc',borderRadius:10,overflow:'hidden',cursor:'pointer',background:'transparent'}}>
      <img src={item.url} alt="" style={{display:'block',width:'100%',height:90,objectFit:'cover'}}/>
-    </button>):libraryLoaded?<p>{query?'No loaded media matches that filename.':'No media uploaded yet.'}</p>:null}
+    </button>):libraryLoaded?<p>{activeSearch?'No media matches that filename.':'No media uploaded yet.'}</p>:null}
    </div>
-   {hasMore&&<div className="result-actions" style={{marginTop:12}}><button className="button ghost" type="button" disabled={busy} onClick={()=>void loadLibrary(storageOffset)}>{busy?'Loading…':'Load more media'}</button><span className="muted">Loads the next {PAGE_SIZE} files.</span></div>}
+   {hasMore&&<div className="result-actions" style={{marginTop:12}}><button className="button ghost" type="button" disabled={busy} onClick={()=>void loadLibrary(storageOffset,activeSearch)}>{busy?'Loading…':'Load more media'}</button><span className="muted">Loads the next {PAGE_SIZE} files.</span></div>}
   </div>}
   {error&&<p className="notice error">{error}</p>}
  </div>
