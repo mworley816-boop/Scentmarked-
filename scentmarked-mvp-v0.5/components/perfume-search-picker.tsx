@@ -25,9 +25,9 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
  function choose(x:PerfumeOption){setQuery(x.brand+' — '+x.name);setValue(x.slug);setOpen(false);setActiveIndex(-1)}
  return <div className="perfume-search-picker">
   <label htmlFor={inputId}>{label}</label>
-  <input type="hidden" name={name} value={value} required={required}/>
+  <input type="hidden" name={name} value={value}/>
   <div className="perfume-search-box">
-   <input id={inputId} role="combobox" value={query} placeholder="Search perfume or brand…" autoComplete="off" aria-autocomplete="list" aria-controls={expanded?listId:undefined} aria-expanded={expanded} aria-activedescendant={expanded&&matches[activeIndex]?listId+'-'+activeIndex:undefined}
+   <input id={inputId} role="combobox" value={query} required={required} pattern={required&&value?undefined:"(?!)"} title={required&&!value?"Choose a fragrance from the search results.":undefined} placeholder="Search perfume or brand…" autoComplete="off" aria-autocomplete="list" aria-controls={expanded?listId:undefined} aria-expanded={expanded} aria-activedescendant={expanded&&matches[activeIndex]?listId+'-'+activeIndex:undefined}
     onFocus={()=>setOpen(true)}
     onBlur={()=>{setOpen(false);setActiveIndex(-1)}}
     onChange={e=>{setQuery(e.target.value);setValue('');setOpen(true);setActiveIndex(-1)}}
