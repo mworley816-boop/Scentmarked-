@@ -53,7 +53,7 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
     }}/>
    {required&&<span id={hintId} className="sr-only">Choose a fragrance from the search results.</span>}
    <span className="sr-only" role="status" aria-live="polite">{expanded&&matches.length?matches.length+" matching fragrance"+(matches.length===1?"":"s")+" available.":""}</span>
-   {expanded&&<div className="perfume-search-results" id={listId} role="listbox" aria-label={label}>{matches.length?matches.map((x,index)=><button type="button" role="option" id={listId+'-'+index} tabIndex={-1} ref={index===activeIndex?activeOption:undefined} aria-selected={index===activeIndex} key={x.id} onMouseDown={e=>e.preventDefault()} onClick={()=>choose(x)}><b>{x.name}</b><span>{x.brand}</span></button>):<p role="status">No matching fragrances.</p>}</div>}
+   {expanded&&<div className="perfume-search-results" id={listId} role="listbox" aria-label={label}>{matches.length?matches.map((x,index)=><button type="button" role="option" id={listId+'-'+index} tabIndex={-1} ref={index===activeIndex?activeOption:undefined} aria-selected={index===activeIndex} key={x.id} onPointerDown={e=>e.preventDefault()} onClick={()=>choose(x)}><b>{x.name}</b><span>{x.brand}</span></button>):<p role="status">No matching fragrances.</p>}</div>}
   </div>
  </div>
 }
