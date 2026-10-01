@@ -26,7 +26,7 @@ export async function deleteAccount(formData:FormData){
  if(!url||!serviceKey)redirect(accountUrl('error','Account deletion is not configured yet. Please contact Scentmarked.'))
  const admin=createAdminClient(url,serviceKey,{auth:{autoRefreshToken:false,persistSession:false}})
  const {error}=await admin.auth.admin.deleteUser(user.id)
- if(error)redirect(accountUrl('error','Account deletion could not be completed: '+error.message))
+ if(error)redirect(accountUrl('error','Account deletion could not be completed. Please try again or contact Scentmarked.'))
  try{await supabase.auth.signOut()}catch{}
  redirect('/?account=deleted')
 }
