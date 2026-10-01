@@ -248,3 +248,11 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Keep the phone header focused; Collection already lives in the bottom nav. */
 @media(max-width:600px){.site-header .nav-mobile-redundant{display:none}.nav-signout-error{position:absolute;right:14px;top:100%;max-width:min(280px,calc(100vw - 28px));padding:7px 9px;background:#fffaf4;border:1px solid var(--line);border-radius:7px;font-size:9px;overflow-wrap:anywhere}}
+
+/* Comfortable footer touch targets on phones without changing desktop density. */
+@media(max-width:600px){
+ .footer-links{gap:2px}
+ .footer-links a{display:flex;align-items:center;min-height:40px;padding:5px 0}
+ .footer-legal{gap:2px 14px;white-space:normal}
+ .footer-legal a{display:inline-flex;align-items:center;min-height:40px;padding:5px 0}
+}
