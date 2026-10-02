@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export const metadata={title:'Reset Password',robots:{index:false,follow:false}}
 
-const resetErrors:Record<string,string>={'password-too-short':'Password must be at least 12 characters.','password-mismatch':'Passwords do not match.','update-failed':'Password could not be updated. Please request a new recovery link and try again.'}
+const resetErrors:Record<string,string>={'password-too-short':'Password must be at least 12 characters.','password-mismatch':'Passwords do not match.','update-failed':'Password could not be updated. Please request a new recovery link and try again.','session-expired':'This recovery session is missing or has expired. Please request a new recovery link.'}
 
 async function updatePassword(formData:FormData){
  'use server'
@@ -14,9 +14,12 @@ async function updatePassword(formData:FormData){
  let updateFailed=false
  try{
   const supabase=await createClient()
+  const {data:{user},error:userError}=await supabase.auth.getUser()
+  if(userError||!user)redirect('/reset-password?error=session-expired')
   const {error}=await supabase.auth.updateUser({password})
   updateFailed=!!error
- }catch{
+ }catch(error:any){
+  if(error?.digest)throw error
   updateFailed=true
  }
  if(updateFailed)redirect('/reset-password?error=update-failed')
