@@ -1,9 +1,10 @@
 import { login, signup, requestPasswordReset } from './actions'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { safeAuthNext } from '@/lib/auth-redirect'
 export const metadata={title:'Sign In or Join',description:'Sign in to Scentmarked or create an account to save fragrances and manage My Marks.',robots:{index:false,follow:false}}
 export default async function LoginPage({searchParams}:{searchParams:Promise<{error?:string,message?:string,next?:string}>}) {
- const p=await searchParams; const rawNext=p.next||'/collection'; const next=rawNext.startsWith('/')&&!rawNext.startsWith('//')?rawNext:'/collection'
+ const p=await searchParams; const next=safeAuthNext(p.next)
  const supabase=await createClient(); const {data:{user}}=await supabase.auth.getUser(); if(user)redirect(next)
  return <main className="auth-page"><section className="auth-shell">
   <div className="auth-story"><p className="eyebrow">YOUR SCENTED JOURNEY</p><h1>More than scents.<br/>A more informed you.</h1><p>Create your Scentmarked account to collect fragrances, remember what you've tried, and keep your next discoveries close.</p><div className="auth-bottle">S</div><i>Know the notes.<br/>Find the match.</i></div>
