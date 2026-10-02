@@ -1,6 +1,5 @@
 'use server'
 import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { siteUrl } from '@/lib/site'
 import { safeAuthNext } from '@/lib/auth-redirect'
@@ -10,14 +9,6 @@ function validEmail(email:string){return email.length<=254&&/^[^\s@]+@[^\s@]+\.[
 function loginUrl(kind:'error'|'message',code:string,next:string){
  return `/login?${kind}=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`
 }
-async function siteOrigin(){
- const h=await headers()
- const host=h.get('x-forwarded-host')||h.get('host')
- const proto=h.get('x-forwarded-proto')||'https'
- if(host)return `${proto}://${host}`
- return siteUrl
-}
-
 export async function login(formData:FormData){
  const email=String(formData.get('email')||'').trim()
  const password=String(formData.get('password')||'')
@@ -42,7 +33,7 @@ export async function requestPasswordReset(formData:FormData){
  if(!validEmail(email))redirect(loginUrl('error','invalid-email',next))
  try{
   const supabase=await createClient()
-  const origin=await siteOrigin()
+  const origin=siteUrl
   const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:`${origin}/auth/callback?next=${encodeURIComponent('/reset-password')}`})
   if(error)redirect(loginUrl('error','recovery-failed',next))
  }catch(error:any){
@@ -62,7 +53,7 @@ export async function signup(formData:FormData){
  if(password.length<12)redirect(loginUrl('error','password-too-short',next))
  try{
   const supabase=await createClient()
-  const origin=await siteOrigin()
+  const origin=siteUrl
   const {data,error}=await supabase.auth.signUp({email,password,options:{data:{display_name:displayName},emailRedirectTo:`${origin}/auth/callback?next=${encodeURIComponent(next)}`}})
   if(error)redirect(loginUrl('error','signup-failed',next))
   if(data.session)redirect(next)
