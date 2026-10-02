@@ -25,6 +25,7 @@ export async function login(formData:FormData){
  const password=String(formData.get('password')||'')
  const next=safeNext(formData.get('next'))
  if(!email||!password)redirect(loginUrl('error','Email and password are required.',next))
+ if(!validEmail(email))redirect(loginUrl('error','Enter a valid email address.',next))
  try{
   const supabase=await createClient()
   const {error}=await supabase.auth.signInWithPassword({email,password})
@@ -59,6 +60,7 @@ export async function signup(formData:FormData){
  const displayName=String(formData.get('display_name')||'').trim()
  const next=safeNext(formData.get('next'))
  if(!email||!password)redirect(loginUrl('error','Email and password are required.',next))
+ if(!validEmail(email))redirect(loginUrl('error','Enter a valid email address.',next))
  if(password.length<12)redirect(loginUrl('error','Password must be at least 12 characters.',next))
  try{
   const supabase=await createClient()
