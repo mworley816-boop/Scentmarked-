@@ -3,11 +3,9 @@ import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { siteUrl } from '@/lib/site'
+import { safeAuthNext } from '@/lib/auth-redirect'
 
-function safeNext(value:FormDataEntryValue|null){
- const next=typeof value==='string'?value:'/collection'
- return next.startsWith('/')&&!next.startsWith('//')?next:'/collection'
-}
+
 function validEmail(email:string){return email.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
 function loginUrl(kind:'error'|'message',message:string,next:string){
  return `/login?${kind}=${encodeURIComponent(message)}&next=${encodeURIComponent(next)}`
@@ -23,7 +21,7 @@ async function siteOrigin(){
 export async function login(formData:FormData){
  const email=String(formData.get('email')||'').trim()
  const password=String(formData.get('password')||'')
- const next=safeNext(formData.get('next'))
+ const next=safeAuthNext(formData.get('next'))
  if(!email||!password)redirect(loginUrl('error','Email and password are required.',next))
  if(!validEmail(email))redirect(loginUrl('error','Enter a valid email address.',next))
  try{
@@ -39,7 +37,7 @@ export async function login(formData:FormData){
 
 export async function requestPasswordReset(formData:FormData){
  const email=String(formData.get('email')||'').trim()
- const next=safeNext(formData.get('next'))
+ const next=safeAuthNext(formData.get('next'))
  if(!email)redirect(loginUrl('error','Enter your email address first.',next))
  if(!validEmail(email))redirect(loginUrl('error','Enter a valid email address.',next))
  try{
@@ -58,7 +56,7 @@ export async function signup(formData:FormData){
  const email=String(formData.get('email')||'').trim()
  const password=String(formData.get('password')||'')
  const displayName=String(formData.get('display_name')||'').trim().slice(0,80)
- const next=safeNext(formData.get('next'))
+ const next=safeAuthNext(formData.get('next'))
  if(!email||!password)redirect(loginUrl('error','Email and password are required.',next))
  if(!validEmail(email))redirect(loginUrl('error','Enter a valid email address.',next))
  if(password.length<12)redirect(loginUrl('error','Password must be at least 12 characters.',next))
