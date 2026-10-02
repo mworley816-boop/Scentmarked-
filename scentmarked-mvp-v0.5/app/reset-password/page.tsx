@@ -21,6 +21,7 @@ async function updatePassword(formData:FormData){
   if(userError||!user||recoveryUserId!==user.id)redirect('/reset-password?error=session-expired')
   const {error}=await supabase.auth.updateUser({password})
   updateFailed=!!error
+  if(!updateFailed)cookieStore.delete('scent_password_recovery')
  }catch(error:any){
   if(error?.digest)throw error
   updateFailed=true
