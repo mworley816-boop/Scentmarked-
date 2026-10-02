@@ -57,7 +57,7 @@ export async function requestPasswordReset(formData:FormData){
 export async function signup(formData:FormData){
  const email=String(formData.get('email')||'').trim()
  const password=String(formData.get('password')||'')
- const displayName=String(formData.get('display_name')||'').trim()
+ const displayName=String(formData.get('display_name')||'').trim().slice(0,80)
  const next=safeNext(formData.get('next'))
  if(!email||!password)redirect(loginUrl('error','Email and password are required.',next))
  if(!validEmail(email))redirect(loginUrl('error','Enter a valid email address.',next))
