@@ -15,7 +15,7 @@ export async function GET(request:Request){
   }catch{}
  }
  const login=new URL('/login',url.origin);
- login.searchParams.set('error','Could not confirm your sign in. Please try again.');
+ login.searchParams.set('error','callback-failed');
  login.searchParams.set('next',next);
  return NextResponse.redirect(login);
 }
