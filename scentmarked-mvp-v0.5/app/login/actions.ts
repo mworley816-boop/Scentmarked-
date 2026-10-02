@@ -8,7 +8,7 @@ function safeNext(value:FormDataEntryValue|null){
  const next=typeof value==='string'?value:'/collection'
  return next.startsWith('/')&&!next.startsWith('//')?next:'/collection'
 }
-function validEmail(email:string){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
+function validEmail(email:string){return email.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
 function loginUrl(kind:'error'|'message',message:string,next:string){
  return `/login?${kind}=${encodeURIComponent(message)}&next=${encodeURIComponent(next)}`
 }
