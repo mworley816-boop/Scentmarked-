@@ -8,6 +8,7 @@ function safeNext(value:FormDataEntryValue|null){
  const next=typeof value==='string'?value:'/collection'
  return next.startsWith('/')&&!next.startsWith('//')?next:'/collection'
 }
+function validEmail(email:string){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
 function loginUrl(kind:'error'|'message',message:string,next:string){
  return `/login?${kind}=${encodeURIComponent(message)}&next=${encodeURIComponent(next)}`
 }
@@ -39,6 +40,7 @@ export async function requestPasswordReset(formData:FormData){
  const email=String(formData.get('email')||'').trim()
  const next=safeNext(formData.get('next'))
  if(!email)redirect(loginUrl('error','Enter your email address first.',next))
+ if(!validEmail(email))redirect(loginUrl('error','Enter a valid email address.',next))
  try{
   const supabase=await createClient()
   const origin=await siteOrigin()
