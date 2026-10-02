@@ -10,8 +10,14 @@ export async function GET(request:Request){
  if(code){
   try{
    const supabase=await createClient();
-   const {error}=await supabase.auth.exchangeCodeForSession(code);
-   if(!error)return NextResponse.redirect(new URL(next,url.origin));
+   const {data,error}=await supabase.auth.exchangeCodeForSession(code);
+   if(!error){
+    const response=NextResponse.redirect(new URL(next,url.origin));
+    if(next.split(/[?#]/,1)[0]==='/reset-password'&&data.user){
+     response.cookies.set('scent_password_recovery',data.user.id,{httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',path:'/reset-password',maxAge:900});
+    }
+    return response;
+   }
   }catch{}
  }
  const login=new URL('/login',url.origin);
