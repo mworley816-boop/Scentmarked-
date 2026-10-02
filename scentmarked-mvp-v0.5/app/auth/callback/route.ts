@@ -3,7 +3,10 @@ import { createClient } from '@/lib/supabase/server';
 
 function safeNext(value:string|null){
  const next=value||'/collection';
- return next.startsWith('/')&&!next.startsWith('//')?next:'/collection';
+ if(!next.startsWith('/')||next.startsWith('//'))return '/collection';
+ const pathname=next.split(/[?#]/,1)[0];
+ if(pathname==='/login'||pathname==='/reset-password'||pathname.startsWith('/auth/'))return '/collection';
+ return next;
 }
 export async function GET(request:Request){
  const url=new URL(request.url);
