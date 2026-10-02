@@ -46,7 +46,7 @@ export default function AccountNav(){
   <a className="nav-signin" href="/account">Account</a>
   <a className="nav-signin nav-mobile-redundant" href="/collection">My Marks</a>
   <button className="nav-join nav-signout" type="button" onClick={signOut} disabled={busy}>{busy?'Signing Out…':'Sign Out'}</button>
-  {signOutError&&<span className="nav-signout-error" role="status">Sign out failed. Please try again.</span>}
+  {signOutError&&<span className="nav-signout-error" role="alert">Sign out failed. Please try again.</span>}
  </>
  return <><a className="nav-signin" href="/login">Sign In</a><a className="nav-join" href="/login">Join Free</a></>
 }
