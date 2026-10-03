@@ -28,6 +28,10 @@ async function updatePassword(formData:FormData){
  }
  if(updateFailed)redirect('/reset-password?error=update-failed')
  try{cookieStore?.delete('scent_password_recovery')}catch{}
+ try{
+  const supabase=await createClient()
+  await supabase.auth.signOut()
+ }catch{}
  redirect('/login?message=password-updated')
 }
 
