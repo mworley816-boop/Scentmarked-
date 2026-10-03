@@ -67,6 +67,27 @@ async function sendCampaign(formData:FormData){
   }
 }
 
+async function scheduleCampaign(formData:FormData){
+  'use server'
+  const id=String(formData.get('id')||'')
+  const when=String(formData.get('scheduled_at')||'')
+  const s=await requireAdmin('/admin/email/'+id)
+  const date=new Date(when)
+  if(!id||!when||Number.isNaN(date.getTime())||date.getTime()<=Date.now())redirect('/admin/email/'+id+'?error='+encodeURIComponent('Choose a future send date and time.'))
+  const {error}=await s.rpc('schedule_email_campaign',{p_campaign_id:id,p_scheduled_at:date.toISOString()})
+  if(error)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Campaign could not be scheduled. Prepare its audience first.'))
+  redirect('/admin/email/'+id+'?scheduled=1')
+}
+
+async function cancelSchedule(formData:FormData){
+  'use server'
+  const id=String(formData.get('id')||'')
+  const s=await requireAdmin('/admin/email/'+id)
+  const {error}=await s.rpc('cancel_scheduled_email_campaign',{p_campaign_id:id})
+  if(error)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Schedule could not be cancelled.'))
+  redirect('/admin/email/'+id+'?unscheduled=1')
+}
+
 async function prepareCampaign(formData:FormData){
   'use server'
   const id=String(formData.get('id')||'')
@@ -77,7 +98,7 @@ async function prepareCampaign(formData:FormData){
   redirect('/admin/email/'+id+'?queued='+String(data||0))
 }
 
-export default async function EditCampaign({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string,saved?:string,queued?:string,sent?:string,failed?:string,skipped?:string,retried?:string}>}){
+export default async function EditCampaign({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string,saved?:string,queued?:string,sent?:string,failed?:string,skipped?:string,retried?:string,scheduled?:string,unscheduled?:string}>}){
   const {id}=await params
   const p=await searchParams
   const s=await requireAdmin('/admin/email/'+id)
@@ -116,6 +137,8 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
     {p.saved&&<div className="notice">Draft saved.</div>}{p.queued!==undefined&&<div className="notice">Campaign audience prepared: {p.queued} new eligible recipient{p.queued==='1'?'':'s'} queued. No email has been sent.</div>}
     {p.sent!==undefined&&<div className="notice">Send finished: {p.sent} sent · {p.failed||'0'} failed · {p.skipped||'0'} skipped.</div>}
     {p.retried!==undefined&&<div className="notice">{p.retried} failed recipient{p.retried==='1'?'':'s'} prepared for retry.</div>}
+    {p.scheduled&&<div className="notice">Campaign scheduled successfully.</div>}
+    {p.unscheduled&&<div className="notice">Campaign schedule cancelled. It is a draft again.</div>}
     <div className="notice"><strong>Provider-gated sending.</strong> Campaign sending only works when the Resend environment variables are configured. Recipient consent is checked again immediately before each send.</div>
 
     <div className="admin-grid">
@@ -152,6 +175,10 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
     </form>
 
     {editable&&<article className="admin-card"><p className="eyebrow">AUDIENCE PREPARATION</p><h2>{audiencePreview} currently eligible recipient{audiencePreview===1?'':'s'}</h2><p>{campaign.segment_id?'This preview uses the selected segment plus current marketing consent.':'No segment is selected, so this preview includes all currently active, explicitly consented contacts.'} Preparing creates queued delivery records only; it does not send email.</p><form action={prepareCampaign}><input type="hidden" name="id" value={id}/><button type="submit" disabled={audiencePreview===0}>Prepare audience</button></form></article>}
+
+    {editable&&(counts.queued||0)>0&&<article className="admin-card"><p className="eyebrow">SCHEDULE CAMPAIGN</p><h2>Send later</h2><p>Choose a future date and time. The campaign remains queued until a trusted scheduled worker processes it.</p><form action={scheduleCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><label>Send date and time<input type="datetime-local" name="scheduled_at" required/></label><button type="submit">Schedule campaign</button></form></article>}
+
+    {campaign.status==='scheduled'&&<article className="admin-card"><p className="eyebrow">SCHEDULED</p><h2>{campaign.scheduled_at?new Date(campaign.scheduled_at).toLocaleString():'Scheduled campaign'}</h2><p>The campaign is waiting for its scheduled processing time.</p><form action={cancelSchedule}><input type="hidden" name="id" value={id}/><button className="button ghost" type="submit">Cancel schedule</button></form></article>}
 
     {editable&&(counts.queued||0)>0&&<article className="admin-card"><p className="eyebrow">SEND CAMPAIGN</p><h2>Send to {counts.queued} queued recipient{counts.queued===1?'':'s'}</h2><p>This action sends real email when the Resend provider is configured. Consent is checked again immediately before each message.</p><form action={sendCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><label>Type SEND to confirm<input name="confirmation" autoComplete="off" required/></label><button type="submit">Send campaign</button></form></article>}
 
