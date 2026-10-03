@@ -92,6 +92,15 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   const rows=deliveryRows||[]
   const counts=rows.reduce((a:any,x:any)=>{a[x.status]=(a[x.status]||0)+1;return a},{})
   const editable=campaign.status==='draft'
+  const total=rows.length
+  const sentBase=total-(counts.queued||0)
+  const delivered=(counts.delivered||0)+(counts.opened||0)+(counts.clicked||0)
+  const opened=(counts.opened||0)+(counts.clicked||0)
+  const clicked=counts.clicked||0
+  const bounced=counts.bounced||0
+  const failed=counts.failed||0
+  const unsubscribed=counts.unsubscribed||0
+  const rate=(value:number,base:number)=>base>0?Math.round((value/base)*1000)/10:0
 
   return <main><section className="admin-page">
     <div className="admin-heading"><div><p className="eyebrow">ADMIN · EMAIL CAMPAIGN</p><h1>{campaign.name}</h1><p>{campaign.status} · Created {new Date(campaign.created_at).toLocaleDateString()}</p></div><Link className="button ghost" href="/admin/email">Back to Email</Link></div>
@@ -103,8 +112,19 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
 
     <div className="admin-grid">
       <article className="admin-card"><p className="eyebrow">STATUS</p><h2>{campaign.status}</h2><p>{campaign.scheduled_at?'Scheduled '+new Date(campaign.scheduled_at).toLocaleString():'Not scheduled'}</p></article>
-      <article className="admin-card"><p className="eyebrow">DELIVERIES</p><h2>{rows.length}</h2><p>{counts.delivered||0} delivered · {counts.opened||0} opened · {counts.clicked||0} clicked</p></article>
+      <article className="admin-card"><p className="eyebrow">DELIVERIES</p><h2>{total}</h2><p>{delivered} delivered · {opened} opened · {clicked} clicked</p></article>
     </div>
+
+    <article className="admin-card"><p className="eyebrow">CAMPAIGN ANALYTICS</p><h2>Performance</h2>
+      <div className="admin-grid">
+        <div><strong>{rate(delivered,sentBase)}%</strong><p>Delivery rate · {delivered}/{sentBase}</p></div>
+        <div><strong>{rate(opened,delivered)}%</strong><p>Open rate · {opened}/{delivered}</p></div>
+        <div><strong>{rate(clicked,delivered)}%</strong><p>Click rate · {clicked}/{delivered}</p></div>
+        <div><strong>{rate(bounced,sentBase)}%</strong><p>Bounce rate · {bounced}/{sentBase}</p></div>
+        <div><strong>{failed}</strong><p>Failed sends</p></div>
+        <div><strong>{unsubscribed}</strong><p>Unsubscribes</p></div>
+      </div>
+    </article>
 
     <form action={saveCampaign} style={{display:'grid',gap:16}}>
       <input type="hidden" name="id" value={id}/>
