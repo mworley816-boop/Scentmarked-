@@ -63,11 +63,12 @@ async function saveProfile(formData:FormData){
  redirect('/matches')
 }
 
-function Checks({name,items}:{name:string,items:string[]}){
- return <div className="quiz-check-grid">{items.map(item=><label className="quiz-check" key={item}><input type="checkbox" name={name} value={item}/><span>{item}</span></label>)}</div>
+function Checks({name,items,selected=[]}:{name:string,items:string[],selected?:string[]}){
+ const chosen=new Set(selected.map(x=>x.toLocaleLowerCase()))
+ return <div className="quiz-check-grid">{items.map(item=><label className="quiz-check" key={item}><input type="checkbox" name={name} value={item} defaultChecked={chosen.has(item.toLocaleLowerCase())}/><span>{item}</span></label>)}</div>
 }
-function Radios({name,items}:{name:string,items:string[][]}){
- return <div className="quiz-check-grid quiz-radio-grid">{items.map(([value,label])=><label className="quiz-check" key={value}><input type="radio" name={name} value={value}/><span>{label}</span></label>)}</div>
+function Radios({name,items,selected}:{name:string,items:string[][],selected?:string|number|null}){
+ return <div className="quiz-check-grid quiz-radio-grid">{items.map(([value,label])=><label className="quiz-check" key={value}><input type="radio" name={name} value={value} defaultChecked={String(selected??'')===value}/><span>{label}</span></label>)}</div>
 }
 
 export default async function Onboarding({searchParams}:{searchParams:Promise<{error?:string}>}){
@@ -75,23 +76,28 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
  const s=await createClient()
  const {data:{user}}=await s.auth.getUser()
  if(!user)redirect('/login?next='+encodeURIComponent('/onboarding'))
+ type ScentProfile={scent_loved_notes:string[]|null;scent_avoided_notes:string[]|null;scent_sweetness:number|null;scent_projection:number|null;scent_longevity:number|null;scent_max_price:number|null;scent_occasions:string[]|null;scent_vibes:string[]|null;scent_presentations:string[]|null;scent_profile_completed_at:string|null}
+ let saved:ScentProfile|null=null,loadError=false
+ try{const {data,error}=await s.from('profiles').select('scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at').eq('id',user.id).maybeSingle();if(error)loadError=true;else saved=data as ScentProfile|null}catch{loadError=true}
+ const loved=saved?.scent_loved_notes||[],familyKeys=new Set(families.map(x=>x.toLocaleLowerCase())),savedFamilies=loved.filter(x=>familyKeys.has(x.toLocaleLowerCase())),savedNotes=loved.filter(x=>!familyKeys.has(x.toLocaleLowerCase())),completed=!!saved?.scent_profile_completed_at
  return <main className="quiz-page"><section className="quiz-shell">
   <p className="eyebrow">YOUR SCENTMARKED PROFILE</p>
-  <h1>What smells like you?</h1>
-  <p className="quiz-intro">Check the answers that fit you best. We’ll use them to personalize your first scent matches. You can change these preferences later.</p>
+  <h1>{completed?'Edit your scent profile':'What smells like you?'}</h1>
+  <p className="quiz-intro">{completed?'Update any answers that have changed. Your saved preferences will continue shaping your ScentMarked matches.':'Check the answers that fit you best. We’ll use them to personalize your first scent matches. You can change these preferences later.'}</p>
+  {loadError&&<div className="notice error" role="alert">Your saved scent profile could not be loaded. You can still choose new preferences, but saving will replace your previous questionnaire answers.</div>}
   {p.error==='save-failed'&&<div className="notice error" role="alert">Your scent profile could not be saved. Please try again.</div>}
   <form action={saveProfile} className="quiz-form">
-   <fieldset><legend>1. Which scent families are you drawn to?</legend><p>Choose as many as you like.</p><Checks name="families" items={families}/></fieldset>
-   <fieldset><legend>2. Which notes do you love?</legend><Checks name="lovedNotes" items={notes}/></fieldset>
-   <fieldset><legend>3. Which notes do you usually avoid?</legend><p>Leave everything unchecked if you’re not sure yet.</p><Checks name="avoidedNotes" items={notes}/></fieldset>
-   <fieldset><legend>4. What fragrance presentation do you enjoy?</legend><p>Choose one or more. Fragrance has no rules—this only helps tune your matches.</p><Checks name="presentations" items={presentations}/></fieldset>
-   <fieldset><legend>5. When do you usually wear fragrance?</legend><p>Check every occasion that fits.</p><Checks name="occasions" items={occasions}/></fieldset>
-   <fieldset><legend>6. What fragrance vibes feel most like you?</legend><p>Choose all that sound good to you.</p><Checks name="vibes" items={vibes}/></fieldset>
-   <fieldset><legend>7. How sweet do you like your fragrances?</legend><Radios name="sweetness" items={traitOptions.sweetness}/></fieldset>
-   <fieldset><legend>8. How much projection do you like?</legend><Radios name="projection" items={traitOptions.projection}/></fieldset>
-   <fieldset><legend>9. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity}/></fieldset>
-   <fieldset><legend>10. What do you usually want to spend?</legend><Radios name="budget" items={budgets}/></fieldset>
-   <div className="quiz-actions"><button type="submit">Save & Find My Matches</button><a href="/matches">Skip for now</a></div>
+   <fieldset><legend>1. Which scent families are you drawn to?</legend><p>Choose as many as you like.</p><Checks name="families" items={families} selected={savedFamilies}/></fieldset>
+   <fieldset><legend>2. Which notes do you love?</legend><Checks name="lovedNotes" items={notes} selected={savedNotes}/></fieldset>
+   <fieldset><legend>3. Which notes do you usually avoid?</legend><p>Leave everything unchecked if you’re not sure yet.</p><Checks name="avoidedNotes" items={notes} selected={saved?.scent_avoided_notes||[]}/></fieldset>
+   <fieldset><legend>4. What fragrance presentation do you enjoy?</legend><p>Choose one or more. Fragrance has no rules—this only helps tune your matches.</p><Checks name="presentations" items={presentations} selected={saved?.scent_presentations||[]}/></fieldset>
+   <fieldset><legend>5. When do you usually wear fragrance?</legend><p>Check every occasion that fits.</p><Checks name="occasions" items={occasions} selected={saved?.scent_occasions||[]}/></fieldset>
+   <fieldset><legend>6. What fragrance vibes feel most like you?</legend><p>Choose all that sound good to you.</p><Checks name="vibes" items={vibes} selected={saved?.scent_vibes||[]}/></fieldset>
+   <fieldset><legend>7. How sweet do you like your fragrances?</legend><Radios name="sweetness" items={traitOptions.sweetness} selected={saved?.scent_sweetness}/></fieldset>
+   <fieldset><legend>8. How much projection do you like?</legend><Radios name="projection" items={traitOptions.projection} selected={saved?.scent_projection}/></fieldset>
+   <fieldset><legend>9. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity} selected={saved?.scent_longevity}/></fieldset>
+   <fieldset><legend>10. What do you usually want to spend?</legend><Radios name="budget" items={budgets} selected={saved?.scent_max_price}/></fieldset>
+   <div className="quiz-actions"><button type="submit">{completed?'Update & Find My Matches':'Save & Find My Matches'}</button><a href="/matches">{completed?'Cancel':'Skip for now'}</a></div>
   </form>
  </section></main>
 }
