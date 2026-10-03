@@ -48,13 +48,19 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const delivered=ds.filter((x:any)=>['delivered','opened','clicked'].includes(x.status)).length
   const opened=ds.filter((x:any)=>['opened','clicked'].includes(x.status)).length
   const clicked=ds.filter((x:any)=>x.status==='clicked').length
+  const bounced=ds.filter((x:any)=>x.status==='bounced').length
+  const failed=ds.filter((x:any)=>x.status==='failed').length
+  const unsubscribed=ds.filter((x:any)=>x.status==='unsubscribed').length
+  const attempted=ds.filter((x:any)=>x.status!=='queued').length
+  const campaignCount=campaigns?.length||0
+  const completedCampaigns=(campaigns||[]).filter((x:any)=>x.status==='sent').length
   const pct=(n:number,d:number)=>d?Math.round(n/d*1000)/10:0
 
   return <main><section className="admin-page">
-    <div className="admin-heading"><div><p className="eyebrow">ADMIN · EMAIL</p><h1>Email Marketing</h1><p>Create ScentMarked campaigns and monitor engagement. Sending stays locked until an email provider is connected.</p></div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><Link className="button ghost" href="/admin">Back to Admin</Link><Link className="button ghost" href="/admin/crm">CRM Contacts</Link></div></div>
+    <div className="admin-heading"><div><p className="eyebrow">ADMIN · EMAIL</p><h1>Email Marketing</h1><p>Create ScentMarked campaigns, send through the configured provider, and monitor engagement.</p></div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><Link className="button ghost" href="/admin">Back to Admin</Link><Link className="button ghost" href="/admin/crm">CRM Contacts</Link></div></div>
     {p.error&&<div className="notice error">{p.error}</div>}
     {error&&<div className="notice error">Campaign data could not be loaded. Apply the CRM/email migration before using this page.</div>}
-    <div className="notice"><strong>Sending disabled:</strong> Drafting and audience management are available, but no campaign can send until provider credentials, unsubscribe processing, and delivery webhooks are configured.</div>
+    <div className="notice"><strong>Provider-gated sending:</strong> Campaigns can send only when the Resend environment variables are configured. Consent checks, unsubscribe processing, and verified webhook handling remain enforced.</div>
 
     <div className="admin-grid">
       <article className="admin-card"><p className="eyebrow">EMAILABLE</p><h2>{emailable||0}</h2><p>Active contacts with consent</p></article>
@@ -62,6 +68,19 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
       <article className="admin-card"><p className="eyebrow">OPENED</p><h2>{opened}</h2><p>{pct(opened,delivered)}% of delivered</p></article>
       <article className="admin-card"><p className="eyebrow">CLICKED</p><h2>{clicked}</h2><p>{pct(clicked,delivered)}% of delivered</p></article>
     </div>
+
+    <article className="admin-card"><p className="eyebrow">EMAIL HEALTH</p><h2>Overall performance</h2>
+      <div className="admin-grid">
+        <div><strong>{pct(delivered,attempted)}%</strong><p>Delivery rate · {delivered}/{attempted}</p></div>
+        <div><strong>{pct(opened,delivered)}%</strong><p>Open rate · {opened}/{delivered}</p></div>
+        <div><strong>{pct(clicked,delivered)}%</strong><p>Click rate · {clicked}/{delivered}</p></div>
+        <div><strong>{pct(bounced,attempted)}%</strong><p>Bounce rate · {bounced}/{attempted}</p></div>
+        <div><strong>{failed}</strong><p>Failed deliveries</p></div>
+        <div><strong>{unsubscribed}</strong><p>Unsubscribes</p></div>
+        <div><strong>{campaignCount}</strong><p>Recent campaigns</p></div>
+        <div><strong>{completedCampaigns}</strong><p>Completed campaigns</p></div>
+      </div>
+    </article>
 
     <article className="admin-card"><p className="eyebrow">NEW CAMPAIGN</p><h2>Create a draft</h2><form action={createCampaign} style={{display:'grid',gap:12}}><label>Campaign name<input name="name" maxLength={120} placeholder="October Gourmand Finds" required/></label><label>Email subject<input name="subject" maxLength={200} placeholder="Sweet new scents picked for you" required/></label><label>Audience segment<select name="segment_id" defaultValue=""><option value="">Choose later</option>{segments?.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><div><button type="submit">Create draft</button></div></form></article>
 
