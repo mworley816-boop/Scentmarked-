@@ -259,3 +259,43 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Visually hidden, but available to assistive technology. */
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+
+
+/* Scent Profile onboarding quiz */
+.quiz-page{min-height:100vh;padding:54px 24px 80px;background:linear-gradient(180deg,#fffaf6 0%,#f7eee6 100%)}
+.quiz-shell{max-width:920px;margin:0 auto}
+.quiz-shell>h1{max-width:720px;margin:6px 0 10px;font-size:clamp(36px,6vw,64px);line-height:.98}
+.quiz-intro{max-width:680px;margin:0 0 28px;color:var(--muted);font-size:13px;line-height:1.65}
+.quiz-form{display:grid;gap:16px}
+.quiz-form fieldset{min-width:0;margin:0;padding:22px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.88);box-shadow:0 8px 28px rgba(67,45,31,.035)}
+.quiz-form legend{padding:0 8px 0 0;font-size:17px;font-weight:750;color:var(--ink)}
+.quiz-form fieldset>p{margin:2px 0 14px;color:var(--muted);font-size:10px;line-height:1.45}
+.quiz-check-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.quiz-check{position:relative;display:block;min-width:0;cursor:pointer}
+.quiz-check input{position:absolute;inline-size:1px;block-size:1px;opacity:0;pointer-events:none}
+.quiz-check span{display:flex;align-items:center;justify-content:center;min-height:48px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);font-size:11px;font-weight:650;line-height:1.25;text-align:center;transition:border-color .16s ease,background-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.quiz-check span::before{content:'✓';display:inline-flex;align-items:center;justify-content:center;width:0;margin-right:0;opacity:0;overflow:hidden;font-size:11px;transition:width .16s ease,margin-right .16s ease,opacity .16s ease}
+.quiz-check:hover span{border-color:#b48b6d;transform:translateY(-1px)}
+.quiz-check input:checked+span{border-color:#a77a59;background:#f3e5d8;box-shadow:inset 0 0 0 1px #a77a59}
+.quiz-check input:checked+span::before{width:14px;margin-right:4px;opacity:1}
+.quiz-check input:focus-visible+span{outline:3px solid var(--gold);outline-offset:3px}
+.quiz-radio-grid .quiz-check span{min-height:52px}
+.quiz-actions{display:flex;align-items:center;gap:18px;padding:10px 2px}
+.quiz-actions button{min-height:48px;padding:0 22px;border:1px solid var(--ink);border-radius:999px;background:var(--ink);color:#fff;font:inherit;font-size:11px;font-weight:750;cursor:pointer}
+.quiz-actions button:hover{opacity:.9}
+.quiz-actions button:focus-visible,.quiz-actions a:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.quiz-actions a{color:var(--muted);font-size:10px;font-weight:650;text-underline-offset:3px}
+@media(max-width:800px){.quiz-check-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){
+ .quiz-page{padding:32px 16px calc(92px + env(safe-area-inset-bottom))}
+ .quiz-shell>h1{font-size:clamp(36px,12vw,50px)}
+ .quiz-form{gap:12px}
+ .quiz-form fieldset{padding:18px 14px;border-radius:14px}
+ .quiz-form legend{font-size:15px}
+ .quiz-check-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .quiz-check span{min-height:52px;padding:8px;font-size:10px}
+ .quiz-actions{position:sticky;bottom:calc(62px + env(safe-area-inset-bottom));z-index:10;flex-direction:column;gap:9px;padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,250,246,.96);box-shadow:0 10px 30px rgba(67,45,31,.12);backdrop-filter:blur(8px)}
+ .quiz-actions button{width:100%}
+}
+@media(max-width:360px){.quiz-check-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.quiz-check span,.quiz-check span::before{transition:none}}
