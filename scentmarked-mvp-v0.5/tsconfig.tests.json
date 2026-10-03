@@ -33,7 +33,8 @@
     "lib/match-page-helpers.ts",
     "lib/match-scoring.ts",
     "lib/scent-profile.ts",
-    "lib/scent-relationships.ts"
+    "lib/scent-relationships.ts",
+    "lib/supabase/config.ts"
   ],
   "exclude": [
     "node_modules"
