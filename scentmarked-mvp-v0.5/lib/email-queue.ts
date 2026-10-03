@@ -17,6 +17,8 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string){
   if(deliveryError)throw new Error('Queued deliveries could not be loaded.')
 
   const provider=getEmailProvider()
+  const {error:startError}=await s.rpc('start_email_campaign',{p_campaign_id:campaignId})
+  if(startError)throw new Error('Campaign could not start.')
   let sent=0,skipped=0,failed=0
 
   for(const row of rows||[]){
@@ -54,5 +56,10 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string){
     }
   }
 
+  const {error:finishError}=await s.rpc('finish_email_campaign',{
+    p_campaign_id:campaignId,
+    p_has_failures:failed>0
+  })
+  if(finishError)throw new Error('Campaign finished sending but its final status could not be saved.')
   return {sent,skipped,failed}
 }
