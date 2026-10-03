@@ -91,12 +91,27 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
  try{const {data,error}=await s.from('profiles').select('scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at,scent_favorite_perfume_ids').eq('id',user.id).maybeSingle();if(error)loadError=true;else saved=data as ScentProfile|null}catch{loadError=true}
  const savedFavoriteIds=saved?.scent_favorite_perfume_ids||[]
  const [{data:catalogFavorites},{data:savedFavoriteRows}]=await Promise.all([
-  s.from('perfumes').select('id,name,brands(name)').eq('status','published').order('name').limit(24),
-  savedFavoriteIds.length?s.from('perfumes').select('id,name,brands(name)').in('id',savedFavoriteIds):Promise.resolve({data:[] as any[]})
+  s.from('perfumes').select('id,name,brands(name)').eq('status','published').order('name').limit(120),
+  savedFavoriteIds.length?s.from('perfumes').select('id,name,brands(name)').eq('status','published').in('id',savedFavoriteIds):Promise.resolve({data:[] as any[]})
  ])
  const favoriteMap=new Map<string,any>()
  for(const perfume of savedFavoriteRows||[])favoriteMap.set(String(perfume.id),perfume)
- for(const perfume of catalogFavorites||[])if(favoriteMap.size<24&&!favoriteMap.has(String(perfume.id)))favoriteMap.set(String(perfume.id),perfume)
+ const brandBuckets=new Map<string,any[]>()
+ for(const perfume of catalogFavorites||[]){
+  const brand=String((perfume as any).brands?.name||'Other')
+  const bucket=brandBuckets.get(brand)||[]
+  bucket.push(perfume);brandBuckets.set(brand,bucket)
+ }
+ const buckets=[...brandBuckets.values()]
+ let round=0
+ while(favoriteMap.size<24&&buckets.some(bucket=>round<bucket.length)){
+  for(const bucket of buckets){
+   const perfume=bucket[round]
+   if(perfume&&!favoriteMap.has(String(perfume.id)))favoriteMap.set(String(perfume.id),perfume)
+   if(favoriteMap.size>=24)break
+  }
+  round+=1
+ }
  const favoriteOptions=[...favoriteMap.values()]
  const loved=saved?.scent_loved_notes||[],familyKeys=new Set(families.map(x=>x.toLocaleLowerCase())),savedFamilies=loved.filter(x=>familyKeys.has(x.toLocaleLowerCase())),savedNotes=loved.filter(x=>!familyKeys.has(x.toLocaleLowerCase())),completed=!!saved?.scent_profile_completed_at
  return <main className="quiz-page"><section className="quiz-shell">
