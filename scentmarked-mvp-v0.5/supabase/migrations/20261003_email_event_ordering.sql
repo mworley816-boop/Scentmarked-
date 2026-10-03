@@ -36,8 +36,11 @@ begin
   if p_provider_event_id is not null and v_inserted=0 then return; end if;
 
   v_next_status:=case
-    when p_event_type in ('bounced','complained','failed','unsubscribed') then p_event_type
-    when v_current_status in ('bounced','complained','failed','unsubscribed') then v_current_status
+    when v_current_status in ('complained','unsubscribed') then v_current_status
+    when p_event_type in ('complained','unsubscribed') then p_event_type
+    when v_current_status='bounced' and p_event_type='failed' then v_current_status
+    when p_event_type in ('bounced','failed') then p_event_type
+    when v_current_status in ('bounced','failed') then v_current_status
     when p_event_type='clicked' then 'clicked'
     when p_event_type='opened' and v_current_status<>'clicked' then 'opened'
     when p_event_type='delivered' and v_current_status not in ('opened','clicked') then 'delivered'
