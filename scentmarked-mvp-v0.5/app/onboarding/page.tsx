@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import FavoritePerfumeChecks from '@/components/favorite-perfume-checks'
 import PresentationChecks from '@/components/presentation-checks'
 import NotePreferenceChecks from '@/components/note-preference-checks'
+import ScentProfileForm from '@/components/scent-profile-form'
 import { hasScentProfileRankingSignal } from '@/lib/scent-profile'
 
 export const metadata={title:'Build Your Scent Profile',robots:{index:false,follow:false}}
@@ -131,7 +132,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
   <p className="quiz-intro">{completed?'Update any answers that have changed. Your saved recommendation signals will continue shaping your ScentMarked matches.':'Check the answers that fit you best. You can leave individual questions unanswered, but saving a completed Scent Profile requires at least one preference that can affect recommendations. “No preference” answers do not count as ranking signals. You can change these preferences later.'}</p>
   {loadError&&<div className="notice error" role="alert">Your saved scent profile could not be loaded. You can still choose new preferences, but saving will replace your previous questionnaire answers.</div>}
   {p.error==='save-failed'&&<div className="notice error" role="alert">Your scent profile could not be saved. Please try again.</div>}{p.error==='choose-preference'&&<div className="notice error" role="alert">Choose at least one recommendation preference before saving. You can still leave any individual question unanswered, or use “Skip for now” instead.</div>}
-  <form action={saveProfile} className="quiz-form">
+  <ScentProfileForm action={saveProfile}>
    <fieldset><legend>1. Which scent families are you drawn to?</legend><p>Choose as many as you like.</p><Checks name="families" items={families} selected={savedFamilies}/></fieldset>
    <NotePreferenceChecks items={notes} loved={savedNotes} avoided={saved?.scent_avoided_notes||[]}/>
    <fieldset><legend>4. What fragrance presentation do you enjoy?</legend><p>Choose one or more. Selecting “No preference” clears the other choices. Fragrance has no rules—this only helps tune your matches.</p><PresentationChecks items={presentations} selected={saved?.scent_presentations||[]}/></fieldset>
@@ -143,6 +144,6 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
    <fieldset><legend>10. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity} selected={saved?.scent_longevity}/></fieldset>
    <fieldset><legend>11. What do you usually want to spend?</legend><Radios name="budget" items={budgets} selected={saved?.scent_max_price}/></fieldset>
    <div className="quiz-actions"><button type="submit">{completed?'Update & Find My Matches':'Save & Find My Matches'}</button><a href="/matches">{completed?'Cancel':'Skip for now'}</a></div>
-  </form>
+  </ScentProfileForm>
  </section></main>
 }
