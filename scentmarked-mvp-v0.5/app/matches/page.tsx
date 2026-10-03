@@ -1,7 +1,5 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
 import PerfumeSearchPicker from '@/components/perfume-search-picker'
 import MatchEmptyState from '@/components/match-empty-state'
 import MatchResultCard from '@/components/match-result-card'
