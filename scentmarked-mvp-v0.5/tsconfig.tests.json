@@ -1,8 +1,21 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "incremental": false,
-    "noEmit": true
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "types": ["node"]
   },
   "include": [
     "tests/**/*.ts",
@@ -13,7 +26,5 @@
     "lib/scent-profile.ts",
     "lib/scent-relationships.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }
