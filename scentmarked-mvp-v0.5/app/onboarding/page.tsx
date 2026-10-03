@@ -104,7 +104,9 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
   const bucket=brandBuckets.get(brand)||[]
   bucket.push(perfume);brandBuckets.set(brand,bucket)
  }
- const buckets=[...brandBuckets.values()]
+ const buckets=[...brandBuckets.entries()]
+  .sort(([a],[b])=>a.localeCompare(b))
+  .map(([,bucket])=>bucket.sort((a,b)=>String(a.name).localeCompare(String(b.name))))
  let round=0
  while(favoriteMap.size<24&&buckets.some(bucket=>round<bucket.length)){
   for(const bucket of buckets){
