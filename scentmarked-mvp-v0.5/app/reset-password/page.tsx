@@ -13,20 +13,21 @@ async function updatePassword(formData:FormData){
  if(password.length<12)redirect('/reset-password?error=password-too-short')
  if(password!==confirm)redirect('/reset-password?error=password-mismatch')
  let updateFailed=false
+ let cookieStore:Awaited<ReturnType<typeof cookies>>|null=null
  try{
   const supabase=await createClient()
   const {data:{user},error:userError}=await supabase.auth.getUser()
-  const cookieStore=await cookies()
+  cookieStore=await cookies()
   const recoveryUserId=cookieStore.get('scent_password_recovery')?.value
   if(userError||!user||recoveryUserId!==user.id)redirect('/reset-password?error=session-expired')
   const {error}=await supabase.auth.updateUser({password})
   updateFailed=!!error
-  if(!updateFailed)cookieStore.delete('scent_password_recovery')
  }catch(error:any){
   if(error?.digest)throw error
   updateFailed=true
  }
  if(updateFailed)redirect('/reset-password?error=update-failed')
+ try{cookieStore?.delete('scent_password_recovery')}catch{}
  redirect('/login?message=password-updated')
 }
 
