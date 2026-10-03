@@ -5,8 +5,9 @@ import { useState } from 'react'
 type Props={items:string[];loved?:string[];avoided?:string[]}
 
 export default function NotePreferenceChecks({items,loved=[],avoided=[]}:Props){
- const [love,setLove]=useState(()=>new Set(loved.filter(x=>items.includes(x))))
- const [avoid,setAvoid]=useState(()=>new Set(avoided.filter(x=>items.includes(x))))
+ const initialAvoid=new Set(avoided.filter(x=>items.includes(x)))
+ const [avoid,setAvoid]=useState(()=>initialAvoid)
+ const [love,setLove]=useState(()=>new Set(loved.filter(x=>items.includes(x)&&!initialAvoid.has(x))))
  const toggle=(kind:'love'|'avoid',item:string,checked:boolean)=>{
   if(kind==='love'){
    setLove(current=>{const next=new Set(current);checked?next.add(item):next.delete(item);return next})
