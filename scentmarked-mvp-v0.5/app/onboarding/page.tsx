@@ -124,7 +124,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
  return <main className="quiz-page"><section className="quiz-shell">
   <p className="eyebrow">YOUR SCENTMARKED PROFILE</p>
   <h1>{completed?'Edit your scent profile':'What smells like you?'}</h1>
-  <p className="quiz-intro">{completed?'Update any answers that have changed. Your saved preferences will continue shaping your ScentMarked matches.':'Check the answers that fit you best. We’ll use them to personalize your first scent matches. You can change these preferences later.'}</p>
+  <p className="quiz-intro">{completed?'Update any answers that have changed. Your saved recommendation signals will continue shaping your ScentMarked matches.':'Check the answers that fit you best. You can leave individual questions unanswered, but saving a completed Scent Profile requires at least one preference that can affect recommendations. “No preference” answers do not count as ranking signals. You can change these preferences later.'}</p>
   {loadError&&<div className="notice error" role="alert">Your saved scent profile could not be loaded. You can still choose new preferences, but saving will replace your previous questionnaire answers.</div>}
   {p.error==='save-failed'&&<div className="notice error" role="alert">Your scent profile could not be saved. Please try again.</div>}{p.error==='choose-preference'&&<div className="notice error" role="alert">Choose at least one recommendation preference before saving. You can still leave any individual question unanswered, or use “Skip for now” instead.</div>}
   <form action={saveProfile} className="quiz-form">
