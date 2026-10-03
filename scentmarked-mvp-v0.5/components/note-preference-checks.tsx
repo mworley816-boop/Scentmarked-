@@ -17,5 +17,5 @@ export default function NotePreferenceChecks({items,loved=[],avoided=[]}:Props){
   }
  }
  const group=(kind:'love'|'avoid',chosen:Set<string>)=><div className="quiz-check-grid">{items.map(item=><label className="quiz-check" key={item}><input type="checkbox" name={kind==='love'?'lovedNotes':'avoidedNotes'} value={item} checked={chosen.has(item)} onChange={e=>toggle(kind,item,e.target.checked)}/><span>{item}</span></label>)}</div>
- return <>{group('love',love)}{group('avoid',avoid)}</>
+ return <><h3>Loved notes</h3>{group('love',love)}<h3>Avoided notes</h3><p>Leave these unchecked if you’re not sure yet.</p>{group('avoid',avoid)}</>
 }
