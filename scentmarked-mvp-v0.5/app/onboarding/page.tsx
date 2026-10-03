@@ -101,10 +101,12 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
   s.from('perfumes').select('id,name,brands(name)').eq('status','published').order('name'),
   savedFavoriteIds.length?s.from('perfumes').select('id,name,brands(name)').eq('status','published').in('id',savedFavoriteIds):Promise.resolve({data:[] as any[]})
  ])
- const favoriteMap=new Map<string,any>()
- for(const perfume of savedFavoriteRows||[])favoriteMap.set(String(perfume.id),perfume)
+ const savedFavoriteMap=new Map<string,any>()
+ for(const perfume of savedFavoriteRows||[])savedFavoriteMap.set(String(perfume.id),perfume)
+ const freshFavoriteMap=new Map<string,any>()
  const brandBuckets=new Map<string,any[]>()
  for(const perfume of catalogFavorites||[]){
+  if(savedFavoriteMap.has(String(perfume.id)))continue
   const brand=String((perfume as any).brands?.name||'Other')
   const bucket=brandBuckets.get(brand)||[]
   bucket.push(perfume);brandBuckets.set(brand,bucket)
@@ -113,15 +115,15 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
   .sort(([a],[b])=>a.localeCompare(b))
   .map(([,bucket])=>bucket.sort((a,b)=>String(a.name).localeCompare(String(b.name))))
  let round=0
- while(favoriteMap.size<24&&buckets.some(bucket=>round<bucket.length)){
+ while(freshFavoriteMap.size<24&&buckets.some(bucket=>round<bucket.length)){
   for(const bucket of buckets){
    const perfume=bucket[round]
-   if(perfume&&!favoriteMap.has(String(perfume.id)))favoriteMap.set(String(perfume.id),perfume)
-   if(favoriteMap.size>=24)break
+   if(perfume&&!freshFavoriteMap.has(String(perfume.id)))freshFavoriteMap.set(String(perfume.id),perfume)
+   if(freshFavoriteMap.size>=24)break
   }
   round+=1
  }
- const favoriteOptions=[...favoriteMap.values()]
+ const favoriteOptions=[...savedFavoriteMap.values(),...freshFavoriteMap.values()]
  const loved=saved?.scent_loved_notes||[],familyKeys=new Set(families.map(x=>x.toLocaleLowerCase())),savedFamilies=loved.filter(x=>familyKeys.has(x.toLocaleLowerCase())),savedNotes=loved.filter(x=>!familyKeys.has(x.toLocaleLowerCase())),completed=!!saved?.scent_profile_completed_at
  return <main className="quiz-page"><section className="quiz-shell">
   <p className="eyebrow">YOUR SCENTMARKED PROFILE</p>
