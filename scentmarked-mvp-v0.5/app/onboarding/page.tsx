@@ -98,7 +98,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
  try{const {data,error}=await s.from('profiles').select('scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at,scent_favorite_perfume_ids').eq('id',user.id).maybeSingle();if(error)loadError=true;else saved=data as ScentProfile|null}catch{loadError=true}
  const savedFavoriteIds=saved?.scent_favorite_perfume_ids||[]
  const [{data:catalogFavorites},{data:savedFavoriteRows}]=await Promise.all([
-  s.from('perfumes').select('id,name,brands(name)').eq('status','published').order('name').limit(120),
+  s.from('perfumes').select('id,name,brands(name)').eq('status','published').order('name'),
   savedFavoriteIds.length?s.from('perfumes').select('id,name,brands(name)').eq('status','published').in('id',savedFavoriteIds):Promise.resolve({data:[] as any[]})
  ])
  const favoriteMap=new Map<string,any>()
