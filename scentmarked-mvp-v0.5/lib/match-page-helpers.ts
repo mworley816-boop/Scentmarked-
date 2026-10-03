@@ -39,12 +39,12 @@ export function buildMatchCompareHref(candidateSlug:string,selectedSlug?:string)
 }
 
 
-type RecommendationCriteria={selectedSlug?:string;love:string[];avoid:string[];sweetness:number;projection:number;longevity:number;maxPrice:number}
+type RecommendationCriteria={selectedSlug?:string;love:string[];avoid:string[];sweetness:number;projection:number;longevity:number;maxPrice:number;presentations?:string[];favoritePerfumeIds?:string[]}
 
 const canonicalTerms=(terms:string[])=>[...new Set(terms.map(term=>term.trim().toLocaleLowerCase()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))
 
 export function buildRecommendationCriteriaKey(options:RecommendationCriteria){
- return [options.selectedSlug?.trim().toLocaleLowerCase()||'',canonicalTerms(options.love).join(','),canonicalTerms(options.avoid).join(','),options.sweetness||'',options.projection||'',options.longevity||'',options.maxPrice||''].join('|')
+ return [options.selectedSlug?.trim().toLocaleLowerCase()||'',canonicalTerms(options.love).join(','),canonicalTerms(options.avoid).join(','),options.sweetness||'',options.projection||'',options.longevity||'',options.maxPrice||'',canonicalTerms(options.presentations||[]).join(','),canonicalTerms(options.favoritePerfumeIds||[]).join(',')].join('|')
 }
 
 
