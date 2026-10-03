@@ -175,8 +175,8 @@ test('recommendation feedback uses a bounded ranking adjustment',()=>{
 })
 
 test('feedback can reorder close matches without changing their core scores',()=>{
- const lower={...buildMatchCandidate(perfume('lower',['Vanilla']),undefined,new Map(),2,{love:['Vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}),score:78}
- const higher={...buildMatchCandidate(perfume('higher',['Vanilla']),undefined,new Map(),2,{love:['Vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}),score:82}
+ const lower={...buildMatchCandidate(perfume({id:'lower',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,{love:['Vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}),score:78}
+ const higher={...buildMatchCandidate(perfume({id:'higher',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,{love:['Vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}),score:82}
  const ranked=rankMatchCandidates([higher,lower],12,{[higher.id]:'less_like_this',[lower.id]:'more_like_this'})
  assert.equal(ranked.matches[0].id,lower.id)
  assert.equal(lower.score,78)
