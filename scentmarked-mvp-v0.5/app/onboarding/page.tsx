@@ -60,6 +60,7 @@ async function saveProfile(formData:FormData){
  const rawBudget=String(formData.get('budget')||'0')
  const budget=/^\d+$/.test(rawBudget)?Number(rawBudget):0
  const sweetness=trait(formData,'sweetness'),projection=trait(formData,'projection'),longevity=trait(formData,'longevity')
+ const marketingConsent=formData.get('marketingConsent')==='yes'
  const hasRankingSignal=hasScentProfileRankingSignal({loved:resolvedLoved,avoided,favoriteIds,presentations:selectedPresentations,sweetness,projection,longevity,budget})
  if(!hasRankingSignal)redirect('/onboarding?error=choose-preference')
  let failed=false
@@ -80,6 +81,12 @@ async function saveProfile(formData:FormData){
   failed=!!error||!data
  }catch{failed=true}
  if(failed)redirect('/onboarding?error=save-failed')
+ try{
+  const now=new Date().toISOString()
+  if(marketingConsent){
+   await s.from('crm_contacts').update({marketing_consent:true,marketing_consented_at:now,status:'active',unsubscribed_at:null,updated_at:now}).eq('user_id',user.id).not('status','in','("bounced","suppressed")')
+  }
+ }catch{}
  redirect('/matches?profile=ready')
 }
 
@@ -145,6 +152,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
    <fieldset><legend>9. How much projection do you like?</legend><Radios name="projection" items={traitOptions.projection} selected={saved?.scent_projection}/></fieldset>
    <fieldset><legend>10. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity} selected={saved?.scent_longevity}/></fieldset>
    <fieldset><legend>11. What do you usually want to spend?</legend><Radios name="budget" items={budgets} selected={saved?.scent_max_price}/></fieldset>
+   <fieldset><legend>Stay in the scent loop?</legend><p>Optional. Get ScentMarked perfume finds, match updates and occasional news by email. You can unsubscribe anytime.</p><label className="quiz-check"><input type="checkbox" name="marketingConsent" value="yes"/><span>Yes, send me ScentMarked marketing emails.</span></label></fieldset>
    <div className="quiz-actions"><ScentProfileSubmit completed={completed}/><Link href="/matches">{completed?'Cancel':'Skip for now'}</Link></div>
   </ScentProfileForm>
  </section></main>
