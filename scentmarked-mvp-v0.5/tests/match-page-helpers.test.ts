@@ -70,10 +70,10 @@ test('compare links can start with only the recommendation candidate',()=>{
 test('match reasons prioritize relationship and preference evidence',()=>{
  const reasons=matchReasons({
   id:'p',name:'Perfume',slug:'perfume',perfume_notes:[],perfume_accords:[],
-  dnaScore:80,score:85,scoreWeights:{dna:.45,preferences:.35,wear:.2},
+  dnaScore:80,score:85,scoreWeights:{dna:.45,preferences:.35,wear:.2,favorites:0},
   shared:['Vanilla'],positionMatches:['Vanilla'],sharedAccords:['Gourmand'],usesAccords:true,
   confidence:'High',loved:['vanilla'],lovedAccords:['gourmand'],avoided:[],
-  preferenceScore:90,traitScore:90,sweet:5,proj:4,long:5,price:40,priceKnown:true,priceOk:true,
+  preferenceScore:90,traitScore:90,favoriteTasteScore:null,presentationMatched:false,sweet:5,proj:4,long:5,price:40,priceKnown:true,priceOk:true,
   relationship:{relationship_type:'possible_clone'}
  },true)
  assert.deepEqual(reasons,['Possible clone relationship','Matches vanilla','Shared DNA: Gourmand'])
@@ -82,10 +82,10 @@ test('match reasons prioritize relationship and preference evidence',()=>{
 test('preference-only reasons do not imply shared DNA with a baseline perfume',()=>{
  const reasons=matchReasons({
   id:'p',name:'Perfume',slug:'perfume',perfume_notes:[],perfume_accords:[],
-  dnaScore:0,score:90,scoreWeights:{dna:0,preferences:.65,wear:.35},
+  dnaScore:0,score:90,scoreWeights:{dna:0,preferences:.65,wear:.35,favorites:0},
   shared:['Vanilla'],positionMatches:['Vanilla'],sharedAccords:['Gourmand'],usesAccords:true,
   confidence:'Limited',loved:['vanilla'],lovedAccords:['gourmand'],avoided:[],
-  preferenceScore:90,traitScore:95,sweet:5,proj:4,long:5,price:0,priceKnown:false,priceOk:true
+  preferenceScore:90,traitScore:95,favoriteTasteScore:null,presentationMatched:false,sweet:5,proj:4,long:5,price:0,priceKnown:false,priceOk:true
  },false)
  assert.deepEqual(reasons,['Matches vanilla','Strong wear-profile fit'])
 })
@@ -116,4 +116,17 @@ test('recommendation history result ids preserve rank order while removing dupli
 
 test('recommendation history result ids respect the requested storage limit',()=>{
  assert.deepEqual(uniqueRecommendationResultIds(['a','b','c','d'],2),['a','b'])
+})
+
+
+test('recommendation history keys canonicalize presentation and favorite fragrance order',()=>{
+ const a=buildRecommendationCriteriaKey({...base,presentations:['Unisex / Gender-neutral','Feminine-leaning'],favoritePerfumeIds:['B','A']})
+ const b=buildRecommendationCriteriaKey({...base,presentations:[' feminine-leaning ','UNISEX / GENDER-NEUTRAL'],favoritePerfumeIds:['a','b','A']})
+ assert.equal(a,b)
+})
+
+test('recommendation history keys distinguish presentation and favorite fragrance changes',()=>{
+ const a=buildRecommendationCriteriaKey({...base,presentations:['Feminine-leaning'],favoritePerfumeIds:['a']})
+ assert.notEqual(a,buildRecommendationCriteriaKey({...base,presentations:['Unisex / Gender-neutral'],favoritePerfumeIds:['a']}))
+ assert.notEqual(a,buildRecommendationCriteriaKey({...base,presentations:['Feminine-leaning'],favoritePerfumeIds:['b']}))
 })
