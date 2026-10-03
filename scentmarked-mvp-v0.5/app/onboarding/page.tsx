@@ -82,7 +82,15 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
  type ScentProfile={scent_loved_notes:string[]|null;scent_avoided_notes:string[]|null;scent_sweetness:number|null;scent_projection:number|null;scent_longevity:number|null;scent_max_price:number|null;scent_occasions:string[]|null;scent_vibes:string[]|null;scent_presentations:string[]|null;scent_profile_completed_at:string|null;scent_favorite_perfume_ids:string[]|null}
  let saved:ScentProfile|null=null,loadError=false
  try{const {data,error}=await s.from('profiles').select('scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at,scent_favorite_perfume_ids').eq('id',user.id).maybeSingle();if(error)loadError=true;else saved=data as ScentProfile|null}catch{loadError=true}
- const {data:favoriteOptions}=await s.from('perfumes').select('id,name,brands(name)').eq('status','published').order('name').limit(24)
+ const savedFavoriteIds=saved?.scent_favorite_perfume_ids||[]
+ const [{data:catalogFavorites},{data:savedFavoriteRows}]=await Promise.all([
+  s.from('perfumes').select('id,name,brands(name)').eq('status','published').order('name').limit(24),
+  savedFavoriteIds.length?s.from('perfumes').select('id,name,brands(name)').in('id',savedFavoriteIds):Promise.resolve({data:[] as any[]})
+ ])
+ const favoriteMap=new Map<string,any>()
+ for(const perfume of savedFavoriteRows||[])favoriteMap.set(String(perfume.id),perfume)
+ for(const perfume of catalogFavorites||[])if(favoriteMap.size<24&&!favoriteMap.has(String(perfume.id)))favoriteMap.set(String(perfume.id),perfume)
+ const favoriteOptions=[...favoriteMap.values()]
  const loved=saved?.scent_loved_notes||[],familyKeys=new Set(families.map(x=>x.toLocaleLowerCase())),savedFamilies=loved.filter(x=>familyKeys.has(x.toLocaleLowerCase())),savedNotes=loved.filter(x=>!familyKeys.has(x.toLocaleLowerCase())),completed=!!saved?.scent_profile_completed_at
  return <main className="quiz-page"><section className="quiz-shell">
   <p className="eyebrow">YOUR SCENTMARKED PROFILE</p>
