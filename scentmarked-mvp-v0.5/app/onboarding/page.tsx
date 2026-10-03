@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 export const metadata={title:'Build Your Scent Profile',robots:{index:false,follow:false}}
 
 const families=['Gourmand','Fruity','Floral','Fresh','Citrus','Woody','Amber','Spicy','Musky','Aquatic','Green','Smoky']
+const presentations=['Feminine-leaning','Masculine-leaning','Unisex / Gender-neutral','No preference']
 const occasions=['Everyday','Work or School','Date Night','Going Out','Special Occasions','Cozy at Home','Vacation or Summer','Cold Weather']
 const vibes=['Cozy & Comforting','Sexy & Seductive','Clean & Polished','Playful & Sweet','Elegant & Sophisticated','Bold & Mysterious','Fresh & Energetic','Dark & Luxurious']
 const notes=['Vanilla','Marshmallow','Caramel','Strawberry','Cherry','Peach','Mango','Pear','Coconut','Chocolate','Coffee','Praline','Rose','Jasmine','Orange Blossom','Bergamot','Lemon','Sandalwood','Oud','Musk','Amber','Patchouli']
@@ -36,6 +37,7 @@ async function saveProfile(formData:FormData){
  const loved=[...checked(formData,'families',families),...checked(formData,'lovedNotes',notes)]
  const avoided=checked(formData,'avoidedNotes',notes)
  const selectedOccasions=checked(formData,'occasions',occasions)
+ const selectedPresentations=checked(formData,'presentations',presentations)
  const selectedVibes=checked(formData,'vibes',vibes)
  const avoidedKeys=new Set(avoided.map(x=>x.toLocaleLowerCase()))
  const resolvedLoved=loved.filter(x=>!avoidedKeys.has(x.toLocaleLowerCase()))
@@ -51,7 +53,9 @@ async function saveProfile(formData:FormData){
    scent_longevity:trait(formData,'longevity'),
    scent_max_price:Number.isSafeInteger(budget)&&budget>0?budget:null,
    scent_occasions:selectedOccasions,
-   scent_vibes:selectedVibes
+   scent_vibes:selectedVibes,
+   scent_presentations:selectedPresentations,
+   scent_profile_completed_at:new Date().toISOString()
   }).eq('id',user.id).select('id').maybeSingle()
   failed=!!error||!data
  }catch{failed=true}
@@ -80,12 +84,13 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
    <fieldset><legend>1. Which scent families are you drawn to?</legend><p>Choose as many as you like.</p><Checks name="families" items={families}/></fieldset>
    <fieldset><legend>2. Which notes do you love?</legend><Checks name="lovedNotes" items={notes}/></fieldset>
    <fieldset><legend>3. Which notes do you usually avoid?</legend><p>Leave everything unchecked if you’re not sure yet.</p><Checks name="avoidedNotes" items={notes}/></fieldset>
-   <fieldset><legend>4. When do you usually wear fragrance?</legend><p>Check every occasion that fits.</p><Checks name="occasions" items={occasions}/></fieldset>
-   <fieldset><legend>5. What fragrance vibes feel most like you?</legend><p>Choose all that sound good to you.</p><Checks name="vibes" items={vibes}/></fieldset>
-   <fieldset><legend>6. How sweet do you like your fragrances?</legend><Radios name="sweetness" items={traitOptions.sweetness}/></fieldset>
-   <fieldset><legend>7. How much projection do you like?</legend><Radios name="projection" items={traitOptions.projection}/></fieldset>
-   <fieldset><legend>8. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity}/></fieldset>
-   <fieldset><legend>9. What do you usually want to spend?</legend><Radios name="budget" items={budgets}/></fieldset>
+   <fieldset><legend>4. What fragrance presentation do you enjoy?</legend><p>Choose one or more. Fragrance has no rules—this only helps tune your matches.</p><Checks name="presentations" items={presentations}/></fieldset>
+   <fieldset><legend>5. When do you usually wear fragrance?</legend><p>Check every occasion that fits.</p><Checks name="occasions" items={occasions}/></fieldset>
+   <fieldset><legend>6. What fragrance vibes feel most like you?</legend><p>Choose all that sound good to you.</p><Checks name="vibes" items={vibes}/></fieldset>
+   <fieldset><legend>7. How sweet do you like your fragrances?</legend><Radios name="sweetness" items={traitOptions.sweetness}/></fieldset>
+   <fieldset><legend>8. How much projection do you like?</legend><Radios name="projection" items={traitOptions.projection}/></fieldset>
+   <fieldset><legend>9. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity}/></fieldset>
+   <fieldset><legend>10. What do you usually want to spend?</legend><Radios name="budget" items={budgets}/></fieldset>
    <div className="quiz-actions"><button type="submit">Save & Find My Matches</button><a href="/matches">Skip for now</a></div>
   </form>
  </section></main>
