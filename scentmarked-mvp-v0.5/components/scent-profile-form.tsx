@@ -1,12 +1,13 @@
 'use client'
 
-import { FormEvent, ReactNode, useState } from 'react'
+import { FormEvent, ReactNode, useRef, useState } from 'react'
 import { hasScentProfileRankingSignal } from '@/lib/scent-profile'
 
 type Props={children:ReactNode;action:(formData:FormData)=>void|Promise<void>}
 
 export default function ScentProfileForm({children,action}:Props){
  const [error,setError]=useState('')
+ const errorRef=useRef<HTMLDivElement>(null)
  const submit=(event:FormEvent<HTMLFormElement>)=>{
   const form=event.currentTarget
   const data=new FormData(form)
@@ -23,11 +24,11 @@ export default function ScentProfileForm({children,action}:Props){
    longevity:numberOrNull('longevity'),
    budget
   })
-  if(!hasSignal){event.preventDefault();setError('Choose at least one recommendation preference before saving, or use “Skip for now.”');form.querySelector('input')?.focus();return}
+  if(!hasSignal){event.preventDefault();setError('Choose at least one recommendation preference before saving, or use “Skip for now.”');requestAnimationFrame(()=>errorRef.current?.focus());return}
   setError('')
  }
  return <form action={action} className="quiz-form" onSubmit={submit}>
-  {error&&<div className="notice error" role="alert">{error}</div>}
+  {error&&<div ref={errorRef} className="notice error" role="alert" tabIndex={-1}>{error}</div>}
   {children}
  </form>
 }
