@@ -54,6 +54,11 @@ export default async function Segments({searchParams}:{searchParams:Promise<{err
   const p=await searchParams
   const s=await requireAdmin()
   const {data,error}=await s.from('crm_segments').select('id,name,description,rules,is_active,created_at,updated_at').order('name')
+  const audienceCounts=new Map<number,number>()
+  await Promise.all((data||[]).filter((x:any)=>x.is_active).map(async(x:any)=>{
+    const {data:count}=await s.rpc('count_email_segment_audience',{p_segment_id:x.id})
+    audienceCounts.set(x.id,Number(count)||0)
+  }))
 
   return <main><section className="admin-page">
     <div className="admin-heading"><div><p className="eyebrow">ADMIN · CRM</p><h1>Audience Segments</h1><p>Build reusable audiences from email consent and ScentMarked taste signals.</p></div><Link className="button ghost" href="/admin/email">Back to Email</Link></div>
@@ -70,6 +75,6 @@ export default async function Segments({searchParams}:{searchParams:Promise<{err
       </form>
     </article>
 
-    {!data?.length?<div className="empty-state"><h2>No audience segments yet.</h2></div>:<div className="admin-list">{data.map((x:any)=><article className="admin-card" key={x.id}><div className="admin-heading"><div><p className="eyebrow">{x.is_active?'ACTIVE':'INACTIVE'}</p><h2>{x.name}</h2>{x.description&&<p>{x.description}</p>}<p><strong>Audience:</strong> {ruleLabel(x.rules)}</p><small>Consent required · Created {new Date(x.created_at).toLocaleDateString()}</small></div><form action={toggleSegment}><input type="hidden" name="id" value={x.id}/><input type="hidden" name="active" value={String(!x.is_active)}/><button className="button ghost" type="submit">{x.is_active?'Deactivate':'Activate'}</button></form></div></article>)}</div>}
+    {!data?.length?<div className="empty-state"><h2>No audience segments yet.</h2></div>:<div className="admin-list">{data.map((x:any)=><article className="admin-card" key={x.id}><div className="admin-heading"><div><p className="eyebrow">{x.is_active?'ACTIVE':'INACTIVE'}</p><h2>{x.name}</h2>{x.description&&<p>{x.description}</p>}<p><strong>Audience:</strong> {ruleLabel(x.rules)}</p><p><strong>Current eligible audience:</strong> {x.is_active?(audienceCounts.get(x.id)||0):'Inactive'}</p><small>Consent required · Created {new Date(x.created_at).toLocaleDateString()}</small></div><form action={toggleSegment}><input type="hidden" name="id" value={x.id}/><input type="hidden" name="active" value={String(!x.is_active)}/><button className="button ghost" type="submit">{x.is_active?'Deactivate':'Activate'}</button></form></div></article>)}</div>}
   </section></main>
 }
