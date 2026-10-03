@@ -7,6 +7,8 @@ export function matchReasons(m:MatchCandidate,withBaseline:boolean){
  if(m.loved?.length)reasons.push('Matches '+m.loved.slice(0,3).join(', '))
  if(withBaseline&&m.sharedAccords?.length)reasons.push('Shared DNA: '+m.sharedAccords.slice(0,3).join(', '))
  if(withBaseline&&m.shared?.length)reasons.push('Shared notes: '+m.shared.slice(0,3).join(', '))
+ if(m.favoriteTasteScore!=null&&m.favoriteTasteScore>=45)reasons.push('Similar to your saved favorites')
+ if(m.presentationMatched)reasons.push('Matches your fragrance presentation preference')
  if(m.traitScore!=null&&m.traitScore>=70)reasons.push('Strong wear-profile fit')
  return reasons.slice(0,3)
 }
