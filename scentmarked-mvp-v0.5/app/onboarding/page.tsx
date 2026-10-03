@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import FavoritePerfumeChecks from '@/components/favorite-perfume-checks'
 
 export const metadata={title:'Build Your Scent Profile',robots:{index:false,follow:false}}
 
@@ -96,7 +97,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
    <fieldset><legend>4. What fragrance presentation do you enjoy?</legend><p>Choose one or more. Fragrance has no rules—this only helps tune your matches.</p><Checks name="presentations" items={presentations} selected={saved?.scent_presentations||[]}/></fieldset>
    <fieldset><legend>5. When do you usually wear fragrance?</legend><p>Check every occasion that fits.</p><Checks name="occasions" items={occasions} selected={saved?.scent_occasions||[]}/></fieldset>
    <fieldset><legend>6. What fragrance vibes feel most like you?</legend><p>Choose all that sound good to you.</p><Checks name="vibes" items={vibes} selected={saved?.scent_vibes||[]}/></fieldset>
-   <fieldset><legend>7. Which fragrances do you already love?</legend><p>Check up to 8. This helps ScentMarked learn your taste from real fragrances. Leave this blank if none of these are favorites yet.</p><div className="quiz-check-grid">{(favoriteOptions||[]).map((perfume:any)=><label className="quiz-check" key={perfume.id}><input type="checkbox" name="favoritePerfumes" value={perfume.id} defaultChecked={(saved?.scent_favorite_perfume_ids||[]).includes(perfume.id)}/><span>{perfume.brands?.name?perfume.brands.name+' · ':''}{perfume.name}</span></label>)}</div></fieldset>
+   <fieldset><legend>7. Which fragrances do you already love?</legend><p>Check up to 8. This helps ScentMarked learn your taste from real fragrances. Leave this blank if none of these are favorites yet.</p><FavoritePerfumeChecks items={(favoriteOptions||[]).map((perfume:any)=>({id:perfume.id,name:perfume.name,brand:perfume.brands?.name||null}))} selected={saved?.scent_favorite_perfume_ids||[]}/></fieldset>
    <fieldset><legend>8. How sweet do you like your fragrances?</legend><Radios name="sweetness" items={traitOptions.sweetness} selected={saved?.scent_sweetness}/></fieldset>
    <fieldset><legend>9. How much projection do you like?</legend><Radios name="projection" items={traitOptions.projection} selected={saved?.scent_projection}/></fieldset>
    <fieldset><legend>10. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity} selected={saved?.scent_longevity}/></fieldset>
