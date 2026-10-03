@@ -48,15 +48,16 @@ export async function signup(formData:FormData){
  const password=String(formData.get('password')||'')
  const displayName=String(formData.get('display_name')||'').trim().slice(0,80)
  const next=safeAuthNext(formData.get('next'))
+ const onboarding='/onboarding'
  if(!email||!password)redirect(loginUrl('error','credentials-required',next))
  if(!validEmail(email))redirect(loginUrl('error','invalid-email',next))
  if(password.length<12)redirect(loginUrl('error','password-too-short',next))
  try{
   const supabase=await createClient()
   const origin=siteUrl
-  const {data,error}=await supabase.auth.signUp({email,password,options:{data:{display_name:displayName},emailRedirectTo:`${origin}/auth/callback?next=${encodeURIComponent(next)}`}})
+  const {data,error}=await supabase.auth.signUp({email,password,options:{data:{display_name:displayName},emailRedirectTo:`${origin}/auth/callback?next=${encodeURIComponent(onboarding)}`}})
   if(error)redirect(loginUrl('error','signup-failed',next))
-  if(data.session)redirect(next)
+  if(data.session)redirect(onboarding)
  }catch(error:any){
   if(error?.digest)throw error
   redirect(loginUrl('error','signup-unavailable',next))
