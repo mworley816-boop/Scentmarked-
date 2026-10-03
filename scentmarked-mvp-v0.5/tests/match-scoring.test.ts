@@ -120,6 +120,24 @@ test('selected-perfume recommendations normalize DNA preference and wear weights
  assert.ok(candidate.scoreWeights.wear>0)
 })
 
+test('saved favorite similarity contributes a normalized scoring weight',()=>{
+ const favorite=perfume({id:'favorite',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
+ const candidate=buildMatchCandidate(perfume({id:'candidate',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map([['Vanilla',2]]),2,{love:[],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0,favoritePerfumes:[favorite]})
+ const total=candidate.scoreWeights.dna+candidate.scoreWeights.preferences+candidate.scoreWeights.wear+candidate.scoreWeights.favorites
+ assert.ok(candidate.favoriteTasteScore!=null)
+ assert.ok(candidate.scoreWeights.favorites>0)
+ assert.ok(Math.abs(total-1)<1e-10)
+})
+
+test('matching presentation adds four points but never exceeds 100',()=>{
+ const prefs={love:['vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0,presentations:['Feminine-leaning']}
+ const matching=buildMatchCandidate(perfume({id:'matching',gender_marketing:'Women',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,prefs)
+ const neutral=buildMatchCandidate(perfume({id:'neutral',gender_marketing:'Men',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,prefs)
+ assert.equal(matching.presentationMatched,true)
+ assert.equal(neutral.presentationMatched,false)
+ assert.equal(matching.score,Math.min(100,neutral.score+4))
+})
+
 test('selected perfume uses DNA as the full score when no other preference signal exists',()=>{
  const selected=perfume({id:'selected',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
  const p=perfume({id:'candidate',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
