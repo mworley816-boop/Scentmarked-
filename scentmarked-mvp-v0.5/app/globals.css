@@ -299,3 +299,5 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 }
 @media(max-width:360px){.quiz-check-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.quiz-check span,.quiz-check span::before{transition:none}}
+
+.quiz-selection-count{margin:0 0 10px!important;font-size:10px!important;color:var(--muted)}.quiz-selection-count strong{color:var(--ink)}.quiz-check-disabled{cursor:not-allowed}.quiz-check-disabled span{opacity:.48;background:#f8f5f2}.quiz-check-disabled:hover span{transform:none;border-color:var(--line)}.quiz-limit-note{margin:10px 0 0!important;padding:8px 10px;border-radius:8px;background:#fff7ec;color:var(--muted);font-size:10px!important}
