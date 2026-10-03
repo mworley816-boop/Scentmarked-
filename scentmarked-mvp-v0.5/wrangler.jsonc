@@ -9,7 +9,8 @@
     "NEXT_PUBLIC_SUPABASE_URL": "https://qnlqdkctfmfagsvbwiis.supabase.co",
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_DhzPVepdeQt-1Xt00CBOsw_cl30TcYp",
     // Add NEXT_PUBLIC_SITE_URL here when the custom Scentmarked domain is connected.
-    // Until then, lib/site.ts intentionally uses the production workers.dev fallback.
+    // Example: "NEXT_PUBLIC_SITE_URL": "https://www.example.com"
+    // Use the site origin only (no path). Until then, lib/site.ts uses the workers.dev fallback.
   },
 
   "assets": {
