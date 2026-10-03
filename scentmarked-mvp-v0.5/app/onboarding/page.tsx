@@ -40,7 +40,14 @@ async function saveProfile(formData:FormData){
  const selectedOccasions=checked(formData,'occasions',occasions)
  const selectedPresentations=checked(formData,'presentations',presentations)
  const selectedVibes=checked(formData,'vibes',vibes)
- const favoriteIds=formData.getAll('favoritePerfumes').map(String).filter(x=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x)).slice(0,8)
+ const submittedFavoriteIds=[...new Set(formData.getAll('favoritePerfumes').map(String).filter(x=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x)))].slice(0,8)
+ let favoriteIds:string[]=[]
+ if(submittedFavoriteIds.length){
+  const {data:publishedFavorites,error:favoriteError}=await s.from('perfumes').select('id').eq('status','published').in('id',submittedFavoriteIds)
+  if(favoriteError)redirect('/onboarding?error=save-failed')
+  const publishedSet=new Set((publishedFavorites||[]).map((row:any)=>String(row.id)))
+  favoriteIds=submittedFavoriteIds.filter(id=>publishedSet.has(id))
+ }
  const avoidedKeys=new Set(avoided.map(x=>x.toLocaleLowerCase()))
  const resolvedLoved=loved.filter(x=>!avoidedKeys.has(x.toLocaleLowerCase()))
  const rawBudget=String(formData.get('budget')||'0')
