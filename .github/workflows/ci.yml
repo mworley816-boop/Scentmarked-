@@ -1,0 +1,33 @@
+name: ScentMarked CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scentmarked-mvp-v0.5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: scentmarked-mvp-v0.5/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck, test, and build for Cloudflare
+        run: npm run check
