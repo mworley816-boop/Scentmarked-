@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import FavoritePerfumeChecks from '@/components/favorite-perfume-checks'
+import PresentationChecks from '@/components/presentation-checks'
 
 export const metadata={title:'Build Your Scent Profile',robots:{index:false,follow:false}}
 
@@ -124,7 +125,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
    <fieldset><legend>1. Which scent families are you drawn to?</legend><p>Choose as many as you like.</p><Checks name="families" items={families} selected={savedFamilies}/></fieldset>
    <fieldset><legend>2. Which notes do you love?</legend><Checks name="lovedNotes" items={notes} selected={savedNotes}/></fieldset>
    <fieldset><legend>3. Which notes do you usually avoid?</legend><p>Leave everything unchecked if you’re not sure yet.</p><Checks name="avoidedNotes" items={notes} selected={saved?.scent_avoided_notes||[]}/></fieldset>
-   <fieldset><legend>4. What fragrance presentation do you enjoy?</legend><p>Choose one or more. Fragrance has no rules—this only helps tune your matches.</p><Checks name="presentations" items={presentations} selected={saved?.scent_presentations||[]}/></fieldset>
+   <fieldset><legend>4. What fragrance presentation do you enjoy?</legend><p>Choose one or more. Selecting “No preference” clears the other choices. Fragrance has no rules—this only helps tune your matches.</p><PresentationChecks items={presentations} selected={saved?.scent_presentations||[]}/></fieldset>
    <fieldset><legend>5. When do you usually wear fragrance?</legend><p>Check every occasion that fits.</p><Checks name="occasions" items={occasions} selected={saved?.scent_occasions||[]}/></fieldset>
    <fieldset><legend>6. What fragrance vibes feel most like you?</legend><p>Choose all that sound good to you.</p><Checks name="vibes" items={vibes} selected={saved?.scent_vibes||[]}/></fieldset>
    <fieldset><legend>7. Which fragrances do you already love?</legend><p>Check up to 8. This helps ScentMarked learn your taste from real fragrances. Leave this blank if none of these are favorites yet.</p><FavoritePerfumeChecks items={(favoriteOptions||[]).map((perfume:any)=>({id:perfume.id,name:perfume.name,brand:perfume.brands?.name||null}))} selected={saved?.scent_favorite_perfume_ids||[]}/></fieldset>
