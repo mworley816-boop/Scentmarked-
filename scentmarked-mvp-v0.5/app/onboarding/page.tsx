@@ -4,6 +4,7 @@ import FavoritePerfumeChecks from '@/components/favorite-perfume-checks'
 import PresentationChecks from '@/components/presentation-checks'
 import NotePreferenceChecks from '@/components/note-preference-checks'
 import ScentProfileForm from '@/components/scent-profile-form'
+import ScentProfileSubmit from '@/components/scent-profile-submit'
 import { hasScentProfileRankingSignal } from '@/lib/scent-profile'
 
 export const metadata={title:'Build Your Scent Profile',robots:{index:false,follow:false}}
@@ -143,7 +144,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
    <fieldset><legend>9. How much projection do you like?</legend><Radios name="projection" items={traitOptions.projection} selected={saved?.scent_projection}/></fieldset>
    <fieldset><legend>10. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity} selected={saved?.scent_longevity}/></fieldset>
    <fieldset><legend>11. What do you usually want to spend?</legend><Radios name="budget" items={budgets} selected={saved?.scent_max_price}/></fieldset>
-   <div className="quiz-actions"><button type="submit">{completed?'Update & Find My Matches':'Save & Find My Matches'}</button><a href="/matches">{completed?'Cancel':'Skip for now'}</a></div>
+   <div className="quiz-actions"><ScentProfileSubmit completed={completed}/><a href="/matches">{completed?'Cancel':'Skip for now'}</a></div>
   </ScentProfileForm>
  </section></main>
 }
