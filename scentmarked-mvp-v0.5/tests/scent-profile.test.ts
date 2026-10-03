@@ -19,3 +19,15 @@ test('each supported recommendation preference can complete a scent profile',()=
  assert.equal(hasScentProfileRankingSignal({...empty(),longevity:5}),true)
  assert.equal(hasScentProfileRankingSignal({...empty(),budget:100}),true)
 })
+
+
+test('budget only counts when it is a positive safe integer',()=>{
+ assert.equal(hasScentProfileRankingSignal({...empty(),budget:-1}),false)
+ assert.equal(hasScentProfileRankingSignal({...empty(),budget:1.5}),false)
+ assert.equal(hasScentProfileRankingSignal({...empty(),budget:Number.MAX_SAFE_INTEGER+1}),false)
+ assert.equal(hasScentProfileRankingSignal({...empty(),budget:30}),true)
+})
+
+test('a real presentation remains a signal when no preference is also present',()=>{
+ assert.equal(hasScentProfileRankingSignal({...empty(),presentations:['No preference','Feminine-leaning']}),true)
+})
