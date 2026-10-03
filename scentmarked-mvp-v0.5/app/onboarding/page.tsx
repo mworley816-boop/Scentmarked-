@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import FavoritePerfumeChecks from '@/components/favorite-perfume-checks'
 import PresentationChecks from '@/components/presentation-checks'
+import { hasScentProfileRankingSignal } from '@/lib/scent-profile'
 
 export const metadata={title:'Build Your Scent Profile',robots:{index:false,follow:false}}
 
@@ -55,7 +56,7 @@ async function saveProfile(formData:FormData){
  const rawBudget=String(formData.get('budget')||'0')
  const budget=/^\d+$/.test(rawBudget)?Number(rawBudget):0
  const sweetness=trait(formData,'sweetness'),projection=trait(formData,'projection'),longevity=trait(formData,'longevity')
- const hasRankingSignal=resolvedLoved.length>0||avoided.length>0||favoriteIds.length>0||selectedPresentations.some(x=>x!=='No preference')||sweetness!=null||projection!=null||longevity!=null||(Number.isSafeInteger(budget)&&budget>0)
+ const hasRankingSignal=hasScentProfileRankingSignal({loved:resolvedLoved,avoided,favoriteIds,presentations:selectedPresentations,sweetness,projection,longevity,budget})
  if(!hasRankingSignal)redirect('/onboarding?error=choose-preference')
  let failed=false
  try{
