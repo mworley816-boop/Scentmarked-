@@ -28,17 +28,13 @@ export async function POST(request:Request){
   if(!providerMessageId)return new NextResponse('Missing email id',{status:400})
 
   const s=await createClient()
-  const {data:delivery,error:lookupError}=await s.from('email_deliveries').select('id').eq('provider_message_id',providerMessageId).maybeSingle()
-  if(lookupError)return new NextResponse('Lookup failed',{status:500})
-  if(!delivery)return NextResponse.json({ok:true,ignored:true})
-
   const providerEventId=request.headers.get('svix-id')
-  const {error}=await s.rpc('record_email_delivery_event',{
-    p_delivery_id:delivery.id,
+  const {data:recorded,error}=await s.rpc('record_provider_email_event',{
+    p_provider_message_id:providerMessageId,
     p_event_type:mapped,
     p_provider_event_id:providerEventId,
     p_metadata:{provider:'resend',created_at:event?.created_at||null}
   })
   if(error)return new NextResponse('Event processing failed',{status:500})
-  return NextResponse.json({ok:true})
+  return NextResponse.json({ok:true,ignored:!recorded})
 }
