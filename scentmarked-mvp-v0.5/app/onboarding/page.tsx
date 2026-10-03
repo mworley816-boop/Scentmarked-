@@ -39,6 +39,7 @@ async function saveProfile(formData:FormData){
  const selectedOccasions=checked(formData,'occasions',occasions)
  const selectedPresentations=checked(formData,'presentations',presentations)
  const selectedVibes=checked(formData,'vibes',vibes)
+ const favoriteIds=formData.getAll('favoritePerfumes').map(String).filter(x=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x)).slice(0,8)
  const avoidedKeys=new Set(avoided.map(x=>x.toLocaleLowerCase()))
  const resolvedLoved=loved.filter(x=>!avoidedKeys.has(x.toLocaleLowerCase()))
  const rawBudget=String(formData.get('budget')||'0')
@@ -55,7 +56,8 @@ async function saveProfile(formData:FormData){
    scent_occasions:selectedOccasions,
    scent_vibes:selectedVibes,
    scent_presentations:selectedPresentations,
-   scent_profile_completed_at:new Date().toISOString()
+   scent_profile_completed_at:new Date().toISOString(),
+   scent_favorite_perfume_ids:favoriteIds
   }).eq('id',user.id).select('id').maybeSingle()
   failed=!!error||!data
  }catch{failed=true}
@@ -76,9 +78,10 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
  const s=await createClient()
  const {data:{user}}=await s.auth.getUser()
  if(!user)redirect('/login?next='+encodeURIComponent('/onboarding'))
- type ScentProfile={scent_loved_notes:string[]|null;scent_avoided_notes:string[]|null;scent_sweetness:number|null;scent_projection:number|null;scent_longevity:number|null;scent_max_price:number|null;scent_occasions:string[]|null;scent_vibes:string[]|null;scent_presentations:string[]|null;scent_profile_completed_at:string|null}
+ type ScentProfile={scent_loved_notes:string[]|null;scent_avoided_notes:string[]|null;scent_sweetness:number|null;scent_projection:number|null;scent_longevity:number|null;scent_max_price:number|null;scent_occasions:string[]|null;scent_vibes:string[]|null;scent_presentations:string[]|null;scent_profile_completed_at:string|null;scent_favorite_perfume_ids:string[]|null}
  let saved:ScentProfile|null=null,loadError=false
- try{const {data,error}=await s.from('profiles').select('scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at').eq('id',user.id).maybeSingle();if(error)loadError=true;else saved=data as ScentProfile|null}catch{loadError=true}
+ try{const {data,error}=await s.from('profiles').select('scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at,scent_favorite_perfume_ids').eq('id',user.id).maybeSingle();if(error)loadError=true;else saved=data as ScentProfile|null}catch{loadError=true}
+ const {data:favoriteOptions}=await s.from('perfumes').select('id,name,brands(name)').eq('status','published').order('name').limit(24)
  const loved=saved?.scent_loved_notes||[],familyKeys=new Set(families.map(x=>x.toLocaleLowerCase())),savedFamilies=loved.filter(x=>familyKeys.has(x.toLocaleLowerCase())),savedNotes=loved.filter(x=>!familyKeys.has(x.toLocaleLowerCase())),completed=!!saved?.scent_profile_completed_at
  return <main className="quiz-page"><section className="quiz-shell">
   <p className="eyebrow">YOUR SCENTMARKED PROFILE</p>
@@ -93,10 +96,11 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
    <fieldset><legend>4. What fragrance presentation do you enjoy?</legend><p>Choose one or more. Fragrance has no rules—this only helps tune your matches.</p><Checks name="presentations" items={presentations} selected={saved?.scent_presentations||[]}/></fieldset>
    <fieldset><legend>5. When do you usually wear fragrance?</legend><p>Check every occasion that fits.</p><Checks name="occasions" items={occasions} selected={saved?.scent_occasions||[]}/></fieldset>
    <fieldset><legend>6. What fragrance vibes feel most like you?</legend><p>Choose all that sound good to you.</p><Checks name="vibes" items={vibes} selected={saved?.scent_vibes||[]}/></fieldset>
-   <fieldset><legend>7. How sweet do you like your fragrances?</legend><Radios name="sweetness" items={traitOptions.sweetness} selected={saved?.scent_sweetness}/></fieldset>
-   <fieldset><legend>8. How much projection do you like?</legend><Radios name="projection" items={traitOptions.projection} selected={saved?.scent_projection}/></fieldset>
-   <fieldset><legend>9. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity} selected={saved?.scent_longevity}/></fieldset>
-   <fieldset><legend>10. What do you usually want to spend?</legend><Radios name="budget" items={budgets} selected={saved?.scent_max_price}/></fieldset>
+   <fieldset><legend>7. Which fragrances do you already love?</legend><p>Check up to 8. This helps ScentMarked learn your taste from real fragrances. Leave this blank if none of these are favorites yet.</p><div className="quiz-check-grid">{(favoriteOptions||[]).map((perfume:any)=><label className="quiz-check" key={perfume.id}><input type="checkbox" name="favoritePerfumes" value={perfume.id} defaultChecked={(saved?.scent_favorite_perfume_ids||[]).includes(perfume.id)}/><span>{perfume.brands?.name?perfume.brands.name+' · ':''}{perfume.name}</span></label>)}</div></fieldset>
+   <fieldset><legend>8. How sweet do you like your fragrances?</legend><Radios name="sweetness" items={traitOptions.sweetness} selected={saved?.scent_sweetness}/></fieldset>
+   <fieldset><legend>9. How much projection do you like?</legend><Radios name="projection" items={traitOptions.projection} selected={saved?.scent_projection}/></fieldset>
+   <fieldset><legend>10. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity} selected={saved?.scent_longevity}/></fieldset>
+   <fieldset><legend>11. What do you usually want to spend?</legend><Radios name="budget" items={budgets} selected={saved?.scent_max_price}/></fieldset>
    <div className="quiz-actions"><button type="submit">{completed?'Update & Find My Matches':'Save & Find My Matches'}</button><a href="/matches">{completed?'Cancel':'Skip for now'}</a></div>
   </form>
  </section></main>
