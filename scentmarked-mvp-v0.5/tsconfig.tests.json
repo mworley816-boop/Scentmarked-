@@ -6,7 +6,12 @@
   },
   "include": [
     "tests/**/*.ts",
-    "lib/**/*.ts"
+    "lib/affiliate-export.ts",
+    "lib/affiliate-tracking.ts",
+    "lib/match-page-helpers.ts",
+    "lib/match-scoring.ts",
+    "lib/scent-profile.ts",
+    "lib/scent-relationships.ts"
   ],
   "exclude": [
     "node_modules"
