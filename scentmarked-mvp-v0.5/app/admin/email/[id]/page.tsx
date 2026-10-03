@@ -37,6 +37,16 @@ async function saveCampaign(formData:FormData){
   redirect('/admin/email/'+id+'?saved=1')
 }
 
+async function retryFailed(formData:FormData){
+  'use server'
+  const id=String(formData.get('id')||'')
+  const s=await requireAdmin('/admin/email/'+id)
+  if(!id)redirect('/admin/email')
+  const {data,error}=await s.rpc('retry_failed_email_deliveries',{p_campaign_id:id})
+  if(error)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Failed recipients could not be prepared for retry.'))
+  redirect('/admin/email/'+id+'?retried='+String(data||0))
+}
+
 async function sendCampaign(formData:FormData){
   'use server'
   const id=String(formData.get('id')||'')
@@ -67,7 +77,7 @@ async function prepareCampaign(formData:FormData){
   redirect('/admin/email/'+id+'?queued='+String(data||0))
 }
 
-export default async function EditCampaign({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string,saved?:string,queued?:string,sent?:string,failed?:string,skipped?:string}>}){
+export default async function EditCampaign({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string,saved?:string,queued?:string,sent?:string,failed?:string,skipped?:string,retried?:string}>}){
   const {id}=await params
   const p=await searchParams
   const s=await requireAdmin('/admin/email/'+id)
@@ -88,6 +98,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
     {p.error&&<div className="notice error">{p.error}</div>}
     {p.saved&&<div className="notice">Draft saved.</div>}{p.queued!==undefined&&<div className="notice">Campaign audience prepared: {p.queued} new eligible recipient{p.queued==='1'?'':'s'} queued. No email has been sent.</div>}
     {p.sent!==undefined&&<div className="notice">Send finished: {p.sent} sent · {p.failed||'0'} failed · {p.skipped||'0'} skipped.</div>}
+    {p.retried!==undefined&&<div className="notice">{p.retried} failed recipient{p.retried==='1'?'':'s'} prepared for retry.</div>}
     <div className="notice"><strong>Provider-gated sending.</strong> Campaign sending only works when the Resend environment variables are configured. Recipient consent is checked again immediately before each send.</div>
 
     <div className="admin-grid">
@@ -115,6 +126,8 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
     {editable&&<article className="admin-card"><p className="eyebrow">AUDIENCE PREPARATION</p><h2>Prepare recipients</h2><p>Create queued delivery records for contacts who are currently active and explicitly opted in. This does not send email.</p><form action={prepareCampaign}><input type="hidden" name="id" value={id}/><button type="submit">Prepare audience</button></form></article>}
 
     {editable&&(counts.queued||0)>0&&<article className="admin-card"><p className="eyebrow">SEND CAMPAIGN</p><h2>Send to {counts.queued} queued recipient{counts.queued===1?'':'s'}</h2><p>This action sends real email when the Resend provider is configured. Consent is checked again immediately before each message.</p><form action={sendCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><label>Type SEND to confirm<input name="confirmation" autoComplete="off" required/></label><button type="submit">Send campaign</button></form></article>}
+
+    {(counts.failed||0)>0&&<article className="admin-card"><p className="eyebrow">FAILED DELIVERIES</p><h2>{counts.failed} recipient{counts.failed===1?'':'s'} failed</h2><p>Requeue only failed recipients who are still eligible for marketing email. Successful recipients will not be sent again.</p><form action={retryFailed}><input type="hidden" name="id" value={id}/><button type="submit">Prepare failed recipients for retry</button></form></article>}
 
     <article className="admin-card"><p className="eyebrow">PREVIEW</p><h2>{campaign.subject}</h2>{campaign.preview_text&&<p>{campaign.preview_text}</p>}<div style={{border:'1px solid currentColor',borderRadius:12,padding:20,marginTop:12,background:'white',color:'black'}} dangerouslySetInnerHTML={{__html:campaign.html_body}}/></article>
   </section></main>
