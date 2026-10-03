@@ -30,6 +30,11 @@ export default function Methodology(){
   <h2>What a match score means</h2>
   <p>A Scentmarked match percentage is a catalog-comparison score. It is not an official clone percentage, a brand claim, or a guarantee of perceived similarity. Skin chemistry, formulation, concentration, batch variation, and individual perception can all affect how a fragrance smells and wears.</p>
 
+  <h2>Personalized recommendations</h2>
+  <p>When you use a Scent Profile, Scentmarked can combine your loved notes and accords, wear preferences, budget, and saved favorite fragrances with catalog similarity. Saved favorites are treated as taste references: the system compares a candidate with your saved favorites and uses the strongest available similarity signals rather than labeling the candidate a clone.</p>
+  <p>If you save a fragrance-presentation preference such as feminine-leaning, masculine-leaning, or unisex / gender-neutral, a matching catalog presentation can add a bounded 4-point adjustment after the base recommendation score is calculated. The final displayed score remains capped at 100.</p>
+  <p>Occasion and vibe answers are saved as part of your Scent Profile, but they are not currently used to change recommendation ranking. Scentmarked will only use those answers as ranking signals when comparable structured catalog data is available; we do not infer those attributes just to increase a match score.</p>
+
   <h2>Community data</h2>
   <p>Ratings, written reviews, wear metrics, and comparison votes come from Scentmarked members and are presented separately from sourced catalog facts. Community comparison consensus is withheld until enough votes are available to avoid presenting a tiny sample as established opinion.</p>
 
