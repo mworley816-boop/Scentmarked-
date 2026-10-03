@@ -10,13 +10,14 @@ export default function NotePreferenceChecks({items,loved=[],avoided=[]}:Props){
  const avoidKeys=new Set([...initialAvoid].map(x=>x.toLocaleLowerCase()))
  const [avoid,setAvoid]=useState(()=>initialAvoid)
  const [love,setLove]=useState(()=>new Set(loved.map(x=>itemByKey.get(x.toLocaleLowerCase())).filter((x):x is string=>!!x&&!avoidKeys.has(x.toLocaleLowerCase()))))
+ const withoutKey=(current:Set<string>,item:string)=>{const key=item.toLocaleLowerCase();return new Set([...current].filter(x=>x.toLocaleLowerCase()!==key))}
  const toggle=(kind:'love'|'avoid',item:string,checked:boolean)=>{
   if(kind==='love'){
-   setLove(current=>{const next=new Set(current);checked?next.add(item):next.delete(item);return next})
-   if(checked)setAvoid(current=>{const next=new Set(current);next.delete(item);return next})
+   setLove(current=>{const next=withoutKey(current,item);if(checked)next.add(item);return next})
+   if(checked)setAvoid(current=>withoutKey(current,item))
   }else{
-   setAvoid(current=>{const next=new Set(current);checked?next.add(item):next.delete(item);return next})
-   if(checked)setLove(current=>{const next=new Set(current);next.delete(item);return next})
+   setAvoid(current=>{const next=withoutKey(current,item);if(checked)next.add(item);return next})
+   if(checked)setLove(current=>withoutKey(current,item))
   }
  }
  const group=(kind:'love'|'avoid',chosen:Set<string>)=><div className="quiz-check-grid">{items.map(item=><label className="quiz-check" key={item}><input type="checkbox" name={kind==='love'?'lovedNotes':'avoidedNotes'} value={item} checked={chosen.has(item)} onChange={e=>toggle(kind,item,e.target.checked)}/><span>{item}</span></label>)}</div>
