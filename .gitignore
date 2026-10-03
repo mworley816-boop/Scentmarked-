@@ -1,0 +1,38 @@
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+.dev.vars
+.dev.vars.*
+**/.dev.vars
+**/.dev.vars.*
+
+# Dependencies and build output
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+.open-next/
+**/.open-next/
+dist/
+coverage/
+
+# Cloudflare/Wrangler local state
+.wrangler/
+**/.wrangler/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
