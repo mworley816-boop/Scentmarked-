@@ -39,7 +39,8 @@ async function saveProfile(formData:FormData){
  const loved=[...checked(formData,'families',families),...checked(formData,'lovedNotes',notes)]
  const avoided=checked(formData,'avoidedNotes',notes)
  const selectedOccasions=checked(formData,'occasions',occasions)
- const selectedPresentations=checked(formData,'presentations',presentations)
+ const rawPresentations=checked(formData,'presentations',presentations)
+ const selectedPresentations=rawPresentations.includes('No preference')?['No preference']:rawPresentations
  const selectedVibes=checked(formData,'vibes',vibes)
  const submittedFavoriteIds=[...new Set(formData.getAll('favoritePerfumes').map(String).filter(x=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x)))].slice(0,8)
  let favoriteIds:string[]=[]
