@@ -3,6 +3,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { publicSupabaseConfig } from '@/lib/supabase/config'
+import { hasAccountDeletionConfirmation } from '@/lib/account-deletion'
 
 function accountUrl(kind:'error'|'message',message:string){return '/account?'+kind+'='+encodeURIComponent(message)}
 
@@ -17,8 +18,7 @@ export async function updateProfile(formData:FormData){
 }
 
 export async function deleteAccount(formData:FormData){
- const confirmation=String(formData.get('confirmation')||'').trim().toUpperCase()
- if(confirmation!=='DELETE')redirect(accountUrl('error','Type DELETE to confirm permanent account deletion.'))
+ if(!hasAccountDeletionConfirmation(formData.get('confirmation')))redirect(accountUrl('error','Type DELETE to confirm permanent account deletion.'))
  const supabase=await createClient()
  const {data:{user}}=await supabase.auth.getUser()
  if(!user)redirect('/login?next='+encodeURIComponent('/account'))
