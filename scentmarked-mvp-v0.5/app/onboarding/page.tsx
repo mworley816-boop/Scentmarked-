@@ -63,7 +63,7 @@ async function saveProfile(formData:FormData){
   failed=!!error||!data
  }catch{failed=true}
  if(failed)redirect('/onboarding?error=save-failed')
- redirect('/matches')
+ redirect('/matches?profile=ready')
 }
 
 function Checks({name,items,selected=[]}:{name:string,items:string[],selected?:string[]}){
