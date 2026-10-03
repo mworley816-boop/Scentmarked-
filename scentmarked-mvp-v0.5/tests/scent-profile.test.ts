@@ -28,6 +28,6 @@ test('budget only counts when it is a positive safe integer',()=>{
  assert.equal(hasScentProfileRankingSignal({...empty(),budget:30}),true)
 })
 
-test('a real presentation remains a signal when no preference is also present',()=>{
- assert.equal(hasScentProfileRankingSignal({...empty(),presentations:['No preference','Feminine-leaning']}),true)
+test('no preference overrides malformed mixed presentation submissions',()=>{
+ assert.equal(hasScentProfileRankingSignal({...empty(),presentations:['No preference','Feminine-leaning']}),false)
 })
