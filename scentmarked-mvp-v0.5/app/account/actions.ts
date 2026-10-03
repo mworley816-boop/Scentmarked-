@@ -2,6 +2,7 @@
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { publicSupabaseConfig } from '@/lib/supabase/config'
 
 function accountUrl(kind:'error'|'message',message:string){return '/account?'+kind+'='+encodeURIComponent(message)}
 
@@ -21,9 +22,9 @@ export async function deleteAccount(formData:FormData){
  const supabase=await createClient()
  const {data:{user}}=await supabase.auth.getUser()
  if(!user)redirect('/login?next='+encodeURIComponent('/account'))
- const url=process.env.NEXT_PUBLIC_SUPABASE_URL
+ const {url}=publicSupabaseConfig()
  const serviceKey=process.env.SUPABASE_SERVICE_ROLE_KEY
- if(!url||!serviceKey)redirect(accountUrl('error','Account deletion is not configured yet. Please contact Scentmarked.'))
+ if(!serviceKey)redirect(accountUrl('error','Account deletion is not configured yet. Please contact Scentmarked.'))
  const admin=createAdminClient(url,serviceKey,{auth:{autoRefreshToken:false,persistSession:false}})
  const {error}=await admin.auth.admin.deleteUser(user.id)
  if(error)redirect(accountUrl('error','Account deletion could not be completed. Please try again or contact Scentmarked.'))
