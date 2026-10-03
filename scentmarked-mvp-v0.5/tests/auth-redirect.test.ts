@@ -17,6 +17,7 @@ test('safeAuthNext rejects external and protocol-relative destinations',()=>{
 test('safeAuthNext prevents auth and login redirect loops',()=>{
  assert.equal(safeAuthNext('/login'),'/collection')
  assert.equal(safeAuthNext('/login?message=ok'),'/collection')
+ assert.equal(safeAuthNext('/auth'),'/collection')
  assert.equal(safeAuthNext('/auth/callback?next=/collection'),'/collection')
 })
 
