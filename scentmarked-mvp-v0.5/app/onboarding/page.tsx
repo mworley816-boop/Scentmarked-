@@ -54,14 +54,17 @@ async function saveProfile(formData:FormData){
  const resolvedLoved=loved.filter(x=>!avoidedKeys.has(x.toLocaleLowerCase()))
  const rawBudget=String(formData.get('budget')||'0')
  const budget=/^\d+$/.test(rawBudget)?Number(rawBudget):0
+ const sweetness=trait(formData,'sweetness'),projection=trait(formData,'projection'),longevity=trait(formData,'longevity')
+ const hasRankingSignal=resolvedLoved.length>0||avoided.length>0||favoriteIds.length>0||selectedPresentations.some(x=>x!=='No preference')||sweetness!=null||projection!=null||longevity!=null||(Number.isSafeInteger(budget)&&budget>0)
+ if(!hasRankingSignal)redirect('/onboarding?error=choose-preference')
  let failed=false
  try{
   const {data,error}=await s.from('profiles').update({
    scent_loved_notes:resolvedLoved,
    scent_avoided_notes:avoided,
-   scent_sweetness:trait(formData,'sweetness'),
-   scent_projection:trait(formData,'projection'),
-   scent_longevity:trait(formData,'longevity'),
+   scent_sweetness:sweetness,
+   scent_projection:projection,
+   scent_longevity:longevity,
    scent_max_price:Number.isSafeInteger(budget)&&budget>0?budget:null,
    scent_occasions:selectedOccasions,
    scent_vibes:selectedVibes,
@@ -123,7 +126,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
   <h1>{completed?'Edit your scent profile':'What smells like you?'}</h1>
   <p className="quiz-intro">{completed?'Update any answers that have changed. Your saved preferences will continue shaping your ScentMarked matches.':'Check the answers that fit you best. We’ll use them to personalize your first scent matches. You can change these preferences later.'}</p>
   {loadError&&<div className="notice error" role="alert">Your saved scent profile could not be loaded. You can still choose new preferences, but saving will replace your previous questionnaire answers.</div>}
-  {p.error==='save-failed'&&<div className="notice error" role="alert">Your scent profile could not be saved. Please try again.</div>}
+  {p.error==='save-failed'&&<div className="notice error" role="alert">Your scent profile could not be saved. Please try again.</div>}{p.error==='choose-preference'&&<div className="notice error" role="alert">Choose at least one recommendation preference before saving. You can still leave any individual question unanswered, or use “Skip for now” instead.</div>}
   <form action={saveProfile} className="quiz-form">
    <fieldset><legend>1. Which scent families are you drawn to?</legend><p>Choose as many as you like.</p><Checks name="families" items={families} selected={savedFamilies}/></fieldset>
    <fieldset><legend>2. Which notes do you love?</legend><Checks name="lovedNotes" items={notes} selected={savedNotes}/></fieldset>
