@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import FavoritePerfumeChecks from '@/components/favorite-perfume-checks'
 import PresentationChecks from '@/components/presentation-checks'
+import NotePreferenceChecks from '@/components/note-preference-checks'
 import { hasScentProfileRankingSignal } from '@/lib/scent-profile'
 
 export const metadata={title:'Build Your Scent Profile',robots:{index:false,follow:false}}
@@ -130,8 +131,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
   {p.error==='save-failed'&&<div className="notice error" role="alert">Your scent profile could not be saved. Please try again.</div>}{p.error==='choose-preference'&&<div className="notice error" role="alert">Choose at least one recommendation preference before saving. You can still leave any individual question unanswered, or use “Skip for now” instead.</div>}
   <form action={saveProfile} className="quiz-form">
    <fieldset><legend>1. Which scent families are you drawn to?</legend><p>Choose as many as you like.</p><Checks name="families" items={families} selected={savedFamilies}/></fieldset>
-   <fieldset><legend>2. Which notes do you love?</legend><Checks name="lovedNotes" items={notes} selected={savedNotes}/></fieldset>
-   <fieldset><legend>3. Which notes do you usually avoid?</legend><p>Leave everything unchecked if you’re not sure yet.</p><Checks name="avoidedNotes" items={notes} selected={saved?.scent_avoided_notes||[]}/></fieldset>
+   <fieldset><legend>2–3. Which notes do you love or avoid?</legend><p>Choose your loved notes first, then your avoided notes below. A note can only be in one group; choosing it in one automatically removes it from the other.</p><h3>Loved notes</h3><NotePreferenceChecks items={notes} loved={savedNotes} avoided={saved?.scent_avoided_notes||[]}/></fieldset>
    <fieldset><legend>4. What fragrance presentation do you enjoy?</legend><p>Choose one or more. Selecting “No preference” clears the other choices. Fragrance has no rules—this only helps tune your matches.</p><PresentationChecks items={presentations} selected={saved?.scent_presentations||[]}/></fieldset>
    <fieldset><legend>5. When do you usually wear fragrance?</legend><p>Check every occasion that fits.</p><Checks name="occasions" items={occasions} selected={saved?.scent_occasions||[]}/></fieldset>
    <fieldset><legend>6. What fragrance vibes feel most like you?</legend><p>Choose all that sound good to you.</p><Checks name="vibes" items={vibes} selected={saved?.scent_vibes||[]}/></fieldset>
