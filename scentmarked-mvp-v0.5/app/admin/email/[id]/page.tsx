@@ -37,7 +37,17 @@ async function saveCampaign(formData:FormData){
   redirect('/admin/email/'+id+'?saved=1')
 }
 
-export default async function EditCampaign({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string,saved?:string}>}){
+async function prepareCampaign(formData:FormData){
+  'use server'
+  const id=String(formData.get('id')||'')
+  const s=await requireAdmin('/admin/email/'+id)
+  if(!id)redirect('/admin/email')
+  const {data,error}=await s.rpc('queue_email_campaign',{p_campaign_id:id})
+  if(error)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Campaign audience could not be prepared.'))
+  redirect('/admin/email/'+id+'?queued='+String(data||0))
+}
+
+export default async function EditCampaign({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string,saved?:string,queued?:string}>}){
   const {id}=await params
   const p=await searchParams
   const s=await requireAdmin('/admin/email/'+id)
@@ -56,7 +66,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   return <main><section className="admin-page">
     <div className="admin-heading"><div><p className="eyebrow">ADMIN · EMAIL CAMPAIGN</p><h1>{campaign.name}</h1><p>{campaign.status} · Created {new Date(campaign.created_at).toLocaleDateString()}</p></div><Link className="button ghost" href="/admin/email">Back to Email</Link></div>
     {p.error&&<div className="notice error">{p.error}</div>}
-    {p.saved&&<div className="notice">Draft saved.</div>}
+    {p.saved&&<div className="notice">Draft saved.</div>}{p.queued!==undefined&&<div className="notice">Campaign audience prepared: {p.queued} new eligible recipient{p.queued==='1'?'':'s'} queued. No email has been sent.</div>}
     <div className="notice"><strong>Sending is locked.</strong> This editor can prepare campaigns, but no send or schedule action is exposed until the email provider, unsubscribe endpoint, and webhook verification are complete.</div>
 
     <div className="admin-grid">
@@ -80,6 +90,8 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
         {editable&&<button type="submit">Save draft</button>}
       </article>
     </form>
+
+    {editable&&<article className="admin-card"><p className="eyebrow">AUDIENCE PREPARATION</p><h2>Prepare recipients</h2><p>Create queued delivery records for contacts who are currently active and explicitly opted in. This does not send email.</p><form action={prepareCampaign}><input type="hidden" name="id" value={id}/><button type="submit">Prepare audience</button></form></article>}
 
     <article className="admin-card"><p className="eyebrow">PREVIEW</p><h2>{campaign.subject}</h2>{campaign.preview_text&&<p>{campaign.preview_text}</p>}<div style={{border:'1px solid currentColor',borderRadius:12,padding:20,marginTop:12,background:'white',color:'black'}} dangerouslySetInnerHTML={{__html:campaign.html_body}}/></article>
   </section></main>
