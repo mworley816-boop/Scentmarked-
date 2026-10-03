@@ -7,7 +7,6 @@ type Props={children:ReactNode;action:(formData:FormData)=>void|Promise<void>}
 
 export default function ScentProfileForm({children,action}:Props){
  const [error,setError]=useState('')
- const [submitting,setSubmitting]=useState(false)
  const errorRef=useRef<HTMLDivElement>(null)
  const submit=(event:FormEvent<HTMLFormElement>)=>{
   const form=event.currentTarget
@@ -27,13 +26,9 @@ export default function ScentProfileForm({children,action}:Props){
   })
   if(!hasSignal){event.preventDefault();setError('Choose at least one recommendation preference before saving, or use “Skip for now.”');requestAnimationFrame(()=>errorRef.current?.focus());return}
   setError('')
-  setSubmitting(true)
-  const submitButton=form.querySelector<HTMLButtonElement>('button[type="submit"]')
-  if(submitButton){submitButton.disabled=true;submitButton.setAttribute('aria-disabled','true')}
  }
  return <form action={action} className="quiz-form" onSubmit={submit}>
   {error&&<div ref={errorRef} className="notice error" role="alert" tabIndex={-1}>{error}</div>}
-  {submitting&&<div className="notice" role="status" aria-live="polite">Saving your scent profile…</div>}
   {children}
  </form>
 }
