@@ -10,5 +10,6 @@ export type ScentProfileCompletionSignals={
 }
 
 export function hasScentProfileRankingSignal(signals:ScentProfileCompletionSignals){
- return signals.loved.length>0||signals.avoided.length>0||signals.favoriteIds.length>0||signals.presentations.some(x=>x!=='No preference')||signals.sweetness!=null||signals.projection!=null||signals.longevity!=null||(Number.isSafeInteger(signals.budget)&&signals.budget>0)
+ const presentationSignal=!signals.presentations.includes('No preference')&&signals.presentations.length>0
+ return signals.loved.length>0||signals.avoided.length>0||signals.favoriteIds.length>0||presentationSignal||signals.sweetness!=null||signals.projection!=null||signals.longevity!=null||(Number.isSafeInteger(signals.budget)&&signals.budget>0)
 }
