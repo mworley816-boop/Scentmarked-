@@ -301,3 +301,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 @media(prefers-reduced-motion:reduce){.quiz-check span,.quiz-check span::before{transition:none}}
 
 .quiz-selection-count{margin:0 0 10px!important;font-size:10px!important;color:var(--muted)}.quiz-selection-count strong{color:var(--ink)}.quiz-check-disabled{cursor:not-allowed}.quiz-check-disabled span{opacity:.48;background:#f8f5f2}.quiz-check-disabled:hover span{transform:none;border-color:var(--line)}.quiz-limit-note{margin:10px 0 0!important;padding:8px 10px;border-radius:8px;background:#fff7ec;color:var(--muted);font-size:10px!important}
+
+/* Scent questionnaire completion handoff */
+.profile-ready{display:flex;align-items:center;gap:10px;max-width:680px;margin:14px 0;padding:11px 13px;border:1px solid #c9d8c2;border-radius:10px;background:#f0f6ed;color:var(--ink)}.profile-ready b{font-size:11px;white-space:nowrap}.profile-ready span{font-size:10px;line-height:1.4;color:var(--muted)}@media(max-width:560px){.profile-ready{align-items:flex-start;flex-direction:column;gap:3px}.profile-ready b{white-space:normal}}
