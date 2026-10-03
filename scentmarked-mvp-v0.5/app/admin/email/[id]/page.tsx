@@ -92,6 +92,14 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   const rows=deliveryRows||[]
   const counts=rows.reduce((a:any,x:any)=>{a[x.status]=(a[x.status]||0)+1;return a},{})
   const editable=campaign.status==='draft'
+  let audiencePreview=0
+  if(campaign.segment_id){
+    const {data:previewCount}=await s.rpc('count_email_segment_audience',{p_segment_id:campaign.segment_id})
+    audiencePreview=Number(previewCount)||0
+  }else{
+    const {count}=await s.from('crm_contacts').select('id',{count:'exact',head:true}).eq('status','active').eq('marketing_consent',true).not('marketing_consented_at','is',null).is('unsubscribed_at',null)
+    audiencePreview=count||0
+  }
   const total=rows.length
   const sentBase=total-(counts.queued||0)
   const delivered=(counts.delivered||0)+(counts.opened||0)+(counts.clicked||0)
@@ -143,7 +151,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
       </article>
     </form>
 
-    {editable&&<article className="admin-card"><p className="eyebrow">AUDIENCE PREPARATION</p><h2>Prepare recipients</h2><p>Create queued delivery records for contacts who are currently active and explicitly opted in. This does not send email.</p><form action={prepareCampaign}><input type="hidden" name="id" value={id}/><button type="submit">Prepare audience</button></form></article>}
+    {editable&&<article className="admin-card"><p className="eyebrow">AUDIENCE PREPARATION</p><h2>{audiencePreview} currently eligible recipient{audiencePreview===1?'':'s'}</h2><p>{campaign.segment_id?'This preview uses the selected segment plus current marketing consent.':'No segment is selected, so this preview includes all currently active, explicitly consented contacts.'} Preparing creates queued delivery records only; it does not send email.</p><form action={prepareCampaign}><input type="hidden" name="id" value={id}/><button type="submit" disabled={audiencePreview===0}>Prepare audience</button></form></article>}
 
     {editable&&(counts.queued||0)>0&&<article className="admin-card"><p className="eyebrow">SEND CAMPAIGN</p><h2>Send to {counts.queued} queued recipient{counts.queued===1?'':'s'}</h2><p>This action sends real email when the Resend provider is configured. Consent is checked again immediately before each message.</p><form action={sendCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><label>Type SEND to confirm<input name="confirmation" autoComplete="off" required/></label><button type="submit">Send campaign</button></form></article>}
 
