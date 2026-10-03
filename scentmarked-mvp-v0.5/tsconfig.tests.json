@@ -34,7 +34,8 @@
     "lib/match-scoring.ts",
     "lib/scent-profile.ts",
     "lib/scent-relationships.ts",
-    "lib/supabase/config.ts"
+    "lib/supabase/config.ts",
+    "lib/account-deletion.ts"
   ],
   "exclude": [
     "node_modules"
