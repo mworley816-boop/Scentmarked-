@@ -49,23 +49,22 @@ export default function SiteMediaUpload({name,label,initialUrl=''}:{name:string;
  const shown=library
  return <div className="site-media-upload">
   <label>{label}</label>
-  {url&&<img src={url} alt="" style={{display:'block',width:'100%',maxWidth:420,height:180,objectFit:'cover',borderRadius:12,marginBottom:10}}/>}
+  <div className={'site-media-current '+(url?'has-image':'empty')}>{url?<><img src={url} alt=""/><div><span>CURRENT IMAGE</span><strong>Ready to save</strong><small>Upload a replacement or choose another image from the library.</small></div></>:<div><span>NO IMAGE SELECTED</span><strong>Add artwork</strong><small>Upload a new image or reuse an existing Media Library asset.</small></div>}</div>
   <input type="hidden" name={name} value={url}/>
-  <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void upload(file)}}/>
-  <p>{busy?'Working…':'JPEG, PNG, WebP or AVIF · max 5 MB'}</p>
+  <label className="site-media-file"><span>{url?'Replace with upload':'Upload image'}</span><input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void upload(file)}}/><small>{busy?'Working…':'JPEG, PNG, WebP or AVIF · max 5 MB'}</small></label>
   <div className="result-actions">
    <button className="button ghost" type="button" disabled={busy} onClick={()=>void toggleLibrary()}>{showLibrary?'Hide Library':'Choose from Media Library'}</button>
    {url&&<button className="button ghost" type="button" onClick={()=>setUrl('')}>Remove from content</button>}
   </div>
-  {showLibrary&&<div style={{marginTop:12}}>
-   <form onSubmit={e=>{e.preventDefault();void runSearch()}} className="result-actions" style={{marginBottom:10}}><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search media filenames…" style={{flex:1}}/><button className="button ghost" type="submit" disabled={busy}>Search</button>{activeSearch&&<button className="button ghost" type="button" disabled={busy} onClick={()=>void clearSearch()}>Clear</button>}</form>
+  {showLibrary&&<div className="site-media-library">
+   <form onSubmit={e=>{e.preventDefault();void runSearch()}} className="result-actions site-media-search"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search media filenames…"/><button className="button ghost" type="submit" disabled={busy}>Search</button>{activeSearch&&<button className="button ghost" type="button" disabled={busy} onClick={()=>void clearSearch()}>Clear</button>}</form>
    <p className="muted">{library.length} media file{library.length===1?'':'s'} loaded{activeSearch?' for “'+activeSearch+'”':''}.</p>
-   <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(110px,1fr))',gap:10}}>
-    {shown.length?shown.map(item=><button key={item.name} type="button" title={item.name} onClick={()=>{setUrl(item.url);setShowLibrary(false)}} style={{padding:0,border:url===item.url?'3px solid currentColor':'1px solid #ccc',borderRadius:10,overflow:'hidden',cursor:'pointer',background:'transparent'}}>
-     <img src={item.url} alt="" style={{display:'block',width:'100%',height:90,objectFit:'cover'}}/>
+   <div className="site-media-grid">
+    {shown.length?shown.map(item=><button key={item.name} type="button" title={item.name} onClick={()=>{setUrl(item.url);setShowLibrary(false)}} className={url===item.url?'selected':''}>
+     <img src={item.url} alt="" />
     </button>):libraryLoaded?<p>{activeSearch?'No media matches that filename.':'No media uploaded yet.'}</p>:null}
    </div>
-   {hasMore&&<div className="result-actions" style={{marginTop:12}}><button className="button ghost" type="button" disabled={busy} onClick={()=>void loadLibrary(storageOffset,activeSearch)}>{busy?'Loading…':'Load more media'}</button><span className="muted">Loads the next {PAGE_SIZE} files.</span></div>}
+   {hasMore&&<div className="result-actions" ><button className="button ghost" type="button" disabled={busy} onClick={()=>void loadLibrary(storageOffset,activeSearch)}>{busy?'Loading…':'Load more media'}</button><span className="muted">Loads the next {PAGE_SIZE} files.</span></div>}
   </div>}
   {error&&<p className="notice error">{error}</p>}
  </div>
