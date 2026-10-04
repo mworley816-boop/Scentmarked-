@@ -21,7 +21,7 @@ export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initi
     if(error)throw error
     setSaved(v=>v.filter(x=>x!==status))
    }else{
-    const {error}=await supabase.from('collection_items').insert({user_id:user.id,perfume_id:perfumeId,status})
+    const {error}=await supabase.from('collection_items').upsert({user_id:user.id,perfume_id:perfumeId,status},{onConflict:'user_id,perfume_id,status',ignoreDuplicates:true})
     if(error)throw error
     setSaved(v=>v.includes(status)?v:[...v,status])
    }
