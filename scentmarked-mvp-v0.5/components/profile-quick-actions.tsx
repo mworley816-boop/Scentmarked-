@@ -16,7 +16,7 @@ export default function ProfileQuickActions({perfumeId,name,initialFavorite=fals
     if(error)throw error
     setFavorite(false)
    }else{
-    const {error}=await supabase.from('collection_items').insert({user_id:user.id,perfume_id:perfumeId,status:'favorite'})
+    const {error}=await supabase.from('collection_items').upsert({user_id:user.id,perfume_id:perfumeId,status:'favorite'},{onConflict:'user_id,perfume_id,status',ignoreDuplicates:true})
     if(error)throw error
     setFavorite(true)
    }
