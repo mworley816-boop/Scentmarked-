@@ -14,11 +14,11 @@ export default function ProfileQuickActions({perfumeId,name,initialFavorite=fals
    if(favorite){
     const {error}=await supabase.from('collection_items').delete().eq('user_id',user.id).eq('perfume_id',perfumeId).eq('status','favorite')
     if(error)throw error
-    setFavorite(false)
+    setFavorite(false);setMessage('Removed from favorites.')
    }else{
     const {error}=await supabase.from('collection_items').upsert({user_id:user.id,perfume_id:perfumeId,status:'favorite'},{onConflict:'user_id,perfume_id,status',ignoreDuplicates:true})
     if(error)throw error
-    setFavorite(true)
+    setFavorite(true);setMessage('Added to favorites.')
    }
   }catch{setMessage('Could not update favorite. Please try again.')}
   finally{setBusy(false)}
