@@ -433,3 +433,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Discover relationship indicators */
 .discover-relationship{display:grid;gap:4px;margin:9px 0;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font-size:10px}.discover-relationship.warning{border-color:#d2a06f;background:#fff7ed}.discover-relationship.info{background:#f7f7f4}.discover-relationship b{font-size:10px}.discover-relationship small{color:var(--muted)}.discover-relationship .text-link{font-size:9px}
+
+
+/* Relationship Studio public-warning priority */
+.relationship-admin-list article.public-warning-record{border-color:#d2a06f;background:#fffaf4}.relationship-admin-list article.public-warning-record>div:first-child>small{color:#7b3e13;font-weight:900;letter-spacing:.04em}
