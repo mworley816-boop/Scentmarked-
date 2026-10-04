@@ -1,0 +1,12 @@
+revoke execute on function public.email_profile_matches_rules(public.profiles,jsonb,jsonb) from anon;
+revoke execute on function public.get_email_campaign_audience(uuid) from anon;
+revoke execute on function public.count_email_segment_audience(bigint) from anon;
+revoke execute on function public.preview_email_segment_audience(bigint,integer) from anon;
+revoke execute on function public.queue_email_campaign(uuid) from anon;
+revoke execute on function public.start_email_campaign(uuid) from anon;
+revoke execute on function public.finish_email_campaign(uuid,boolean) from anon;
+revoke execute on function public.schedule_email_campaign(uuid,timestamptz) from anon;
+revoke execute on function public.cancel_scheduled_email_campaign(uuid) from anon;
+revoke execute on function public.get_due_email_campaigns(integer) from anon;
+revoke execute on function public.retry_failed_email_deliveries(uuid) from anon;
+revoke execute on function public.delete_unused_crm_segment(bigint) from anon;
