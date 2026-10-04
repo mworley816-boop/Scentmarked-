@@ -6,6 +6,7 @@ import MarkScent from '@/components/mark-scent'
 import RateScent from '@/components/rate-scent'
 import ProfileQuickActions from '@/components/profile-quick-actions'
 import { siteUrl } from '@/lib/site'
+import { validAffiliateUrl } from '@/lib/affiliate-tracking'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,7 +32,7 @@ export default async function PerfumePage({params}:{params:Promise<{slug:string}
  const performanceMetrics:{key:string;label:string;value:string|null;icon:string}[]=[{key:'longevity',label:'Longevity',value:longevity,icon:'◷'},{key:'projection',label:'Projection',value:projection,icon:'◎'},{key:'sweetness',label:'Sweetness',value:sweetness,icon:'◇'}]
  const metricLabel=(key:string,value:string|null)=>{if(!value)return'';const n=Number(value);if(key==='longevity')return n>=4.5?'Very long lasting':n>=3.5?'Long lasting':n>=2.5?'Moderate':n>=1.5?'Light':'Short';if(key==='projection')return n>=4.5?'Room filling':n>=3.5?'Strong':n>=2.5?'Moderate':n>=1.5?'Soft':'Intimate';return n>=4.5?'Very sweet':n>=3.5?'Sweet':n>=2.5?'Balanced':n>=1.5?'Low sweetness':'Dry'}
  let relationships:any[]=[];try{const rel=await s.from('scent_relationships').select('id,source_perfume_id,target_perfume_id,relationship_type,confidence,evidence_source').or('source_perfume_id.eq.'+p.id+',target_perfume_id.eq.'+p.id);if(!rel.error&&rel.data?.length){const ids=[...new Set(rel.data.flatMap((x:any)=>[x.source_perfume_id,x.target_perfume_id]).filter((x:any)=>x&&x!==p.id))];const related=ids.length?await s.from('perfumes').select('id,name,slug,brands(name)').in('id',ids).eq('status','published'):null;const byId=new Map((related?.data||[]).map((x:any)=>[x.id,x]));relationships=rel.data.map((x:any)=>({...x,related:byId.get(x.source_perfume_id===p.id?x.target_perfume_id:x.source_perfume_id)})).filter((x:any)=>x.related)}}catch{}
- let affiliateOffers:any[]=[];try{const r=await s.from('perfume_affiliate_offers').select('id,merchant_name,affiliate_url,price,currency,label,priority,updated_at').eq('perfume_id',p.id).eq('is_active',true).order('priority',{ascending:true});affiliateOffers=r.data||[]}catch{}
+ let affiliateOffers:any[]=[];try{const r=await s.from('perfume_affiliate_offers').select('id,merchant_name,affiliate_url,price,currency,label,priority,updated_at').eq('perfume_id',p.id).eq('is_active',true).order('priority',{ascending:true});affiliateOffers=(r.data||[]).filter((x:any)=>x?.merchant_name&&validAffiliateUrl(String(x.affiliate_url||'')))}catch{}
  const cloneRelationships=relationships.filter((r:any)=>['manufacturer_inspired_by','possible_clone'].includes(String(r.relationship_type||'').toLowerCase()))
  const featuredRelationship=cloneRelationships[0]||null
  const featuredOffer=affiliateOffers[0]||null,additionalOffers=affiliateOffers.slice(1),pricedOffers=affiliateOffers.filter((x:any)=>x.price!=null&&Number.isFinite(Number(x.price))),lowestRecordedPrice=pricedOffers.length?Math.min(...pricedOffers.map((x:any)=>Number(x.price))):null
