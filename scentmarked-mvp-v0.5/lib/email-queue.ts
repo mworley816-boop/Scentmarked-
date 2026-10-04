@@ -4,7 +4,8 @@ import { siteUrl } from '@/lib/site'
 
 type DbClient=any
 
-export async function sendQueuedCampaign(s:DbClient,campaignId:string){
+export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=25){
+  const safeBatchSize=Math.max(1,Math.min(100,Math.trunc(batchSize)||25))
   const {data:campaign,error:campaignError}=await s.from('email_campaigns')
     .select('id,subject,html_body,text_body,status')
     .eq('id',campaignId).maybeSingle()
@@ -13,7 +14,7 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string){
 
   const {data:rows,error:deliveryError}=await s.from('email_deliveries')
     .select('id,contact_id,crm_contacts!inner(email,first_name,unsubscribe_token,status,marketing_consent,marketing_consented_at,unsubscribed_at)')
-    .eq('campaign_id',campaignId).eq('status','queued')
+    .eq('campaign_id',campaignId).eq('status','queued').order('id',{ascending:true}).limit(safeBatchSize)
   if(deliveryError)throw new Error('Queued deliveries could not be loaded.')
 
   const provider=getEmailProvider()
@@ -68,10 +69,22 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string){
     }
   }
 
-  const {error:finishError}=await s.rpc('finish_email_campaign',{
-    p_campaign_id:campaignId,
-    p_has_failures:failed>0
-  })
-  if(finishError)throw new Error('Campaign finished sending but its final status could not be saved.')
-  return {sent,skipped,failed}
+  const {count:remaining,error:remainingError}=await s.from('email_deliveries')
+    .select('id',{count:'exact',head:true})
+    .eq('campaign_id',campaignId).eq('status','queued')
+  if(remainingError)throw new Error('Campaign batch sent but remaining deliveries could not be counted.')
+
+  if((remaining||0)===0){
+    const {count:failedTotal,error:failedCountError}=await s.from('email_deliveries')
+      .select('id',{count:'exact',head:true})
+      .eq('campaign_id',campaignId).eq('status','failed')
+    if(failedCountError)throw new Error('Campaign batch sent but failed deliveries could not be counted.')
+    const {error:finishError}=await s.rpc('finish_email_campaign',{
+      p_campaign_id:campaignId,
+      p_has_failures:(failedTotal||0)>0
+    })
+    if(finishError)throw new Error('Campaign finished sending but its final status could not be saved.')
+  }
+
+  return {sent,skipped,failed,remaining:remaining||0,complete:(remaining||0)===0}
 }
