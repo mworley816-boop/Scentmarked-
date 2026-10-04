@@ -34,6 +34,9 @@
 /* My Marks filters */
 .collection-tabs{display:flex;gap:8px;flex-wrap:wrap}.collection-tabs a{padding:9px 13px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;background:var(--paper)}.collection-tabs a.active{font-weight:700;border-color:#8f6547}.collection-page .empty-state{margin-top:24px}
 
+/* Discover result-card usability */
+.discover-grid article{display:flex;flex-direction:column;min-width:0}.discover-grid .result-actions{margin-top:auto;padding-top:10px;flex-wrap:wrap}.discover-grid .result-actions a{min-height:40px;display:inline-flex;align-items:center}.discover-grid .note-chips a{font-size:9px;background:#f0ece6;padding:5px 7px;border-radius:5px;line-height:1.25}.discover-grid h3{overflow-wrap:anywhere}@media(max-width:600px){.discover-grid article{padding:11px}.discover-grid h3{font-size:16px}.discover-grid .result-actions{gap:6px}.discover-grid .result-actions a{flex:1 1 100%;justify-content:center;min-height:44px;text-align:center}.discover-grid .view-scent{margin-top:0}.discover-grid .note-chips{min-height:0}.discover-grid .note-chips a{font-size:8px}}
+
 /* Discover catalog jump navigation */
 .discover-jump-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 22px}.discover-jump-nav a{white-space:nowrap}.discover-jump-nav a:last-child{margin-left:auto}@media(max-width:700px){.discover-jump-nav{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-inline:contain;padding:4px 2px 10px;scrollbar-width:thin}.discover-jump-nav a{flex:0 0 auto;min-height:44px;display:inline-flex;align-items:center}.discover-jump-nav a:last-child{margin-left:0}}
 
