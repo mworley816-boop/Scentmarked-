@@ -15,11 +15,12 @@ export default function RateScent({perfumeId}:{perfumeId:string}){
  const supabase=useMemo(()=>createClient(),[]),router=useRouter()
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[loadFailed,setLoadFailed]=useState(false),[message,setMessage]=useState(''),[rating,setRating]=useState<Rating|null>(null)
  useEffect(()=>{let live=true;setLoading(true);setLoadFailed(false);(async()=>{try{const {data:{user},error:authError}=await supabase.auth.getUser();if(authError)throw authError;if(!user)return;const {data,error}=await supabase.from('ratings').select('overall,longevity,projection,sweetness,review').eq('user_id',user.id).eq('perfume_id',perfumeId).maybeSingle();if(error)throw error;if(live)setRating(data as Rating|null)}catch{if(live)setLoadFailed(true)}finally{if(live)setLoading(false)}})();return()=>{live=false}},[supabase,perfumeId])
- async function remove(){if(busy||!rating)return;if(!window.confirm('Delete your rating and review for this fragrance?'))return;setBusy(true);setMessage('');try{const {data:{user}}=await supabase.auth.getUser();if(!user){window.location.href=`/login?next=${encodeURIComponent(window.location.pathname+window.location.search)}`;return}const {error}=await supabase.from('ratings').delete().eq('user_id',user.id).eq('perfume_id',perfumeId);if(error)throw error;setRating(null);setMessage('Your rating was deleted.');router.refresh()}catch{setMessage('Could not delete your rating. Please try again.')}finally{setBusy(false)}}
+ async function remove(){if(busy||loading||loadFailed||!rating)return;if(!window.confirm('Delete your rating and review for this fragrance?'))return;setBusy(true);setMessage('');try{const {data:{user},error:authError}=await supabase.auth.getUser();if(authError)throw authError;if(!user){window.location.href=`/login?next=${encodeURIComponent(window.location.pathname+window.location.search)}`;return}const {error}=await supabase.from('ratings').delete().eq('user_id',user.id).eq('perfume_id',perfumeId);if(error)throw error;setRating(null);setMessage('Your rating was deleted.');router.refresh()}catch{setMessage('Could not delete your rating. Please try again.')}finally{setBusy(false)}}
  async function submit(formData:FormData){
   if(busy||loading||loadFailed)return;setBusy(true);setMessage('')
   try{
-   const {data:{user}}=await supabase.auth.getUser()
+   const {data:{user},error:authError}=await supabase.auth.getUser()
+   if(authError)throw authError
    if(!user){window.location.href=`/login?next=${encodeURIComponent(window.location.pathname+window.location.search)}`;return}
    const num=(key:string)=>Number(formData.get(key)||0),overall=num('overall'),longevity=num('longevity'),projection=num('projection'),sweetness=num('sweetness')
    if(!scale.includes(overall)){setMessage('Choose an overall rating from 1 to 5.');return}
