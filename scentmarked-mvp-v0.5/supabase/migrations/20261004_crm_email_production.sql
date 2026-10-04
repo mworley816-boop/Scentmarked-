@@ -95,6 +95,8 @@ update public.crm_contacts c set user_id=u.id,updated_at=now() from auth.users u
 revoke all on function public.unsubscribe_crm_contact(uuid) from public;
 grant execute on function public.unsubscribe_crm_contact(uuid) to anon,authenticated;
 revoke all on function public.sync_member_to_crm_contact() from public;
+-- Trigger-only privileged function: no API role should invoke it directly.
+revoke all on function public.sync_member_to_crm_contact() from anon,authenticated;
 revoke all on function public.email_profile_matches_rules(public.profiles,jsonb,jsonb) from public;
 revoke all on function public.get_email_campaign_audience(uuid) from public;
 revoke all on function public.count_email_segment_audience(bigint) from public;
@@ -119,3 +121,8 @@ grant execute on function public.cancel_scheduled_email_campaign(uuid) to authen
 grant execute on function public.get_due_email_campaigns(integer) to authenticated;
 grant execute on function public.retry_failed_email_deliveries(uuid) to authenticated;
 grant execute on function public.delete_unused_crm_segment(bigint) to authenticated;
+
+-- Explicit table privileges for PostgREST. RLS remains the authorization boundary.
+grant select,insert,update,delete on public.crm_contacts,public.crm_tags,public.crm_contact_tags,public.crm_notes,public.crm_segments,public.email_templates,public.email_campaigns,public.email_deliveries to authenticated;
+grant select on public.email_events to authenticated;
+grant usage,select on all sequences in schema public to authenticated;
