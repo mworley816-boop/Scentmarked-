@@ -88,7 +88,18 @@ export default async function CrmContact({params,searchParams}:{params:Promise<{
 
     <article className="admin-card crm-tags-card"><p className="eyebrow">ORGANIZATION</p><h2>Tags</h2><div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>{tags.length?tags.map((t:any)=><form action={removeTag} key={t.id}><input type="hidden" name="contact_id" value={id}/><input type="hidden" name="tag_id" value={t.id}/><button className="button ghost" type="submit" title="Remove tag">{t.name} ×</button></form>):<p>No tags yet.</p>}</div><form action={addTag} style={{display:'flex',gap:8,flexWrap:'wrap'}}><input type="hidden" name="contact_id" value={id}/><input name="tag" maxLength={60} placeholder="e.g. gourmand-lover" required/><button type="submit">Add tag</button></form></article>
 
-    {profile&&<article className="admin-card crm-scent-profile"><div className="crm-card-heading"><div><p className="eyebrow">SCENTMARKED PROFILE</p><h2>Scent preferences</h2></div><span className={profile.scent_profile_completed_at?'data-ready':'data-missing'}>{profile.scent_profile_completed_at?'✓ Complete':'Incomplete'}</span></div><div className="crm-preference-grid"><div><small>LOVES</small><p>{profile.scent_loved_notes?.length?profile.scent_loved_notes.join(', '):'—'}</p></div><div><small>AVOIDS</small><p>{profile.scent_avoided_notes?.length?profile.scent_avoided_notes.join(', '):'—'}</p></div><div><small>VIBES</small><p>{profile.scent_vibes?.length?profile.scent_vibes.join(', '):'—'}</p></div><div><small>OCCASIONS</small><p>{profile.scent_occasions?.length?profile.scent_occasions.join(', '):'—'}</p></div><div><small>PRESENTATION</small><p>{profile.scent_presentations?.length?profile.scent_presentations.join(', '):'—'}</p></div><div><small>BUDGET</small><p>{profile.scent_max_price!=null?'Up to 
+    {profile&&<article className="admin-card crm-scent-profile">
+      <div className="crm-card-heading"><div><p className="eyebrow">SCENTMARKED PROFILE</p><h2>Scent preferences</h2></div><span className={profile.scent_profile_completed_at?'data-ready':'data-missing'}>{profile.scent_profile_completed_at?'✓ Complete':'Incomplete'}</span></div>
+      <div className="crm-preference-grid">
+        <div><small>LOVES</small><p>{profile.scent_loved_notes?.length?profile.scent_loved_notes.join(', '):'—'}</p></div>
+        <div><small>AVOIDS</small><p>{profile.scent_avoided_notes?.length?profile.scent_avoided_notes.join(', '):'—'}</p></div>
+        <div><small>VIBES</small><p>{profile.scent_vibes?.length?profile.scent_vibes.join(', '):'—'}</p></div>
+        <div><small>OCCASIONS</small><p>{profile.scent_occasions?.length?profile.scent_occasions.join(', '):'—'}</p></div>
+        <div><small>PRESENTATION</small><p>{profile.scent_presentations?.length?profile.scent_presentations.join(', '):'—'}</p></div>
+        <div><small>BUDGET</small><p>{profile.scent_max_price!=null?'Up to $'+profile.scent_max_price:'—'}</p></div>
+      </div>
+      <div className="crm-scent-scales"><span><b>{profile.scent_sweetness||'—'}</b>Sweetness / 5</span><span><b>{profile.scent_projection||'—'}</b>Projection / 5</span><span><b>{profile.scent_longevity||'—'}</b>Longevity / 5</span></div>
+    </article>}
 
     <article className="admin-card crm-notes-card"><p className="eyebrow">INTERNAL</p><h2>Private notes</h2><form action={addNote}><input type="hidden" name="contact_id" value={id}/><textarea name="body" maxLength={4000} rows={4} placeholder="Add an internal CRM note…" required/><button type="submit">Save note</button></form>{notes?.length?<div className="admin-list" style={{marginTop:16}}>{notes.map((n:any)=><div key={n.id}><small>{new Date(n.created_at).toLocaleString()}</small><p style={{whiteSpace:'pre-wrap'}}>{n.body}</p></div>)}</div>:<p>No notes yet.</p>}</article>
 
