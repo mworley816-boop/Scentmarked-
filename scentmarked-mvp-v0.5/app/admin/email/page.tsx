@@ -50,6 +50,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const clicked=ds.filter((x:any)=>x.status==='clicked').length
   const bounced=ds.filter((x:any)=>x.status==='bounced').length
   const failed=ds.filter((x:any)=>x.status==='failed').length
+  const complained=ds.filter((x:any)=>x.status==='complained').length
   const unsubscribed=ds.filter((x:any)=>x.status==='unsubscribed').length
   const skipped=ds.filter((x:any)=>x.status==='skipped').length
   const attempted=ds.filter((x:any)=>!['queued','skipped'].includes(x.status)).length
@@ -65,7 +66,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
 
     <div className="admin-grid">
       <article className="admin-card"><p className="eyebrow">EMAILABLE</p><h2>{emailable||0}</h2><p>Active contacts with consent</p></article>
-      <article className="admin-card"><p className="eyebrow">DELIVERED</p><h2>{delivered}</h2><p>{pct(delivered,sent)}% of sent</p></article>
+      <article className="admin-card"><p className="eyebrow">DELIVERED</p><h2>{delivered}</h2><p>{pct(delivered,attempted)}% of attempted</p></article>
       <article className="admin-card"><p className="eyebrow">OPENED</p><h2>{opened}</h2><p>{pct(opened,delivered)}% of delivered</p></article>
       <article className="admin-card"><p className="eyebrow">CLICKED</p><h2>{clicked}</h2><p>{pct(clicked,delivered)}% of delivered</p></article>
     </div>
@@ -79,6 +80,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
         <div><strong>{failed}</strong><p>Failed deliveries</p></div>
         <div><strong>{skipped}</strong><p>Skipped · no email sent</p></div>
         <div><strong>{unsubscribed}</strong><p>Unsubscribes</p></div>
+        <div><strong>{complained}</strong><p>Spam complaints</p></div>
         <div><strong>{campaignCount}</strong><p>Recent campaigns</p></div>
         <div><strong>{completedCampaigns}</strong><p>Completed campaigns</p></div>
       </div>
