@@ -34,6 +34,10 @@
 /* My Marks filters */
 .collection-tabs{display:flex;gap:8px;flex-wrap:wrap}.collection-tabs a{padding:9px 13px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;background:var(--paper)}.collection-tabs a.active{font-weight:700;border-color:#8f6547}.collection-page .empty-state{margin-top:24px}
 
+/* Discover jump-link landing offset */
+#browse-brands,#new-releases,#browse-years,#browse-concentrations,#browse-accords,#browse-notes,#discover-results{scroll-margin-top:96px}
+@media(max-width:700px){#browse-brands,#new-releases,#browse-years,#browse-concentrations,#browse-accords,#browse-notes,#discover-results{scroll-margin-top:76px}}
+
 /* Discover search banner */
 @media(max-width:600px){.discover-banner form{display:grid;grid-template-columns:auto 1fr;gap:4px;max-width:100%;padding:6px 6px 6px 12px;border-radius:14px}.discover-banner form>span{align-self:center}.discover-banner form button{grid-column:1/-1;width:100%;margin:0}.discover-banner input{width:100%}}
 
