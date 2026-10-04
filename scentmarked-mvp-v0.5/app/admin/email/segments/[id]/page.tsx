@@ -60,8 +60,10 @@ export default async function EditSegment({params,searchParams}:{params:Promise<
   redirect('/admin/email/segments')
  }
 
- async function remove(){
+ async function remove(formData:FormData){
   'use server'
+  const confirmation=String(formData.get('confirmation')||'').trim()
+  if(confirmation!=='DELETE')redirect('/admin/email/segments/'+segmentId+'?error='+encodeURIComponent('Type DELETE to confirm permanent deletion.'))
   const db=await requireAdmin()
   const {data,error}=await db.rpc('delete_unused_crm_segment',{p_segment_id:segmentId})
   if(error||!data)redirect('/admin/email/segments/'+segmentId+'?error='+encodeURIComponent(error?.message||'Segment could not be deleted.'))
@@ -84,6 +86,6 @@ export default async function EditSegment({params,searchParams}:{params:Promise<
    <div><button type="submit">Save segment</button></div>
   </form></article>
   <article className="admin-card"><p className="eyebrow">AUDIENCE PREVIEW</p><h2>{segment.is_active?(Number(audienceCount)||0)+' eligible contact'+(Number(audienceCount)===1?'':'s'):'Segment inactive'}</h2><p>Only active contacts with marketing consent are included. Showing up to 25 matching names.</p>{segment.is_active&&!audiencePreview?.length?<p>No contacts currently match this segment.</p>:<div className="admin-list">{(audiencePreview||[]).map((contact:any)=><div key={contact.contact_id}>{[contact.first_name,contact.last_name].filter(Boolean).join(' ')||'Unnamed contact'}</div>)}</div>}</article>
-  <article className="admin-card"><p className="eyebrow">SEGMENT LIFECYCLE</p><h2>{segment.is_active?'Active audience':'Inactive audience'}</h2><p>{campaignCount?('This segment is referenced by '+campaignCount+' email campaign'+(campaignCount===1?'':'s')+'. It can be deactivated but not permanently deleted, preserving campaign history.'):'This segment is not used by any email campaign and can be permanently deleted.'}</p>{!campaignCount&&<form action={remove}><button className="button ghost" type="submit">Delete unused segment</button></form>}</article>
+  <article className="admin-card"><p className="eyebrow">SEGMENT LIFECYCLE</p><h2>{segment.is_active?'Active audience':'Inactive audience'}</h2><p>{campaignCount?('This segment is referenced by '+campaignCount+' email campaign'+(campaignCount===1?'':'s')+'. It can be deactivated but not permanently deleted, preserving campaign history.'):'This segment is not used by any email campaign and can be permanently deleted.'}</p>{!campaignCount&&<form action={remove} style={{display:'grid',gap:10,maxWidth:420}}><label>Type DELETE to confirm<input name="confirmation" autoComplete="off" required/></label><button className="button ghost" type="submit">Delete unused segment</button></form>}</article>
  </section></main>
 }
