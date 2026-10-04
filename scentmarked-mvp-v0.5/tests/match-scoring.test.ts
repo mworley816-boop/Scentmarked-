@@ -208,3 +208,20 @@ test('bounded personal signals cannot overpower a clearly stronger core match',(
  const ranked=rankMatchCandidates([higher,lower],12,{}, {[lower.id]:{favorite:true,rating:5},[higher.id]:{rating:1}})
  assert.equal(ranked.matches[0].id,higher.id)
 })
+
+
+test('resolved behavioral evidence is not amplified by neutral collection-state signals',()=>{
+ const prefs={love:['vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}
+ const positive={...buildMatchCandidate(perfume({id:'resolved-positive'}),undefined,new Map(),2,prefs),score:80}
+ const neutral={...buildMatchCandidate(perfume({id:'neutral'}),undefined,new Map(),2,prefs),score:84}
+ const ranked=rankMatchCandidates([neutral,positive],12,{[positive.id]:'more_like_this'},{[positive.id]:{tried:true}})
+ assert.equal(ranked.matches[0].id,positive.id)
+ assert.equal(personalSignalAdjustment({tried:true}),0)
+ assert.equal(positive.score,80)
+})
+
+test('owned and want remain small collection-state adjustments separate from resolved taste evidence',()=>{
+ assert.equal(personalSignalAdjustment({owned:true}),1)
+ assert.equal(personalSignalAdjustment({want:true}),1)
+ assert.equal(personalSignalAdjustment({owned:true,want:true}),2)
+})
