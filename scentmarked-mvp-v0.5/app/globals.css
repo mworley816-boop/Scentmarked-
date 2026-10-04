@@ -449,3 +449,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Because-you-liked shelf */
 .home-recommendations.because-liked{padding-top:24px;border-top:1px solid var(--line)}.because-liked .home-match-score b{font-size:13px}
+
+
+/* Explainable taste learning */
+.home-for-you .taste-learning-summary{margin-top:10px!important;font-size:12px;font-weight:700;letter-spacing:.01em}
