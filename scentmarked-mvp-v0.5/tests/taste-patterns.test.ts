@@ -38,3 +38,23 @@ test('limit caps displayed learned patterns',()=>{
  const patterns=learnedTastePatterns([perfume('a',['Vanilla','Cherry','Amber'])],[],2)
  assert.equal(patterns.length,2)
 })
+
+
+test('confidence grows from possible to emerging to strong with repeated evidence',()=>{
+ const one=learnedTastePatterns([perfume('a',['Vanilla'])],[])
+ const two=learnedTastePatterns([perfume('a',['Vanilla']),perfume('b',['Vanilla'])],[])
+ const three=learnedTastePatterns([perfume('a',['Vanilla']),perfume('b',['Vanilla']),perfume('c',['Vanilla'])],[])
+ assert.equal(one[0].confidence,'possible')
+ assert.equal(two[0].confidence,'emerging')
+ assert.equal(three[0].confidence,'strong')
+})
+
+test('contradictory evidence lowers confidence as well as net strength',()=>{
+ const patterns=learnedTastePatterns([
+  perfume('a',['Vanilla']),perfume('b',['Vanilla']),perfume('c',['Vanilla'])
+ ],[perfume('d',['Vanilla'])])
+ assert.equal(patterns[0].net,2)
+ assert.equal(patterns[0].confidence,'strong')
+ const mixed=learnedTastePatterns([perfume('a',['Rose']),perfume('b',['Rose'])],[perfume('c',['Rose'])])
+ assert.equal(mixed[0].confidence,'emerging')
+})
