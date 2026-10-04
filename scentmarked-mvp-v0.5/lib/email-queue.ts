@@ -24,7 +24,19 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string){
   for(const row of rows||[]){
     const contact=Array.isArray(row.crm_contacts)?row.crm_contacts[0]:row.crm_contacts
     const eligible=contact?.status==='active'&&contact?.marketing_consent===true&&!!contact?.marketing_consented_at&&!contact?.unsubscribed_at
-    if(!eligible){skipped++;continue}
+    if(!eligible){
+      const {error:skipError}=await s.from('email_deliveries').update({
+        status:'skipped',
+        skipped_at:new Date().toISOString(),
+        error_message:'Recipient was no longer eligible for marketing email at send time.'
+      }).eq('id',row.id).eq('status','queued')
+      if(skipError){
+        failed++
+        continue
+      }
+      skipped++
+      continue
+    }
 
     const unsubscribeUrl=siteUrl+'/unsubscribe?token='+encodeURIComponent(String(contact.unsubscribe_token))
     const firstName=String(contact.first_name||'').trim()
