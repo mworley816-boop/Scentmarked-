@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { verifyResendWebhook } from '@/lib/resend-webhook'
 
 
@@ -27,17 +27,13 @@ export async function POST(request:Request){
   const providerMessageId=String(event?.data?.email_id||'')
   if(!providerMessageId)return new NextResponse('Missing email id',{status:400})
 
-  const databaseSecret=(process.env.EMAIL_WEBHOOK_DATABASE_SECRET||'').trim()
-  if(!databaseSecret)return new NextResponse('Webhook database bridge not configured',{status:503})
-
-  const s=await createClient()
+  const s=createServiceClient()
   const providerEventId=request.headers.get('svix-id')
   const {data:recorded,error}=await s.rpc('record_provider_email_event',{
     p_provider_message_id:providerMessageId,
     p_event_type:mapped,
     p_provider_event_id:providerEventId,
-    p_metadata:{provider:'resend',created_at:event?.created_at||null},
-    p_secret:databaseSecret
+    p_metadata:{provider:'resend',created_at:event?.created_at||null}
   })
   if(error)return new NextResponse('Event processing failed',{status:500})
   return NextResponse.json({ok:true,ignored:!recorded})
