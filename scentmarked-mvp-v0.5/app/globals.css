@@ -445,3 +445,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Personalized homepage recommendations */
 .home-recommendations{max-width:1200px;margin:32px auto;padding:0 4px}.home-recommendations .section-head{margin-bottom:16px}.home-recommendations .section-head p:not(.eyebrow){margin:4px 0 0;color:var(--muted)}.home-match-score{margin:8px 0 4px;font-size:12px}.home-match-score b{font-size:14px}@media(max-width:700px){.home-recommendations{margin:26px 14px;padding:0}}
+
+
+/* Because-you-liked shelf */
+.home-recommendations.because-liked{padding-top:24px;border-top:1px solid var(--line)}.because-liked .home-match-score b{font-size:13px}
