@@ -123,7 +123,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   }
   const total=rows.length
   const skipped=counts.skipped||0
-  const sentBase=total-(counts.queued||0)-skipped
+  const sentBase=total-(counts.queued||0)-(counts.processing||0)-skipped
   const delivered=(counts.delivered||0)+(counts.opened||0)+(counts.clicked||0)
   const opened=(counts.opened||0)+(counts.clicked||0)
   const clicked=counts.clicked||0
@@ -145,7 +145,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
 
     <div className="admin-grid">
       <article className="admin-card"><p className="eyebrow">STATUS</p><h2>{campaign.status}</h2><p>{campaign.scheduled_at?'Scheduled '+new Date(campaign.scheduled_at).toLocaleString():'Not scheduled'}</p></article>
-      <article className="admin-card"><p className="eyebrow">DELIVERIES</p><h2>{total}</h2><p>{delivered} delivered · {opened} opened · {clicked} clicked</p></article>
+      <article className="admin-card"><p className="eyebrow">DELIVERIES</p><h2>{total}</h2><p>{delivered} delivered · {opened} opened · {clicked} clicked{(counts.processing||0)>0?' · '+counts.processing+' processing':''}</p></article>
     </div>
 
     <article className="admin-card"><p className="eyebrow">CAMPAIGN ANALYTICS</p><h2>Performance</h2>
