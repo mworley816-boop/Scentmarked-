@@ -24,11 +24,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: scentmarked-mvp-v0.5/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Typecheck, test, and build for Cloudflare
         run: npm run check
