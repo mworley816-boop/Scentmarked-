@@ -129,6 +129,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   const clicked=counts.clicked||0
   const bounced=counts.bounced||0
   const failed=counts.failed||0
+  const complained=counts.complained||0
   const unsubscribed=counts.unsubscribed||0
   const rate=(value:number,base:number)=>base>0?Math.round((value/base)*1000)/10:0
 
@@ -156,6 +157,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
         <div><strong>{failed}</strong><p>Failed sends</p></div>
         <div><strong>{skipped}</strong><p>Skipped · no email sent</p></div>
         <div><strong>{unsubscribed}</strong><p>Unsubscribes</p></div>
+        <div><strong>{complained}</strong><p>Spam complaints</p></div>
       </div>
     </article>
 
