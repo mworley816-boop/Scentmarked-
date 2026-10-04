@@ -24,14 +24,19 @@ export async function POST(request:Request){
 
   const ids=[...new Set([...(due||[]).map((x:any)=>String(x.campaign_id)),...(sending||[]).map((x:any)=>String(x.id))])].slice(0,5)
   const results=[] as any[]
+  let failures=0
 
   for(const campaignId of ids){
     try{
       results.push({campaignId,...await sendQueuedCampaign(s,campaignId,25)})
     }catch(error){
-      results.push({campaignId,ok:false,error:error instanceof Error?error.message:'Campaign batch failed.'})
+      failures++
+      console.error('Email worker campaign batch failed',{campaignId,error:error instanceof Error?error.message:'Campaign batch failed.'})
+      results.push({campaignId,ok:false,error:'Campaign batch failed.'})
     }
   }
 
-  return NextResponse.json({ok:true,processed:results.length,results})
+  const summary={ok:failures===0,processed:results.length,failures,results}
+  if(failures>0)return NextResponse.json(summary,{status:500})
+  return NextResponse.json(summary)
 }
