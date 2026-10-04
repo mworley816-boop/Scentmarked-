@@ -27,22 +27,26 @@ async function createSegment(formData:FormData){
   const s=await requireAdmin()
   const name=String(formData.get('name')||'').trim().slice(0,100)
   const description=String(formData.get('description')||'').trim().slice(0,300)
-  const submitted=fields.map(field=>({field,value:String(formData.get(field)||'').trim().slice(0,100)})).filter(x=>x.value)
+  const multiFields=new Set(['loved_note','avoided_note','vibe','occasion','presentation'])
+  const submitted=fields.map(field=>{
+    const values=multiFields.has(field)?formData.getAll(field).map(String).map(x=>x.trim().slice(0,100)).filter(Boolean):[String(formData.get(field)||'').trim().slice(0,100)].filter(Boolean)
+    return {field,values:[...new Set(values)]}
+  }).filter(x=>x.values.length)
   if(!name)redirect('/admin/email/segments?error='+encodeURIComponent('Segment name is required.'))
   const allowed:Record<string,string[]>={
     loved_note:scentChoices,avoided_note:scentNotes,vibe:vibes,occasion:occasions,presentation:presentations,
     sweetness_min:['1','2','3','4','5'],projection_min:['1','2','3','4','5'],longevity_min:['1','2','3','4','5']
   }
-  for(const {field,value} of submitted){
+  for(const {field,values} of submitted){
     if(field==='max_price'){
-      const n=Number(value)
-      if(!Number.isSafeInteger(n)||n<1)redirect('/admin/email/segments?error='+encodeURIComponent('Maximum budget must be a positive whole number.'))
-    }else if(!allowed[field]?.includes(value)){
+      const n=Number(values[0])
+      if(values.length!==1||!Number.isSafeInteger(n)||n<1)redirect('/admin/email/segments?error='+encodeURIComponent('Maximum budget must be a positive whole number.'))
+    }else if(values.some(value=>!allowed[field]?.includes(value))){
       redirect('/admin/email/segments?error='+encodeURIComponent('Choose valid questionnaire values for every segment condition.'))
     }
   }
   const rules:any={contact:{status:'active',marketing_consent:true},profile:{}}
-  for(const {field,value} of submitted)rules.profile[field]=value
+  for(const {field,values} of submitted)rules.profile[field]=multiFields.has(field)?values:values[0]
   const {error}=await s.from('crm_segments').insert({name,description:description||null,rules,is_active:true})
   if(error)redirect('/admin/email/segments?error='+encodeURIComponent(error.code==='23505'?'A segment with that name already exists.':'Segment could not be created.'))
   redirect('/admin/email/segments')
@@ -61,7 +65,7 @@ async function toggleSegment(formData:FormData){
 function ruleLabel(r:any){
   const p=r?.profile||{}
   const labels:any={loved_note:'Loves note',avoided_note:'Avoids note',vibe:'Vibe',occasion:'Occasion',presentation:'Presentation',sweetness_min:'Sweetness at least',projection_min:'Projection at least',longevity_min:'Longevity at least',max_price:'Budget up to'}
-  const parts=Object.entries(p).filter(([key])=>labels[key]).map(([key,value])=>labels[key]+' '+value)
+  const parts=Object.entries(p).filter(([key])=>labels[key]).map(([key,value])=>labels[key]+' '+(Array.isArray(value)?value.join(' + '):value))
   return parts.length?parts.join(' · '):'All active, consented contacts'
 }
 
@@ -86,11 +90,11 @@ export default async function Segments({searchParams}:{searchParams:Promise<{err
         <label>Description<input name="description" maxLength={300} placeholder="Members who love vanilla"/></label>
         <p>Add any conditions you need. Blank fields are ignored, and all completed conditions must match.</p>
         <div className="admin-grid">
-          <label>Loved note or family<select name="loved_note" defaultValue=""><option value="">Any</option>{scentChoices.map(x=><option key={'love-'+x} value={x}>{x}</option>)}</select></label>
-          <label>Avoided note<select name="avoided_note" defaultValue=""><option value="">Any</option>{scentNotes.map(x=><option key={'avoid-'+x} value={x}>{x}</option>)}</select></label>
-          <label>Vibe<select name="vibe" defaultValue=""><option value="">Any</option>{vibes.map(x=><option key={x} value={x}>{x}</option>)}</select></label>
-          <label>Occasion<select name="occasion" defaultValue=""><option value="">Any</option>{occasions.map(x=><option key={x} value={x}>{x}</option>)}</select></label>
-          <label>Presentation<select name="presentation" defaultValue=""><option value="">Any</option>{presentations.map(x=><option key={x} value={x}>{x}</option>)}</select></label>
+<fieldset><legend>Loved notes or families</legend><div className="quiz-check-grid">{scentChoices.map(x=><label className="quiz-check" key={'loved_note-'+x}><input type="checkbox" name="loved_note" value={x}/><span>{x}</span></label>)}</div></fieldset>
+          <fieldset><legend>Avoided notes</legend><div className="quiz-check-grid">{scentNotes.map(x=><label className="quiz-check" key={'avoided_note-'+x}><input type="checkbox" name="avoided_note" value={x}/><span>{x}</span></label>)}</div></fieldset>
+          <fieldset><legend>Vibes</legend><div className="quiz-check-grid">{vibes.map(x=><label className="quiz-check" key={'vibe-'+x}><input type="checkbox" name="vibe" value={x}/><span>{x}</span></label>)}</div></fieldset>
+          <fieldset><legend>Occasions</legend><div className="quiz-check-grid">{occasions.map(x=><label className="quiz-check" key={'occasion-'+x}><input type="checkbox" name="occasion" value={x}/><span>{x}</span></label>)}</div></fieldset>
+          <fieldset><legend>Presentations</legend><div className="quiz-check-grid">{presentations.map(x=><label className="quiz-check" key={'presentation-'+x}><input type="checkbox" name="presentation" value={x}/><span>{x}</span></label>)}</div></fieldset>
           <label>Minimum sweetness<input name="sweetness_min" type="number" min="1" max="5" step="1"/></label>
           <label>Minimum projection<input name="projection_min" type="number" min="1" max="5" step="1"/></label>
           <label>Minimum longevity<input name="longevity_min" type="number" min="1" max="5" step="1"/></label>
