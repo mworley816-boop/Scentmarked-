@@ -15,14 +15,26 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
   const {data:claimed,error:claimError}=await s.rpc('claim_email_delivery_batch',{p_campaign_id:campaignId,p_limit:safeBatchSize})
   if(claimError)throw new Error('Queued deliveries could not be claimed.')
   const claimedIds=(claimed||[]).map((x:any)=>x.delivery_id)
+  const releaseClaims=async()=>{
+    if(claimedIds.length)await s.rpc('release_email_delivery_claims',{p_delivery_ids:claimedIds})
+  }
   const {data:rows,error:deliveryError}=claimedIds.length?await s.from('email_deliveries')
     .select('id,contact_id,crm_contacts!inner(email,first_name,unsubscribe_token,status,marketing_consent,marketing_consented_at,unsubscribed_at)')
     .in('id',claimedIds).order('id',{ascending:true}):{data:[],error:null}
-  if(deliveryError)throw new Error('Claimed deliveries could not be loaded.')
+  if(deliveryError){
+    await releaseClaims()
+    throw new Error('Claimed deliveries could not be loaded.')
+  }
 
-  const provider=getEmailProvider()
-  const {error:startError}=await s.rpc('start_email_campaign',{p_campaign_id:campaignId})
-  if(startError)throw new Error('Campaign could not start.')
+  let provider
+  try{
+    provider=getEmailProvider()
+    const {error:startError}=await s.rpc('start_email_campaign',{p_campaign_id:campaignId})
+    if(startError)throw new Error('Campaign could not start.')
+  }catch(error){
+    await releaseClaims()
+    throw error
+  }
   let sent=0,skipped=0,failed=0
 
   for(const row of rows||[]){
