@@ -27,6 +27,20 @@ export function buildMatchCandidate(p:MatchPerfume,selected:MatchPerfume|undefin
  return {...p,...base,dnaScore:base.score,score:Math.min(100,combined+(presentationMatched?4:0)),scoreWeights,loved,lovedAccords,avoided,preferenceScore,traitScore,favoriteTasteScore,presentationMatched,sweet,proj,long,price,priceKnown,priceOk,relationship}
 }
 
+export type LearnedTastePattern={name:string;kind:'note'|'accord';net:number;confidence:'possible'|'emerging'|'strong'}
+export function learnedPatternAdjustment(perfume:MatchPerfume,patterns:LearnedTastePattern[]=[]){
+ if(!patterns.length)return 0
+ const notes=new Set(noteNames(perfume).map(x=>x.toLocaleLowerCase())),accords=new Set(accordRows(perfume).map(x=>String(x.accords?.name||'').toLocaleLowerCase()))
+ let adjustment=0
+ for(const pattern of patterns){
+  const key=pattern.name.toLocaleLowerCase(),matched=pattern.kind==='note'?notes.has(key):accords.has(key)
+  if(!matched)continue
+  const confidenceWeight=pattern.confidence==='strong'?1.5:pattern.confidence==='emerging'?1:.5
+  adjustment+=Math.min(2,Math.max(.25,pattern.net))*confidenceWeight
+ }
+ return Math.min(4,Math.round(adjustment*10)/10)
+}
+
 export type RecommendationFeedback='more_like_this'|'less_like_this'
 export const feedbackAdjustment=(feedback?:RecommendationFeedback|null)=>feedback==='more_like_this'?5:feedback==='less_like_this'?-5:0
 
@@ -42,14 +56,14 @@ export function personalSignalAdjustment(signal?:PersonalRecommendationSignal|nu
  return Math.max(-3,Math.min(3,adjustment))
 }
 
-export function rankMatchCandidates(candidates:MatchCandidate[],limit=12,feedbackByPerfume:Record<string,RecommendationFeedback>={},personalSignals:Record<string,PersonalRecommendationSignal>={}){
+export function rankMatchCandidates(candidates:MatchCandidate[],limit=12,feedbackByPerfume:Record<string,RecommendationFeedback>={},personalSignals:Record<string,PersonalRecommendationSignal>={},learnedPatterns:LearnedTastePattern[]=[]){
  let avoidExcluded=0,budgetExcluded=0
  const eligible=candidates.filter(candidate=>{
   if(candidate.avoided.length>0){avoidExcluded+=1;return false}
   if(candidate.priceKnown&&!candidate.priceOk){budgetExcluded+=1;return false}
   return true
  })
- const adjustedScore=(candidate:MatchCandidate)=>candidate.score+feedbackAdjustment(feedbackByPerfume[candidate.id])+personalSignalAdjustment(personalSignals[candidate.id])
+ const adjustedScore=(candidate:MatchCandidate)=>candidate.score+feedbackAdjustment(feedbackByPerfume[candidate.id])+personalSignalAdjustment(personalSignals[candidate.id])+learnedPatternAdjustment(candidate,learnedPatterns)
  eligible.sort((a,b)=>{
   const scoreDifference=adjustedScore(b)-adjustedScore(a)
   if(scoreDifference!==0)return scoreDifference
