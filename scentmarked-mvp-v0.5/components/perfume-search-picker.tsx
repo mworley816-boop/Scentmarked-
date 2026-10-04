@@ -14,7 +14,25 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
  const listId=useId()
  const hintId=useId()
  const activeOption=useRef<HTMLButtonElement>(null)
- const matches=useMemo(()=>{const q=query.trim().toLowerCase();if(!q)return[];return options.filter(x=>(x.name+' '+x.brand).toLowerCase().includes(q)).slice(0,8)},[options,query])
+ const matches=useMemo(()=>{
+  const q=query.trim().toLowerCase();if(!q)return[]
+  const words=q.split(/\s+/).filter(Boolean)
+  const score=(x:PerfumeOption)=>{
+   const name=x.name.toLowerCase(),brand=x.brand.toLowerCase(),combined=name+' '+brand
+   if(name===q)return 100
+   if((brand+' — '+name)===q)return 98
+   if(name.startsWith(q))return 90
+   if(brand===q)return 85
+   if(brand.startsWith(q))return 80
+   if(words.every(word=>name.includes(word)))return 72
+   if(words.every(word=>combined.includes(word)))return 65
+   if(name.includes(q))return 60
+   if(brand.includes(q))return 50
+   if(combined.includes(q))return 40
+   return 0
+  }
+  return options.map(x=>({x,score:score(x)})).filter(row=>row.score>0).sort((a,b)=>b.score-a.score||a.x.name.localeCompare(b.x.name)||a.x.brand.localeCompare(b.x.brand)).slice(0,8).map(row=>row.x)
+ },[options,query])
  const expanded=open&&query.trim().length>0
  useEffect(()=>{
   setQuery(selected?selected.brand+' — '+selected.name:'')
