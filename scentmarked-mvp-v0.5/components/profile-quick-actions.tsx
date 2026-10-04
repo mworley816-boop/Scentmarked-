@@ -30,5 +30,5 @@ export default function ProfileQuickActions({perfumeId,name,initialFavorite=fals
   if(navigator.clipboard){try{await navigator.clipboard.writeText(url);setMessage('Link copied.');return}catch{}}
   setMessage('Could not share the link. Please copy it from your browser.')
  }
- return <div><div className="profile-quick-actions"><button type="button" aria-label={favorite?'Remove from favorites':'Add to favorites'} aria-pressed={favorite} onClick={toggle} disabled={busy}>{favorite?'♥':'♡'}</button><button type="button" aria-label={'Share '+name} onClick={share}>↗</button></div>{message&&<span className="profile-action-message" role="status">{message}</span>}</div>
+ return <div><div className="profile-quick-actions"><button type="button" aria-label={busy?'Updating favorite':favorite?'Remove from favorites':'Add to favorites'} aria-pressed={favorite} aria-busy={busy} onClick={toggle} disabled={busy}>{favorite?'♥':'♡'}</button><button type="button" aria-label={'Share '+name} onClick={share}>↗</button></div>{message&&<span className="profile-action-message" role="status">{message}</span>}</div>
 }
