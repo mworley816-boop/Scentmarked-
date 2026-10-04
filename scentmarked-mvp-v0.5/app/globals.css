@@ -387,3 +387,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .site-secondary-visuals{margin-top:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}.site-secondary-visuals summary{display:flex;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;font-weight:700;list-style:none}.site-secondary-visuals summary::-webkit-details-marker{display:none}.site-secondary-visuals summary span{color:var(--muted);font-size:11px;font-weight:600}.site-secondary-visuals[open] summary{border-bottom:1px solid var(--line)}.site-secondary-visuals .site-slot-grid{padding:12px}.site-slot-grid.secondary{grid-template-columns:repeat(4,1fr)}.site-slot-grid.secondary .site-slot-preview{height:90px}
 @media(max-width:900px){.site-slot-grid.secondary{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.site-slot-grid.secondary{grid-template-columns:1fr}}
+
+
+/* Shared admin context navigation */
+.admin-context-nav{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 10px}.admin-context-nav a{padding:7px 10px;border-radius:8px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.04em;text-decoration:none}.admin-context-nav a:hover,.admin-context-nav a:focus-visible{background:#efe5da;color:var(--ink);outline:none}
