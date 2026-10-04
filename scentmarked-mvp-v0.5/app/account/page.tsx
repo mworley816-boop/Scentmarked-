@@ -22,6 +22,9 @@ export default async function AccountPage({searchParams}:{searchParams:Promise<{
  const recentFeedback=(feedback||[]).slice(0,5),feedbackPerfumeIds=[...new Set(recentFeedback.map((x:any)=>String(x.perfume_id)))]
  const {data:feedbackPerfumes}=feedbackPerfumeIds.length?await supabase.from('perfumes').select('id,name,slug').in('id',feedbackPerfumeIds):{data:[] as {id:string;name:string;slug:string}[]}
  const feedbackPerfumeMap=new Map((feedbackPerfumes||[]).map((x:any)=>[String(x.id),x]))
+ const latest=revisions?.[0]
+ const previous=revisions?.[1]
+ const diffs:{kind:'added'|'removed'|'changed';label:string;detail:string}[]=[]
  const traitLabel=(trait:'sweetness'|'projection'|'longevity',value:any)=>{if(value==null)return 'No preference';const n=Number(value),labels={sweetness:['','Not sweet','Lightly sweet','Balanced','Sweet','Very sweet'],projection:['','Close to skin','Soft','Moderate','Noticeable','Room-filling'],longevity:['','A few hours','Short wear','4–6 hours','6–8 hours','8+ hours']};return labels[trait][n]||String(value)}
  const budgetLabel=(value:any)=>value==null?'No preference':'USD '+Number(value).toLocaleString('en-US')
  const favoriteRevisionIds=[...new Set((revisions||[]).flatMap((x:any)=>x.favorite_perfume_ids||[]))]
