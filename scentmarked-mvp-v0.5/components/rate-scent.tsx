@@ -20,7 +20,7 @@ export default function RateScent({perfumeId}:{perfumeId:string}){
   if(busy)return;setBusy(true);setMessage('')
   try{
    const {data:{user}}=await supabase.auth.getUser()
-   if(!user){window.location.href=`/login?next=${encodeURIComponent(window.location.pathname)}`;return}
+   if(!user){window.location.href=`/login?next=${encodeURIComponent(window.location.pathname+window.location.search)}`;return}
    const num=(key:string)=>Number(formData.get(key)||0),overall=num('overall'),longevity=num('longevity'),projection=num('projection'),sweetness=num('sweetness')
    if(!scale.includes(overall)){setMessage('Choose an overall rating from 1 to 5.');return}
    const review=String(formData.get('review')||'').trim()
