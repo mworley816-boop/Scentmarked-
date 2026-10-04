@@ -31,6 +31,7 @@ export default async function EditSegment({params,searchParams}:{params:Promise<
  const s=await requireAdmin()
  const {data:segment}=await s.from('crm_segments').select('id,name,description,rules,is_active').eq('id',segmentId).maybeSingle()
  if(!segment)notFound()
+ const {count:campaignCount}=await s.from('email_campaigns').select('id',{count:'exact',head:true}).eq('segment_id',segmentId)
  const profile:any=segment.rules?.profile||{},modes:any=segment.rules?.match_modes||{}
 
  async function save(formData:FormData){
@@ -55,6 +56,14 @@ export default async function EditSegment({params,searchParams}:{params:Promise<
   redirect('/admin/email/segments')
  }
 
+ async function remove(){
+  'use server'
+  const db=await requireAdmin()
+  const {data,error}=await db.rpc('delete_unused_crm_segment',{p_segment_id:segmentId})
+  if(error||!data)redirect('/admin/email/segments/'+segmentId+'?error='+encodeURIComponent(error?.message||'Segment could not be deleted.'))
+  redirect('/admin/email/segments')
+ }
+
  return <main><section className="admin-page">
   <div className="admin-heading"><div><p className="eyebrow">ADMIN · CRM</p><h1>Edit {segment.name}</h1><p>Update this reusable audience. Email consent remains required automatically.</p></div><Link className="button ghost" href="/admin/email/segments">Back to Segments</Link></div>
   {p.error&&<div className="notice error">{p.error}</div>}
@@ -70,5 +79,6 @@ export default async function EditSegment({params,searchParams}:{params:Promise<
    </div>
    <div><button type="submit">Save segment</button></div>
   </form></article>
+  <article className="admin-card"><p className="eyebrow">SEGMENT LIFECYCLE</p><h2>{segment.is_active?'Active audience':'Inactive audience'}</h2><p>{campaignCount?('This segment is referenced by '+campaignCount+' email campaign'+(campaignCount===1?'':'s')+'. It can be deactivated but not permanently deleted, preserving campaign history.'):'This segment is not used by any email campaign and can be permanently deleted.'}</p>{!campaignCount&&<form action={remove}><button className="button ghost" type="submit">Delete unused segment</button></form>}</article>
  </section></main>
 }
