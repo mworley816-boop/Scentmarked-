@@ -60,7 +60,7 @@ async function sendCampaign(formData:FormData){
   const { sendQueuedCampaign }=await import('@/lib/email-queue')
   try{
     const result=await sendQueuedCampaign(s,id)
-    redirect('/admin/email/'+id+'?sent='+result.sent+'&failed='+result.failed+'&skipped='+result.skipped)
+    redirect('/admin/email/'+id+'?sent='+result.sent+'&failed='+result.failed+'&skipped='+result.skipped+'&remaining='+result.remaining)
   }catch(error){
     const message=error instanceof Error?error.message:'Campaign send failed.'
     redirect('/admin/email/'+id+'?error='+encodeURIComponent(message))
@@ -98,7 +98,7 @@ async function prepareCampaign(formData:FormData){
   redirect('/admin/email/'+id+'?queued='+String(data||0))
 }
 
-export default async function EditCampaign({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string,saved?:string,queued?:string,sent?:string,failed?:string,skipped?:string,retried?:string,scheduled?:string,unscheduled?:string}>}){
+export default async function EditCampaign({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string,saved?:string,queued?:string,sent?:string,failed?:string,skipped?:string,remaining?:string,retried?:string,scheduled?:string,unscheduled?:string}>}){
   const {id}=await params
   const p=await searchParams
   const s=await requireAdmin('/admin/email/'+id)
@@ -136,7 +136,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
     <div className="admin-heading"><div><p className="eyebrow">ADMIN · EMAIL CAMPAIGN</p><h1>{campaign.name}</h1><p>{campaign.status} · Created {new Date(campaign.created_at).toLocaleDateString()}</p></div><Link className="button ghost" href="/admin/email">Back to Email</Link></div>
     {p.error&&<div className="notice error">{p.error}</div>}
     {p.saved&&<div className="notice">Draft saved.</div>}{p.queued!==undefined&&<div className="notice">Campaign audience prepared: {p.queued} new eligible recipient{p.queued==='1'?'':'s'} queued. No email has been sent.</div>}
-    {p.sent!==undefined&&<div className="notice">Send finished: {p.sent} sent · {p.failed||'0'} failed · {p.skipped||'0'} skipped.</div>}
+    {p.sent!==undefined&&<div className="notice">Batch finished: {p.sent} sent · {p.failed||'0'} failed · {p.skipped||'0'} skipped{Number(p.remaining||0)>0?' · '+p.remaining+' still queued. Send the next batch to continue.':' · campaign complete.'}</div>}
     {p.retried!==undefined&&<div className="notice">{p.retried} failed recipient{p.retried==='1'?'':'s'} prepared for retry.</div>}
     {p.scheduled&&<div className="notice">Campaign scheduled successfully.</div>}
     {p.unscheduled&&<div className="notice">Campaign schedule cancelled. It is a draft again.</div>}
