@@ -12,7 +12,7 @@ export default async function AccountPage({searchParams}:{searchParams:Promise<{
  if(!user)redirect('/login?next='+encodeURIComponent('/account'))
  const [{data:profile,error:profileError},{data:feedback},{data:collection},{data:ratings},{data:history},{data:revisions}]=await Promise.all([
   supabase.from('profiles').select('display_name,is_admin,scent_profile_completed_at,scent_loved_notes,scent_avoided_notes,scent_presentations,scent_sweetness,scent_projection,scent_longevity,scent_max_price').eq('id',user.id).maybeSingle(),
-  supabase.from('recommendation_feedback').select('perfume_id,feedback,updated_at').eq('user_id',user.id).order('updated_at',{ascending:false}),
+  supabase.from('recommendation_feedback').select('perfume_id,feedback,updated_at').eq('user_id',user.id).in('feedback',['more_like_this','less_like_this']).order('updated_at',{ascending:false}),
   supabase.from('collection_items').select('perfume_id,status').eq('user_id',user.id),
   supabase.from('ratings').select('perfume_id,overall').eq('user_id',user.id),
   supabase.from('recommendation_history').select('created_at,result_count').eq('user_id',user.id).order('created_at',{ascending:false}).limit(5),
