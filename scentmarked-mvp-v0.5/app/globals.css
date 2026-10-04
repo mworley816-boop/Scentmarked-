@@ -34,6 +34,8 @@
 /* My Marks filters */
 .collection-tabs{display:flex;gap:8px;flex-wrap:wrap}.collection-tabs a{padding:9px 13px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;background:var(--paper)}.collection-tabs a.active{font-weight:700;border-color:#8f6547}.collection-page .empty-state{margin-top:24px}
 
+.discover-page a:focus-visible,.discover-page button:focus-visible,.discover-page input:focus-visible,.discover-page select:focus-visible{outline:3px solid var(--ink);outline-offset:3px}.discover-banner input:focus-visible{border-radius:5px}.discover-page .note-cloud a:focus-visible,.discover-page .pagination a:focus-visible,.discover-page .result-actions a:focus-visible{outline-offset:2px}
+
 .discover-return{display:flex;justify-content:center;margin:18px 0 6px}.discover-return a{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:9px 16px;border:1px solid var(--line);border-radius:999px;color:var(--ink);background:#fff;font-weight:700;text-decoration:none}
 @media(max-width:600px){.discover-return a{width:100%;max-width:320px}}
 
