@@ -429,3 +429,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Compare relationship decision alert */
 .compare-relationship-alert{position:relative;margin:20px 0;padding:20px;border:1px solid var(--line);border-radius:13px;background:#faf8f5}.compare-relationship-alert.warning{border-color:#c9935e;background:#fff7ed}.compare-relationship-alert.neutral{background:#f7f7f4}.compare-relationship-alert h2{margin:4px 0 8px}.compare-relationship-alert p{max-width:850px}.compare-relationship-label{display:inline-block;margin-bottom:7px;padding:5px 8px;border-radius:999px;background:#3b1607;color:#fffaf4;font-size:8px;font-weight:900;letter-spacing:.11em}.compare-relationship-alert.neutral .compare-relationship-label{background:#5f5a53}
+
+
+/* Discover relationship indicators */
+.discover-relationship{display:grid;gap:4px;margin:9px 0;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font-size:10px}.discover-relationship.warning{border-color:#d2a06f;background:#fff7ed}.discover-relationship.info{background:#f7f7f4}.discover-relationship b{font-size:10px}.discover-relationship small{color:var(--muted)}.discover-relationship .text-link{font-size:9px}
