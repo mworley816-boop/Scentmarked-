@@ -58,6 +58,25 @@ async function createSegment(formData:FormData){
   redirect('/admin/email/segments')
 }
 
+async function duplicateSegment(formData:FormData){
+  'use server'
+  const s=await requireAdmin()
+  const id=Number(formData.get('id'))
+  if(!Number.isSafeInteger(id))redirect('/admin/email/segments')
+  const {data:source}=await s.from('crm_segments').select('name,description,rules').eq('id',id).maybeSingle()
+  if(!source)redirect('/admin/email/segments?error='+encodeURIComponent('Segment could not be found.'))
+  const base=String(source.name).slice(0,88)
+  let created=false
+  for(let i=1;i<=20&&!created;i++){
+    const suffix=i===1?' Copy':' Copy '+i
+    const {error}=await s.from('crm_segments').insert({name:(base+suffix).slice(0,100),description:source.description,rules:source.rules,is_active:false})
+    if(!error)created=true
+    else if(error.code!=='23505')redirect('/admin/email/segments?error='+encodeURIComponent('Segment could not be duplicated.'))
+  }
+  if(!created)redirect('/admin/email/segments?error='+encodeURIComponent('Could not choose a unique name for the duplicate.'))
+  redirect('/admin/email/segments')
+}
+
 async function toggleSegment(formData:FormData){
   'use server'
   const s=await requireAdmin()
@@ -111,6 +130,6 @@ export default async function Segments({searchParams}:{searchParams:Promise<{err
       </form>
     </article>
 
-    {!data?.length?<div className="empty-state"><h2>No audience segments yet.</h2></div>:<div className="admin-list">{data.map((x:any)=><article className="admin-card" key={x.id}><div className="admin-heading"><div><p className="eyebrow">{x.is_active?'ACTIVE':'INACTIVE'}</p><h2>{x.name}</h2>{x.description&&<p>{x.description}</p>}<p><strong>Audience:</strong> {ruleLabel(x.rules)}</p><p><strong>Current eligible audience:</strong> {x.is_active?(audienceCounts.get(x.id)||0):'Inactive'}</p><small>Consent required · Created {new Date(x.created_at).toLocaleDateString()}</small></div><form action={toggleSegment}><input type="hidden" name="id" value={x.id}/><input type="hidden" name="active" value={String(!x.is_active)}/><button className="button ghost" type="submit">{x.is_active?'Deactivate':'Activate'}</button></form></div></article>)}</div>}
+    {!data?.length?<div className="empty-state"><h2>No audience segments yet.</h2></div>:<div className="admin-list">{data.map((x:any)=><article className="admin-card" key={x.id}><div className="admin-heading"><div><p className="eyebrow">{x.is_active?'ACTIVE':'INACTIVE'}</p><h2>{x.name}</h2>{x.description&&<p>{x.description}</p>}<p><strong>Audience:</strong> {ruleLabel(x.rules)}</p><p><strong>Current eligible audience:</strong> {x.is_active?(audienceCounts.get(x.id)||0):'Inactive'}</p><small>Consent required · Created {new Date(x.created_at).toLocaleDateString()}</small><div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}><Link className="button ghost" href={'/admin/email/segments/'+x.id}>Edit</Link><form action={duplicateSegment}><input type="hidden" name="id" value={x.id}/><button className="button ghost" type="submit">Duplicate</button></form></div></div><form action={toggleSegment}><input type="hidden" name="id" value={x.id}/><input type="hidden" name="active" value={String(!x.is_active)}/><button className="button ghost" type="submit">{x.is_active?'Deactivate':'Activate'}</button></form></div></article>)}</div>}
   </section></main>
 }
