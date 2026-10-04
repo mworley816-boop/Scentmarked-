@@ -6,6 +6,12 @@ export const dynamic='force-dynamic'
 export const metadata={title:'CRM Segments',robots:{index:false,follow:false}}
 
 const fields=['loved_note','avoided_note','vibe','occasion','presentation','sweetness_min','projection_min','longevity_min','max_price'] as const
+const scentFamilies=['Gourmand','Fruity','Floral','Fresh','Citrus','Woody','Amber','Spicy','Musky','Aquatic','Green','Smoky']
+const scentNotes=['Vanilla','Marshmallow','Caramel','Strawberry','Cherry','Peach','Mango','Pear','Coconut','Chocolate','Coffee','Praline','Rose','Jasmine','Orange Blossom','Bergamot','Lemon','Sandalwood','Oud','Musk','Amber','Patchouli']
+const scentChoices=[...scentFamilies,...scentNotes]
+const vibes=['Cozy & Comforting','Sexy & Seductive','Clean & Polished','Playful & Sweet','Elegant & Sophisticated','Bold & Mysterious','Fresh & Energetic','Dark & Luxurious']
+const occasions=['Everyday','Work or School','Date Night','Going Out','Special Occasions','Cozy at Home','Vacation or Summer','Cold Weather']
+const presentations=['Feminine-leaning','Masculine-leaning','Unisex / Gender-neutral','No preference']
 
 async function requireAdmin(){
   const s=await createClient()
@@ -68,11 +74,11 @@ export default async function Segments({searchParams}:{searchParams:Promise<{err
         <label>Description<input name="description" maxLength={300} placeholder="Members who love vanilla"/></label>
         <p>Add any conditions you need. Blank fields are ignored, and all completed conditions must match.</p>
         <div className="admin-grid">
-          <label>Loved note or family<input name="loved_note" maxLength={100} placeholder="Vanilla or Gourmand"/></label>
-          <label>Avoided note<input name="avoided_note" maxLength={100} placeholder="Oud"/></label>
-          <label>Vibe<input name="vibe" maxLength={100} placeholder="Cozy & Comforting"/></label>
-          <label>Occasion<input name="occasion" maxLength={100} placeholder="Date Night"/></label>
-          <label>Presentation<input name="presentation" maxLength={100} placeholder="Unisex / Gender-neutral"/></label>
+          <label>Loved note or family<select name="loved_note" defaultValue=""><option value="">Any</option>{scentChoices.map(x=><option key={'love-'+x} value={x}>{x}</option>)}</select></label>
+          <label>Avoided note<select name="avoided_note" defaultValue=""><option value="">Any</option>{scentNotes.map(x=><option key={'avoid-'+x} value={x}>{x}</option>)}</select></label>
+          <label>Vibe<select name="vibe" defaultValue=""><option value="">Any</option>{vibes.map(x=><option key={x} value={x}>{x}</option>)}</select></label>
+          <label>Occasion<select name="occasion" defaultValue=""><option value="">Any</option>{occasions.map(x=><option key={x} value={x}>{x}</option>)}</select></label>
+          <label>Presentation<select name="presentation" defaultValue=""><option value="">Any</option>{presentations.map(x=><option key={x} value={x}>{x}</option>)}</select></label>
           <label>Minimum sweetness<input name="sweetness_min" type="number" min="1" max="5" step="1"/></label>
           <label>Minimum projection<input name="projection_min" type="number" min="1" max="5" step="1"/></label>
           <label>Minimum longevity<input name="longevity_min" type="number" min="1" max="5" step="1"/></label>
