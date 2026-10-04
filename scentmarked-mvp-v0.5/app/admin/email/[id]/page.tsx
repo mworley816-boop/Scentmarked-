@@ -138,7 +138,8 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   const rate=(value:number,base:number)=>base>0?Math.round((value/base)*1000)/10:0
 
   return <main><section className="admin-page">
-    <div className="admin-heading"><div><p className="eyebrow">ADMIN · EMAIL CAMPAIGN</p><h1>{campaign.name}</h1><p>{campaign.status} · Created {new Date(campaign.created_at).toLocaleDateString()}</p></div><Link className="button ghost" href="/admin/email">Back to Email</Link></div>
+    <div className="campaign-editor-hero"><div><div className="email-campaign-meta"><span className={'email-status '+campaign.status}>{campaign.status}</span></div><p className="eyebrow">EMAIL CAMPAIGN</p><h1>{campaign.name}</h1><p>{campaign.subject} · Created {new Date(campaign.created_at).toLocaleDateString()}</p></div><div className="campaign-editor-actions"><Link className="button ghost" href="/admin/email">← Email</Link><a className="button ghost" href="#preview">Preview</a></div></div>
+    <nav className="campaign-steps" aria-label="Campaign workflow"><a href="#setup"><span>1</span><strong>Content</strong></a><a href="#audience"><span>2</span><strong>Audience</strong></a><a href="#delivery"><span>3</span><strong>Schedule / Send</strong></a><a href="#preview"><span>4</span><strong>Preview</strong></a></nav>
     {p.error&&<div className="notice error">{p.error}</div>}
     {p.saved&&<div className="notice">Draft saved.</div>}{p.queued!==undefined&&<div className="notice">Campaign audience prepared: {p.queued} new eligible recipient{p.queued==='1'?'':'s'} queued. No email has been sent.</div>}
     {p.sent!==undefined&&<div className="notice">Batch finished: {p.sent} sent · {p.failed||'0'} failed · {p.skipped||'0'} skipped{Number(p.remaining||0)>0?' · '+p.remaining+' still queued. Send the next batch to continue.':' · campaign complete.'}</div>}
@@ -165,9 +166,9 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
       </div>
     </article>
 
-    <form action={saveCampaign} style={{display:'grid',gap:16}}>
+    <form action={saveCampaign} className="campaign-edit-form" id="setup">
       <input type="hidden" name="id" value={id}/>
-      <article className="admin-card"><p className="eyebrow">SETUP</p><h2>Campaign details</h2>
+      <article className="admin-card campaign-setup-card"><p className="eyebrow">STEP 1 · SETUP</p><h2>Campaign details</h2>
         <label>Campaign name<input name="name" maxLength={120} defaultValue={campaign.name} disabled={!editable} required/></label>
         <label>Subject<input name="subject" maxLength={200} defaultValue={campaign.subject} disabled={!editable} required/></label>
         <label>Preview text<input name="preview_text" maxLength={240} defaultValue={campaign.preview_text||''} disabled={!editable} placeholder="Short inbox preview"/></label>
@@ -175,23 +176,23 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
         <label>Template<select name="template_id" defaultValue={campaign.template_id||''} disabled={!editable}><option value="">No linked template</option>{templates?.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
       </article>
 
-      <article className="admin-card"><p className="eyebrow">CONTENT</p><h2>Email body</h2>
+      <article className="admin-card campaign-content-card"><p className="eyebrow">STEP 1 · CONTENT</p><h2>Email body</h2>
         <label>HTML<textarea name="html_body" rows={18} defaultValue={campaign.html_body} disabled={!editable} required/></label>
         <label>Plain text<textarea name="text_body" rows={10} defaultValue={campaign.text_body||''} disabled={!editable} placeholder="Accessible plain-text version"/></label>
         {editable&&<button type="submit">Save draft</button>}
       </article>
     </form>
 
-    {editable&&<article className="admin-card"><p className="eyebrow">AUDIENCE PREPARATION</p><h2>{audiencePreview} currently eligible recipient{audiencePreview===1?'':'s'}</h2><p>{campaign.segment_id?'This preview uses the selected segment plus current marketing consent.':'No segment is selected, so this preview includes all currently active, explicitly consented contacts.'} Preparing creates queued delivery records only; it does not send email.</p><form action={prepareCampaign}><input type="hidden" name="id" value={id}/><button type="submit" disabled={audiencePreview===0}>Prepare audience</button></form></article>}
+    {editable&&<article className="admin-card campaign-audience-card" id="audience"><p className="eyebrow">STEP 2 · AUDIENCE</p><h2>{audiencePreview} currently eligible recipient{audiencePreview===1?'':'s'}</h2><p>{campaign.segment_id?'This preview uses the selected segment plus current marketing consent.':'No segment is selected, so this preview includes all currently active, explicitly consented contacts.'} Preparing creates queued delivery records only; it does not send email.</p><form action={prepareCampaign}><input type="hidden" name="id" value={id}/><button type="submit" disabled={audiencePreview===0}>Prepare audience</button></form></article>}
 
-    {editable&&(counts.queued||0)>0&&<article className="admin-card"><p className="eyebrow">SCHEDULE CAMPAIGN</p><h2>Send later</h2><p>Choose a future date and time. The campaign remains queued until a trusted scheduled worker processes it.</p><form action={scheduleCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><ScheduleFields/><button type="submit">Schedule campaign</button></form></article>}
+    {editable&&(counts.queued||0)>0&&<article className="admin-card campaign-delivery-card" id="delivery"><p className="eyebrow">STEP 3 · SCHEDULE</p><h2>Send later</h2><p>Choose a future date and time. The campaign remains queued until a trusted scheduled worker processes it.</p><form action={scheduleCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><ScheduleFields/><button type="submit">Schedule campaign</button></form></article>}
 
-    {campaign.status==='scheduled'&&<article className="admin-card"><p className="eyebrow">SCHEDULED</p><h2>{campaign.scheduled_at?new Date(campaign.scheduled_at).toLocaleString():'Scheduled campaign'}</h2><p>The campaign is waiting for its scheduled processing time.</p><form action={cancelSchedule}><input type="hidden" name="id" value={id}/><button className="button ghost" type="submit">Cancel schedule</button></form></article>}
+    {campaign.status==='scheduled'&&<article className="admin-card campaign-delivery-card" id="delivery"><p className="eyebrow">STEP 3 · SCHEDULED</p><h2>{campaign.scheduled_at?new Date(campaign.scheduled_at).toLocaleString():'Scheduled campaign'}</h2><p>The campaign is waiting for its scheduled processing time.</p><form action={cancelSchedule}><input type="hidden" name="id" value={id}/><button className="button ghost" type="submit">Cancel schedule</button></form></article>}
 
-    {editable&&(counts.queued||0)>0&&<article className="admin-card"><p className="eyebrow">SEND CAMPAIGN</p><h2>Send to {counts.queued} queued recipient{counts.queued===1?'':'s'}</h2><p>This action sends real email when the Resend provider is configured. Consent is checked again immediately before each message.</p><form action={sendCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><label>Type SEND to confirm<input name="confirmation" autoComplete="off" required/></label><button type="submit">Send campaign</button></form></article>}
+    {editable&&(counts.queued||0)>0&&<article className="admin-card campaign-send-card"><p className="eyebrow">STEP 3 · SEND NOW</p><h2>Send to {counts.queued} queued recipient{counts.queued===1?'':'s'}</h2><p>This action sends real email when the Resend provider is configured. Consent is checked again immediately before each message.</p><form action={sendCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><label>Type SEND to confirm<input name="confirmation" autoComplete="off" required/></label><button type="submit">Send campaign</button></form></article>}
 
     {(counts.failed||0)>0&&<article className="admin-card"><p className="eyebrow">FAILED DELIVERIES</p><h2>{counts.failed} recipient{counts.failed===1?'':'s'} failed</h2><p>Requeue only failed recipients who are still eligible for marketing email. Successful recipients will not be sent again.</p><form action={retryFailed}><input type="hidden" name="id" value={id}/><button type="submit">Prepare failed recipients for retry</button></form></article>}
 
-    <article className="admin-card"><p className="eyebrow">PREVIEW</p><h2>{campaign.subject}</h2>{campaign.preview_text&&<p>{campaign.preview_text}</p>}<div style={{border:'1px solid currentColor',borderRadius:12,padding:20,marginTop:12,background:'white',color:'black'}} dangerouslySetInnerHTML={{__html:campaign.html_body}}/></article>
+    <article className="admin-card campaign-preview-card" id="preview"><p className="eyebrow">STEP 4 · PREVIEW</p><h2>{campaign.subject}</h2>{campaign.preview_text&&<p>{campaign.preview_text}</p>}<div style={{border:'1px solid currentColor',borderRadius:12,padding:20,marginTop:12,background:'white',color:'black'}} dangerouslySetInnerHTML={{__html:campaign.html_body}}/></article>
   </section></main>
 }
