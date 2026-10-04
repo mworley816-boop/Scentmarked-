@@ -59,7 +59,8 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const pct=(n:number,d:number)=>d?Math.round(n/d*1000)/10:0
 
   return <main><section className="admin-page">
-    <div className="admin-heading"><div><p className="eyebrow">ADMIN · EMAIL</p><h1>Email Marketing</h1><p>Create ScentMarked campaigns, send through the configured provider, and monitor engagement.</p></div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><Link className="button ghost" href="/admin">Back to Admin</Link><Link className="button ghost" href="/admin/crm">CRM Contacts</Link></div></div>
+    <div className="email-admin-hero"><div><p className="eyebrow">SCENTMARKED ADMIN</p><h1>Email Marketing</h1><p>Create campaigns, organize audiences and monitor email performance.</p></div><div className="email-hero-actions"><Link className="button ghost" href="/admin">← Admin</Link><a className="button" href="#new-campaign">+ New campaign</a></div></div>
+    <nav className="email-workspaces" aria-label="Email marketing tools"><a href="#new-campaign"><span>CREATE</span><strong>New campaign</strong><small>Start a new email draft</small></a><Link href="/admin/email/templates"><span>DESIGN</span><strong>Templates</strong><small>{templates?.length||0} reusable designs</small></Link><Link href="/admin/email/segments"><span>AUDIENCE</span><strong>Segments</strong><small>{segments?.length||0} saved audiences</small></Link><Link href="/admin/crm"><span>CRM</span><strong>Contacts</strong><small>{emailable||0} currently emailable</small></Link></nav>
     {p.error&&<div className="notice error">{p.error}</div>}
     {error&&<div className="notice error">Campaign data could not be loaded. Apply the CRM/email migration before using this page.</div>}
     <div className="notice"><strong>Provider-gated sending:</strong> Campaigns can send only when the Resend environment variables are configured. Consent checks, unsubscribe processing, and verified webhook handling remain enforced.</div>
@@ -71,7 +72,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
       <article className="admin-card"><p className="eyebrow">CLICKED</p><h2>{clicked}</h2><p>{pct(clicked,delivered)}% of delivered</p></article>
     </div>
 
-    <article className="admin-card"><p className="eyebrow">EMAIL HEALTH</p><h2>Overall performance</h2>
+    <article className="admin-card email-performance"><p className="eyebrow">EMAIL HEALTH</p><h2>Overall performance</h2>
       <div className="admin-grid">
         <div><strong>{pct(delivered,attempted)}%</strong><p>Delivery rate · {delivered}/{attempted}</p></div>
         <div><strong>{pct(opened,delivered)}%</strong><p>Open rate · {opened}/{delivered}</p></div>
@@ -86,14 +87,10 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
       </div>
     </article>
 
-    <article className="admin-card"><p className="eyebrow">NEW CAMPAIGN</p><h2>Create a draft</h2><form action={createCampaign} style={{display:'grid',gap:12}}><label>Campaign name<input name="name" maxLength={120} placeholder="October Gourmand Finds" required/></label><label>Email subject<input name="subject" maxLength={200} placeholder="Sweet new scents picked for you" required/></label><label>Audience segment<select name="segment_id" defaultValue=""><option value="">Choose later</option>{segments?.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><div><button type="submit">Create draft</button></div></form></article>
+    <article className="admin-card email-create-card" id="new-campaign"><div className="email-section-heading"><div><p className="eyebrow">NEW CAMPAIGN</p><h2>Create a draft</h2><p>Give the campaign a working name and subject. You can choose or change the audience later.</p></div></div><form action={createCampaign} className="email-create-form"><label>Campaign name<input name="name" maxLength={120} placeholder="October Gourmand Finds" required/></label><label>Email subject<input name="subject" maxLength={200} placeholder="Sweet new scents picked for you" required/></label><label>Audience segment<select name="segment_id" defaultValue=""><option value="">Choose later</option>{segments?.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><div><button type="submit">Create draft</button></div></form></article>
 
-    <div className="admin-heading"><div><p className="eyebrow">CAMPAIGNS</p><h2>Recent campaigns</h2></div></div>
-    {!campaigns?.length?<div className="empty-state"><h2>No campaigns yet.</h2><p>Create your first draft above.</p></div>:<div className="admin-list">{campaigns.map((c:any)=>{const segment=Array.isArray(c.crm_segments)?c.crm_segments[0]:c.crm_segments;return <article className="admin-card" key={c.id}><div className="admin-heading"><div><p className="eyebrow">{c.status}{segment?' · '+segment.name:''}</p><h2>{c.name}</h2><p>{c.subject}</p><small>Created {new Date(c.created_at).toLocaleDateString()}{c.scheduled_at?' · Scheduled '+new Date(c.scheduled_at).toLocaleString():''}</small></div><Link className="button ghost" href={'/admin/email/'+c.id}>Edit campaign</Link></div></article>})}</div>}
+    <div className="email-section-heading"><div><p className="eyebrow">CAMPAIGNS</p><h2>Recent campaigns</h2><p>Open a campaign to edit content, audience, scheduling or review delivery performance.</p></div></div>
+    {!campaigns?.length?<div className="empty-state"><h2>No campaigns yet.</h2><p>Create your first draft above.</p></div>:<div className="admin-list">{campaigns.map((c:any)=>{const segment=Array.isArray(c.crm_segments)?c.crm_segments[0]:c.crm_segments;return <article className="admin-card email-campaign-row" key={c.id}><div><div className="email-campaign-meta"><span className={'email-status '+c.status}>{c.status}</span>{segment&&<span>{segment.name}</span>}</div><h2>{c.name}</h2><p>{c.subject}</p><small>Created {new Date(c.created_at).toLocaleDateString()}{c.scheduled_at?' · Scheduled '+new Date(c.scheduled_at).toLocaleString():''}</small></div><Link className="button ghost" href={'/admin/email/'+c.id}>Open campaign</Link></article>})}</div>}
 
-    <div className="admin-grid">
-      <article className="admin-card"><p className="eyebrow">TEMPLATES</p><h2>{templates?.length||0}</h2><p>Reusable email designs</p><Link className="button ghost" href="/admin/email/templates">Manage templates</Link></article>
-      <article className="admin-card"><p className="eyebrow">SEGMENTS</p><h2>{segments?.length||0}</h2><p>Saved CRM audiences</p><Link className="button ghost" href="/admin/email/segments">Manage segments</Link></article>
-    </div>
   </section></main>
 }
