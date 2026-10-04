@@ -39,8 +39,9 @@ export default async function PerfumePage({params}:{params:Promise<{slug:string}
  const evidenceUrl=(value:any)=>{try{const u=new URL(String(value||''));return ['http:','https:'].includes(u.protocol)?u.toString():null}catch{return null}}
  const formatUsd=(value:any)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:Number(value)%1===0?0:2}).format(Number(value))
  const offerPrice=(x:any)=>{if(x.price==null||!Number.isFinite(Number(x.price)))return'';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:String(x.currency||'USD').toUpperCase()}).format(Number(x.price))}catch{return formatUsd(x.price)}}
- const offerUpdated=(x:any)=>x.updated_at?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(new Date(x.updated_at)):null
- const offerIsStale=(x:any)=>x.updated_at?Date.now()-new Date(x.updated_at).getTime()>30*24*60*60*1000:false
+ const offerDate=(x:any)=>{if(!x.updated_at)return null;const d=new Date(x.updated_at);return Number.isNaN(d.getTime())?null:d}
+ const offerUpdated=(x:any)=>{const d=offerDate(x);return d?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(d):null}
+ const offerIsStale=(x:any)=>{const d=offerDate(x);return d?Date.now()-d.getTime()>30*24*60*60*1000:false}
  let sources:any[]=[];try{const r=await s.from('perfume_sources').select('id,source_name,source_url,fields_verified,is_primary').eq('perfume_id',p.id).order('is_primary',{ascending:false});sources=r.data||[]}catch{}
  const group=(pos:string)=>notes.filter(n=>n.position===pos).map(n=>n.notes).filter((n:any)=>n?.name).filter((n:any,i:number,list:any[])=>list.findIndex((x:any)=>x.name===n.name)===i)
  const reviewerName=(r:any)=>{const profile=Array.isArray(r.profiles)?r.profiles[0]:r.profiles;return profile?.display_name||'Scentmarked member'}
