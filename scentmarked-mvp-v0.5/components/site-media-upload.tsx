@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 type MediaItem={name:string;url:string}
 const PAGE_SIZE=100
 
-export default function SiteMediaUpload({name,label,initialUrl=''}:{name:string;label:string;initialUrl?:string}){
+export default function SiteMediaUpload({name,label,initialUrl='',guidance=''}:{name:string;label:string;initialUrl?:string;guidance?:string}){
  const [url,setUrl]=useState(initialUrl),[busy,setBusy]=useState(false),[error,setError]=useState('')
  const [library,setLibrary]=useState<MediaItem[]>([]),[showLibrary,setShowLibrary]=useState(false),[libraryLoaded,setLibraryLoaded]=useState(false)
  const [hasMore,setHasMore]=useState(false),[storageOffset,setStorageOffset]=useState(0),[search,setSearch]=useState(''),[activeSearch,setActiveSearch]=useState('')
@@ -48,7 +48,7 @@ export default function SiteMediaUpload({name,label,initialUrl=''}:{name:string;
  async function clearSearch(){setSearch('');setActiveSearch('');setLibrary([]);setStorageOffset(0);setHasMore(false);await loadLibrary(0,'')}
  const shown=library
  return <div className="site-media-upload">
-  <label>{label}</label>
+  <div className="site-media-label"><label>{label}</label>{guidance&&<small>{guidance}</small>}</div>
   <div className={'site-media-current '+(url?'has-image':'empty')}>{url?<><img src={url} alt=""/><div><span>CURRENT IMAGE</span><strong>Ready to save</strong><small>Upload a replacement or choose another image from the library.</small></div></>:<div><span>NO IMAGE SELECTED</span><strong>Add artwork</strong><small>Upload a new image or reuse an existing Media Library asset.</small></div>}</div>
   <input type="hidden" name={name} value={url}/>
   <label className="site-media-file"><span>{url?'Replace with upload':'Upload image'}</span><input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void upload(file)}}/><small>{busy?'Working…':'JPEG, PNG, WebP or AVIF · max 5 MB'}</small></label>
