@@ -441,3 +441,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Returning-member homepage */
 .home-for-you{display:flex;align-items:center;justify-content:space-between;gap:24px;max-width:1200px;margin:24px auto;padding:24px 28px;border:1px solid var(--line);border-radius:14px;background:#faf8f5}.home-for-you h2{margin:4px 0 7px}.home-for-you p:not(.eyebrow){max-width:700px;margin:0;color:var(--muted)}@media(max-width:700px){.home-for-you{align-items:flex-start;flex-direction:column;margin:18px 14px;padding:20px}.home-for-you .result-actions{width:100%}}
+
+
+/* Personalized homepage recommendations */
+.home-recommendations{max-width:1200px;margin:32px auto;padding:0 4px}.home-recommendations .section-head{margin-bottom:16px}.home-recommendations .section-head p:not(.eyebrow){margin:4px 0 0;color:var(--muted)}.home-match-score{margin:8px 0 4px;font-size:12px}.home-match-score b{font-size:14px}@media(max-width:700px){.home-recommendations{margin:26px 14px;padding:0}}
