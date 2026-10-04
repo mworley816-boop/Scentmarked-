@@ -149,11 +149,12 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 /* Catalog pagination */
-.pagination{display:flex;align-items:center;justify-content:center;gap:18px;margin:38px 0 8px}
-.pagination a{min-width:110px;padding:10px 14px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-align:center;text-decoration:none;background:#fff}
-.pagination span{color:var(--muted);font-size:14px}
+.pagination{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px 18px;margin:38px 0 8px}
+.pagination a{min-width:96px;min-height:44px;padding:10px 14px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-align:center;text-decoration:none;background:#fff;display:inline-flex;align-items:center;justify-content:center}
+.pagination span{color:var(--muted);font-size:14px;text-align:center}
 .pagination a.disabled{pointer-events:none;opacity:.4}
-@media(max-width:520px){.pagination{gap:8px}.pagination a{min-width:auto;padding:9px 12px}.pagination span{font-size:12px}}
+@media(max-width:640px){.pagination{gap:8px}.pagination span{order:-1;flex-basis:100%;font-size:12px}.pagination a{flex:1 1 42%;min-width:0;padding:10px 12px}}
+@media(max-width:380px){.pagination a{flex-basis:100%}}
 
 
 /* Catalog imagery */
