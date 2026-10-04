@@ -67,7 +67,7 @@ test('compare links can start with only the recommendation candidate',()=>{
  assert.equal(q.has('b'),false)
 })
 
-test('match reasons prioritize relationship and preference evidence',()=>{
+test('match reasons explain ranking signals without relationship warnings',()=>{
  const reasons=matchReasons({
   id:'p',name:'Perfume',slug:'perfume',perfume_notes:[],perfume_accords:[],
   dnaScore:80,score:85,scoreWeights:{dna:.45,preferences:.35,wear:.2,favorites:0},
@@ -76,7 +76,7 @@ test('match reasons prioritize relationship and preference evidence',()=>{
   preferenceScore:90,traitScore:90,favoriteTasteScore:null,presentationMatched:false,sweet:5,proj:4,long:5,price:40,priceKnown:true,priceOk:true,
   relationship:{relationship_type:'possible_clone'}
  },true)
- assert.deepEqual(reasons,['Possible clone relationship','Matches vanilla','Shared DNA: Gourmand'])
+ assert.deepEqual(reasons,['Matches vanilla','Shared DNA: Gourmand','Shared notes: Vanilla'])
 })
 
 test('preference-only reasons do not imply shared DNA with a baseline perfume',()=>{
