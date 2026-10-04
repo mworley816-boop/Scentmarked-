@@ -32,3 +32,6 @@ jobs:
 
       - name: Typecheck, test, and build for Cloudflare
         run: npm run check
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
