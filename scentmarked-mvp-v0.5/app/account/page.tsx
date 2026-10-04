@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { deleteAccount, updateProfile } from './actions'
 import { learnedTastePatterns } from '@/lib/taste-patterns'
 import type { MatchPerfume } from '@/lib/match-scoring'
+import { resolveLatestTasteEvidence } from '@/lib/taste-evidence'
 
 export const metadata={title:'Account Settings',description:'Manage your Scentmarked account and privacy controls.',robots:{index:false,follow:false}}
 
@@ -22,9 +23,13 @@ export default async function AccountPage({searchParams}:{searchParams:Promise<{
  ])
  const taste={more:(feedback||[]).filter((x:any)=>x.feedback==='more_like_this').length,less:(feedback||[]).filter((x:any)=>x.feedback==='less_like_this').length,favorites:(collection||[]).filter((x:any)=>x.status==='favorite').length,highRated:(ratings||[]).filter((x:any)=>Number(x.overall)>=4).length}
  const recentFeedback=(feedback||[]).slice(0,5),feedbackPerfumeIds=[...new Set(recentFeedback.map((x:any)=>String(x.perfume_id)))]
- const negativeSignalIds=new Set([...(feedback||[]).filter((x:any)=>x.feedback==='less_like_this').map((x:any)=>String(x.perfume_id)),...(ratings||[]).filter((x:any)=>Number(x.overall)<=2).map((x:any)=>String(x.perfume_id))])
- const learnedPositiveIds=[...new Set([...(feedback||[]).filter((x:any)=>x.feedback==='more_like_this').map((x:any)=>String(x.perfume_id)),...(collection||[]).filter((x:any)=>x.status==='favorite').map((x:any)=>String(x.perfume_id)),...(ratings||[]).filter((x:any)=>Number(x.overall)>=4).map((x:any)=>String(x.perfume_id))])].filter(id=>!negativeSignalIds.has(id)).slice(0,5)
- const learnedNegativeIds=[...negativeSignalIds].slice(0,5)
+ const resolvedEvidence=resolveLatestTasteEvidence([
+  ...(feedback||[]).map((x:any)=>({perfumeId:String(x.perfume_id),direction:x.feedback==='more_like_this'?'positive' as const:'negative' as const,updatedAt:x.updated_at,priority:3})),
+  ...(ratings||[]).filter((x:any)=>Number(x.overall)>=4||Number(x.overall)<=2).map((x:any)=>({perfumeId:String(x.perfume_id),direction:Number(x.overall)>=4?'positive' as const:'negative' as const,updatedAt:x.updated_at,priority:2})),
+  ...(collection||[]).filter((x:any)=>x.status==='favorite').map((x:any)=>({perfumeId:String(x.perfume_id),direction:'positive' as const,updatedAt:x.updated_at,priority:1}))
+ ])
+ const learnedPositiveIds=resolvedEvidence.filter(x=>x.direction==='positive').map(x=>x.perfumeId).slice(0,5)
+ const learnedNegativeIds=resolvedEvidence.filter(x=>x.direction==='negative').map(x=>x.perfumeId).slice(0,5)
  const learnedIds=[...new Set([...learnedPositiveIds,...learnedNegativeIds])]
  const {data:learnedPerfumes}=learnedIds.length?await supabase.from('perfumes').select('id,name,slug,perfume_notes(position,notes(name)),perfume_accords(strength,accords(name))').in('id',learnedIds):{data:[] as {id:string;name:string;slug:string}[]}
  const learnedMap=new Map((learnedPerfumes||[]).map((x:any)=>[String(x.id),x]))
