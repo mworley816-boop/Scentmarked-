@@ -81,6 +81,7 @@ async function saveProfile(formData:FormData){
   failed=!!error||!data
  }catch{failed=true}
  if(failed)redirect('/onboarding?error=save-failed')
+ try{await s.from('taste_profile_revisions').insert({user_id:user.id,loved_notes:resolvedLoved,avoided_notes:avoided,presentations:selectedPresentations,favorite_perfume_ids:favoriteIds,sweetness,projection,longevity,max_price:Number.isSafeInteger(budget)&&budget>0?budget:null})}catch{}
  try{
   const now=new Date().toISOString()
   if(marketingConsent){
