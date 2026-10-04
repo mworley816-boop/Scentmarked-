@@ -12,10 +12,13 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
   if(campaignError||!campaign)throw new Error('Campaign not found.')
   if(!['draft','scheduled','sending'].includes(campaign.status))throw new Error('Campaign is not sendable.')
 
-  const {data:rows,error:deliveryError}=await s.from('email_deliveries')
+  const {data:claimed,error:claimError}=await s.rpc('claim_email_delivery_batch',{p_campaign_id:campaignId,p_limit:safeBatchSize})
+  if(claimError)throw new Error('Queued deliveries could not be claimed.')
+  const claimedIds=(claimed||[]).map((x:any)=>x.delivery_id)
+  const {data:rows,error:deliveryError}=claimedIds.length?await s.from('email_deliveries')
     .select('id,contact_id,crm_contacts!inner(email,first_name,unsubscribe_token,status,marketing_consent,marketing_consented_at,unsubscribed_at)')
-    .eq('campaign_id',campaignId).eq('status','queued').order('id',{ascending:true}).limit(safeBatchSize)
-  if(deliveryError)throw new Error('Queued deliveries could not be loaded.')
+    .in('id',claimedIds).order('id',{ascending:true}):{data:[],error:null}
+  if(deliveryError)throw new Error('Claimed deliveries could not be loaded.')
 
   const provider=getEmailProvider()
   const {error:startError}=await s.rpc('start_email_campaign',{p_campaign_id:campaignId})
@@ -30,7 +33,7 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
         status:'skipped',
         skipped_at:new Date().toISOString(),
         error_message:'Recipient was no longer eligible for marketing email at send time.'
-      }).eq('id',row.id).eq('status','queued')
+      }).eq('id',row.id).eq('status','processing')
       if(skipError){
         failed++
         continue
@@ -56,7 +59,7 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
         provider_message_id:result.providerMessageId,
         status:'sent',
         sent_at:new Date().toISOString()
-      }).eq('id',row.id).eq('status','queued')
+      }).eq('id',row.id).eq('status','processing')
       if(updateError)throw updateError
       sent++
     }catch{
@@ -64,14 +67,14 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
         status:'failed',
         failed_at:new Date().toISOString(),
         error_message:'Provider send failed.'
-      }).eq('id',row.id).eq('status','queued')
+      }).eq('id',row.id).eq('status','processing')
       failed++
     }
   }
 
   const {count:remaining,error:remainingError}=await s.from('email_deliveries')
     .select('id',{count:'exact',head:true})
-    .eq('campaign_id',campaignId).eq('status','queued')
+    .eq('campaign_id',campaignId).in('status',['queued','processing'])
   if(remainingError)throw new Error('Campaign batch sent but remaining deliveries could not be counted.')
 
   if((remaining||0)===0){
