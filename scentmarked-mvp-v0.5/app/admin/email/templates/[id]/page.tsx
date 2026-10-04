@@ -37,13 +37,13 @@ export default async function EditTemplate({params,searchParams}:{params:Promise
   if(error||!data)notFound()
   const t:any=data
   return <main><section className="admin-page">
-    <div className="admin-heading"><div><p className="eyebrow">ADMIN · EMAIL TEMPLATE</p><h1>{t.name}</h1><p>Reusable campaign layout · Updated {new Date(t.updated_at).toLocaleString()}</p></div><Link className="button ghost" href="/admin/email/templates">Back to Templates</Link></div>
+    <div className="email-subpage-hero"><div><p className="eyebrow">EMAIL · TEMPLATE</p><h1>{t.name}</h1><p>Reusable campaign layout · Updated {new Date(t.updated_at).toLocaleString()}</p></div><div className="campaign-editor-actions"><Link className="button ghost" href="/admin/email/templates">← Templates</Link><a className="button ghost" href="#template-preview">Preview</a></div></div>
     {p.error&&<div className="notice error">{p.error}</div>}{p.saved&&<div className="notice">Template saved.</div>}
     <div className="notice"><strong>Required placeholder:</strong> Keep <code>{'{{unsubscribe_url}}'}</code> in marketing templates. The sending layer will replace it with each contact's secure unsubscribe link.</div>
-    <form action={saveTemplate} style={{display:'grid',gap:16}}><input type="hidden" name="id" value={id}/>
-      <article className="admin-card"><h2>Template details</h2><label>Name<input name="name" maxLength={100} defaultValue={t.name} required/></label><label>Default subject<input name="subject" maxLength={200} defaultValue={t.subject} required/></label><label>Preview text<input name="preview_text" maxLength={240} defaultValue={t.preview_text||''}/></label></article>
-      <article className="admin-card"><h2>Content</h2><label>HTML<textarea name="html_body" rows={20} defaultValue={t.html_body} required/></label><label>Plain text<textarea name="text_body" rows={10} defaultValue={t.text_body||''}/></label><button type="submit">Save template</button></article>
+    <form action={saveTemplate} className="template-editor-form"><input type="hidden" name="id" value={id}/>
+      <article className="admin-card template-details-card"><p className="eyebrow">SETUP</p><h2>Template details</h2><label>Name<input name="name" maxLength={100} defaultValue={t.name} required/></label><label>Default subject<input name="subject" maxLength={200} defaultValue={t.subject} required/></label><label>Preview text<input name="preview_text" maxLength={240} defaultValue={t.preview_text||''}/></label></article>
+      <article className="admin-card template-content-card"><p className="eyebrow">CONTENT</p><h2>Email body</h2><label>HTML<textarea name="html_body" rows={20} defaultValue={t.html_body} required/></label><label>Plain text<textarea name="text_body" rows={10} defaultValue={t.text_body||''}/></label><button type="submit">Save template</button></article>
     </form>
-    <article className="admin-card"><p className="eyebrow">PREVIEW</p><h2>{t.subject}</h2>{t.preview_text&&<p>{t.preview_text}</p>}<div style={{border:'1px solid currentColor',borderRadius:12,padding:20,marginTop:12,background:'white',color:'black'}} dangerouslySetInnerHTML={{__html:t.html_body}}/></article>
+    <article className="admin-card campaign-preview-card" id="template-preview"><p className="eyebrow">PREVIEW</p><h2>{t.subject}</h2>{t.preview_text&&<p>{t.preview_text}</p>}<div style={{border:'1px solid currentColor',borderRadius:12,padding:20,marginTop:12,background:'white',color:'black'}} dangerouslySetInnerHTML={{__html:t.html_body}}/></article>
   </section></main>
 }
