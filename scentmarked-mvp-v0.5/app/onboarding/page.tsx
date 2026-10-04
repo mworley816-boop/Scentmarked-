@@ -81,7 +81,11 @@ async function saveProfile(formData:FormData){
   failed=!!error||!data
  }catch{failed=true}
  if(failed)redirect('/onboarding?error=save-failed')
- try{await s.from('taste_profile_revisions').insert({user_id:user.id,loved_notes:resolvedLoved,avoided_notes:avoided,presentations:selectedPresentations,favorite_perfume_ids:favoriteIds,sweetness,projection,longevity,max_price:Number.isSafeInteger(budget)&&budget>0?budget:null})}catch{}
+ const revision={user_id:user.id,loved_notes:resolvedLoved,avoided_notes:avoided,presentations:selectedPresentations,favorite_perfume_ids:favoriteIds,sweetness,projection,longevity,max_price:Number.isSafeInteger(budget)&&budget>0?budget:null}
+ const {data:lastRevision}=await s.from('taste_profile_revisions').select('loved_notes,avoided_notes,presentations,favorite_perfume_ids,sweetness,projection,longevity,max_price').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1).maybeSingle()
+ const sameList=(a:string[]|null|undefined,b:string[]|null|undefined)=>JSON.stringify([...(a||[])].sort())===JSON.stringify([...(b||[])].sort())
+ const unchanged=!!lastRevision&&sameList(lastRevision.loved_notes,revision.loved_notes)&&sameList(lastRevision.avoided_notes,revision.avoided_notes)&&sameList(lastRevision.presentations,revision.presentations)&&sameList(lastRevision.favorite_perfume_ids,revision.favorite_perfume_ids)&&lastRevision.sweetness===revision.sweetness&&lastRevision.projection===revision.projection&&lastRevision.longevity===revision.longevity&&Number(lastRevision.max_price??0)===Number(revision.max_price??0)
+ if(!unchanged){const {error:revisionError}=await s.from('taste_profile_revisions').insert(revision);if(revisionError)console.error('Taste revision snapshot failed',revisionError.message)}
  try{
   const now=new Date().toISOString()
   if(marketingConsent){
