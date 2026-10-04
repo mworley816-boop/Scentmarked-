@@ -10,7 +10,8 @@ export default function ProfileQuickActions({perfumeId,name,initialFavorite=fals
   setBusy(true);setMessage('')
   try{
    const {data:{user},error:authError}=await supabase.auth.getUser()
-   if(authError||!user){window.location.href='/login?next='+encodeURIComponent(window.location.pathname+window.location.search);return}
+   if(authError)throw authError
+   if(!user){window.location.href='/login?next='+encodeURIComponent(window.location.pathname+window.location.search);return}
    if(favorite){
     const {error}=await supabase.from('collection_items').delete().eq('user_id',user.id).eq('perfume_id',perfumeId).eq('status','favorite')
     if(error)throw error
@@ -30,5 +31,6 @@ export default function ProfileQuickActions({perfumeId,name,initialFavorite=fals
   if(navigator.clipboard){try{await navigator.clipboard.writeText(url);setMessage('Link copied.');return}catch{}}
   setMessage('Could not share the link. Please copy it from your browser.')
  }
- return <div><div className="profile-quick-actions"><button type="button" aria-label={busy?'Updating favorite':favorite?'Remove from favorites':'Add to favorites'} aria-pressed={favorite} aria-busy={busy} onClick={toggle} disabled={busy}>{favorite?'♥':'♡'}</button><button type="button" aria-label={'Share '+name} onClick={share}>↗</button></div>{message&&<span className="profile-action-message" role="status">{message}</span>}</div>
+ const isError=message.startsWith('Could not')
+ return <div><div className="profile-quick-actions"><button type="button" aria-label={busy?'Updating favorite':favorite?'Remove from favorites':'Add to favorites'} aria-pressed={favorite} aria-busy={busy} onClick={toggle} disabled={busy}>{favorite?'♥':'♡'}</button><button type="button" aria-label={'Share '+name} onClick={share}>↗</button></div>{message&&<span className="profile-action-message" role={isError?'alert':'status'}>{message}</span>}</div>
 }
