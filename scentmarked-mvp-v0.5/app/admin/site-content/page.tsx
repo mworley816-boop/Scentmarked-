@@ -32,9 +32,15 @@ async function saveContent(formData:FormData){
   starts_at:optional(formData.get('starts_at')),ends_at:optional(formData.get('ends_at')),
   is_active:formData.get('is_active')==='on',updated_at:new Date().toISOString()
  }
- const result=id
-  ?await s.from('site_content').update(payload).eq('id',id)
-  :await s.from('site_content').insert(payload)
+ let result
+ if(id)result=await s.from('site_content').update(payload).eq('id',id)
+ else{
+  const {data:existing,error:lookupError}=await s.from('site_content').select('id').eq('content_key',content_key).maybeSingle()
+  if(lookupError)redirect('/admin/site-content?error='+encodeURIComponent(lookupError.message))
+  result=existing
+   ?await s.from('site_content').update(payload).eq('id',existing.id)
+   :await s.from('site_content').insert(payload)
+ }
  if(result.error)redirect('/admin/site-content?error='+encodeURIComponent(result.error.message))
  redirect('/admin/site-content?saved=1')
 }
