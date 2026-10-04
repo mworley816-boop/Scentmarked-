@@ -31,7 +31,11 @@ export default async function EditSegment({params,searchParams}:{params:Promise<
  const s=await requireAdmin()
  const {data:segment}=await s.from('crm_segments').select('id,name,description,rules,is_active').eq('id',segmentId).maybeSingle()
  if(!segment)notFound()
- const {count:campaignCount}=await s.from('email_campaigns').select('id',{count:'exact',head:true}).eq('segment_id',segmentId)
+ const [{count:campaignCount},{data:audienceCount},{data:audiencePreview}]=await Promise.all([
+  s.from('email_campaigns').select('id',{count:'exact',head:true}).eq('segment_id',segmentId),
+  segment.is_active?s.rpc('count_email_segment_audience',{p_segment_id:segmentId}):Promise.resolve({data:0}),
+  segment.is_active?s.rpc('preview_email_segment_audience',{p_segment_id:segmentId,p_limit:25}):Promise.resolve({data:[] as any[]})
+ ])
  const profile:any=segment.rules?.profile||{},modes:any=segment.rules?.match_modes||{}
 
  async function save(formData:FormData){
@@ -79,6 +83,7 @@ export default async function EditSegment({params,searchParams}:{params:Promise<
    </div>
    <div><button type="submit">Save segment</button></div>
   </form></article>
+  <article className="admin-card"><p className="eyebrow">AUDIENCE PREVIEW</p><h2>{segment.is_active?(Number(audienceCount)||0)+' eligible contact'+(Number(audienceCount)===1?'':'s'):'Segment inactive'}</h2><p>Only active contacts with marketing consent are included. Showing up to 25 matching names.</p>{segment.is_active&&!audiencePreview?.length?<p>No contacts currently match this segment.</p>:<div className="admin-list">{(audiencePreview||[]).map((contact:any)=><div key={contact.contact_id}>{[contact.first_name,contact.last_name].filter(Boolean).join(' ')||'Unnamed contact'}</div>)}</div>}</article>
   <article className="admin-card"><p className="eyebrow">SEGMENT LIFECYCLE</p><h2>{segment.is_active?'Active audience':'Inactive audience'}</h2><p>{campaignCount?('This segment is referenced by '+campaignCount+' email campaign'+(campaignCount===1?'':'s')+'. It can be deactivated but not permanently deleted, preserving campaign history.'):'This segment is not used by any email campaign and can be permanently deleted.'}</p>{!campaignCount&&<form action={remove}><button className="button ghost" type="submit">Delete unused segment</button></form>}</article>
  </section></main>
 }
