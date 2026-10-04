@@ -51,7 +51,8 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const bounced=ds.filter((x:any)=>x.status==='bounced').length
   const failed=ds.filter((x:any)=>x.status==='failed').length
   const unsubscribed=ds.filter((x:any)=>x.status==='unsubscribed').length
-  const attempted=ds.filter((x:any)=>x.status!=='queued').length
+  const skipped=ds.filter((x:any)=>x.status==='skipped').length
+  const attempted=ds.filter((x:any)=>!['queued','skipped'].includes(x.status)).length
   const campaignCount=campaigns?.length||0
   const completedCampaigns=(campaigns||[]).filter((x:any)=>x.status==='sent').length
   const pct=(n:number,d:number)=>d?Math.round(n/d*1000)/10:0
@@ -76,6 +77,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
         <div><strong>{pct(clicked,delivered)}%</strong><p>Click rate · {clicked}/{delivered}</p></div>
         <div><strong>{pct(bounced,attempted)}%</strong><p>Bounce rate · {bounced}/{attempted}</p></div>
         <div><strong>{failed}</strong><p>Failed deliveries</p></div>
+        <div><strong>{skipped}</strong><p>Skipped · no email sent</p></div>
         <div><strong>{unsubscribed}</strong><p>Unsubscribes</p></div>
         <div><strong>{campaignCount}</strong><p>Recent campaigns</p></div>
         <div><strong>{completedCampaigns}</strong><p>Completed campaigns</p></div>
