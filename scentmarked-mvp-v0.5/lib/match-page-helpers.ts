@@ -1,9 +1,7 @@
 import type { MatchCandidate } from '@/lib/match-scoring'
-import { relationshipReason } from './scent-relationship-labels.ts'
 
 export function matchReasons(m:MatchCandidate,withBaseline:boolean){
  const reasons:string[]=[]
- if(m.relationship)reasons.push(relationshipReason(m.relationship.relationship_type))
  if(m.loved?.length)reasons.push('Matches '+m.loved.slice(0,3).join(', '))
  if(withBaseline&&m.sharedAccords?.length)reasons.push('Shared DNA: '+m.sharedAccords.slice(0,3).join(', '))
  if(withBaseline&&m.shared?.length)reasons.push('Shared notes: '+m.shared.slice(0,3).join(', '))
