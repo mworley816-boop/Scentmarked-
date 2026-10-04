@@ -1,14 +1,14 @@
 import type { MatchPerfume } from './match-scoring'
 
-export type TastePattern={name:string;kind:'note'|'accord';positive:number;negative:number;net:number}
+export type TastePattern={name:string;kind:'note'|'accord';positive:number;negative:number;net:number;confidence:'possible'|'emerging'|'strong'}
 
 export function learnedTastePatterns(positive:MatchPerfume[],negative:MatchPerfume[],limit=5):TastePattern[]{
  const scores=new Map<string,TastePattern>()
  const add=(name:string,kind:'note'|'accord',direction:1|-1,weight:number)=>{
   const clean=name.trim();if(!clean)return
-  const key=kind+':'+clean.toLocaleLowerCase(),row=scores.get(key)||{name:clean,kind,positive:0,negative:0,net:0}
+  const key=kind+':'+clean.toLocaleLowerCase(),row=scores.get(key)||{name:clean,kind,positive:0,negative:0,net:0,confidence:'possible' as const}
   if(direction===1)row.positive+=weight;else row.negative+=weight
-  row.net=row.positive-row.negative;scores.set(key,row)
+  row.net=row.positive-row.negative;row.confidence=row.positive>=3&&row.net>=2?'strong':row.positive>=2&&row.net>=1?'emerging':'possible';scores.set(key,row)
  }
  const scan=(perfumes:MatchPerfume[],direction:1|-1)=>{for(const p of perfumes){
   const seenNotes=new Set<string>();for(const x of p.perfume_notes||[]){const name=x.notes?.name;if(!name||seenNotes.has(name.toLocaleLowerCase()))continue;seenNotes.add(name.toLocaleLowerCase());add(name,'note',direction,1)}
