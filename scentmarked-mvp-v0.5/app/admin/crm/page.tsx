@@ -62,7 +62,7 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
       <article className="admin-card"><p className="eyebrow">MEMBERS</p><h2>{members}</h2><p>Linked ScentMarked accounts</p></article>
     </div>
 
-    <form method="get" className="admin-card" style={{display:'grid',gap:12,gridTemplateColumns:'minmax(220px,1fr) repeat(2,minmax(150px,220px)) auto',alignItems:'end'}}>
+    <form method="get" className="admin-card crm-filter-bar">
       <label>Search<input name="q" defaultValue={q} placeholder="Email or name"/></label>
       <label>Status<select name="status" defaultValue={status}><option value="">All statuses</option>{statuses.map(x=><option key={x} value={x}>{x}</option>)}</select></label>
       <label>Marketing consent<select name="consent" defaultValue={consent}><option value="">Any</option><option value="yes">Consented</option><option value="no">Not consented</option></select></label>
@@ -74,12 +74,10 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
       const profile=Array.isArray(c.profiles)?c.profiles[0]:c.profiles
       const name=[c.first_name,c.last_name].filter(Boolean).join(' ')||profile?.display_name||'Unnamed contact'
       const loved=(profile?.scent_loved_notes||[]).slice(0,6)
-      return <article className="admin-card" key={c.id}>
-        <div className="admin-heading"><div><p className="eyebrow">{c.status} · {c.source}</p><h2>{name}</h2><p><a href={'mailto:'+c.email}>{c.email}</a>{c.user_id?' · ScentMarked member':' · CRM-only contact'}</p><small>Added {new Date(c.created_at).toLocaleDateString()} · Marketing: {c.marketing_consent?'consented':'not consented'}</small></div>
-          <form action={updateContact}><input type="hidden" name="id" value={c.id}/><select name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x}>{x}</option>)}</select><button type="submit">Update</button></form>
-        </div>
-        {profile&&<div><p><strong>Scent profile:</strong> {profile.scent_profile_completed_at?'Complete':'Incomplete'}{profile.scent_sweetness?' · Sweetness '+profile.scent_sweetness+'/5':''}{profile.scent_projection?' · Projection '+profile.scent_projection+'/5':''}{profile.scent_longevity?' · Longevity '+profile.scent_longevity+'/5':''}{profile.scent_max_price!=null?' · Budget $'+profile.scent_max_price:''}</p>{loved.length>0&&<p><strong>Loves:</strong> {loved.join(', ')}</p>}{profile.scent_vibes?.length>0&&<p><strong>Vibes:</strong> {profile.scent_vibes.slice(0,5).join(', ')}</p>}</div>}
-        <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}><Link className="button ghost" href={'/admin/crm/'+c.id}>Open contact</Link></div>
+      return <article className="crm-contact-row" key={c.id}>
+        <div className="crm-contact-main"><div className="crm-contact-avatar">{name.slice(0,1).toUpperCase()}</div><div><div className="crm-badges"><span className={'crm-status '+c.status}>{c.status}</span><span>{c.user_id?'Member':'CRM only'}</span><span className={c.marketing_consent&&c.status==='active'?'consented':'muted'}>{c.marketing_consent&&c.status==='active'?'Email eligible':'No marketing'}</span></div><h2>{name}</h2><a className="crm-email" href={'mailto:'+c.email}>{c.email}</a><small>Added {new Date(c.created_at).toLocaleDateString()} · {c.source}</small></div></div>
+        <div className="crm-contact-profile">{profile?<><strong>{profile.scent_profile_completed_at?'Scent profile complete':'Scent profile incomplete'}</strong>{loved.length>0&&<p>Loves {loved.join(', ')}</p>}{profile.scent_vibes?.length>0&&<p>{profile.scent_vibes.slice(0,4).join(' · ')}</p>}</>:<span className="muted">No linked scent profile</span>}</div>
+        <div className="crm-contact-actions"><form action={updateContact}><input type="hidden" name="id" value={c.id}/><select aria-label={'Status for '+name} name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x}>{x}</option>)}</select><button type="submit">Update</button></form><Link className="button" href={'/admin/crm/'+c.id}>Open contact</Link></div>
       </article>
     })}</div>}
   </section></main>
