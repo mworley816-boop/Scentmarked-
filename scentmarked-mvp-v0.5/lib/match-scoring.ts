@@ -49,12 +49,27 @@ export function rankMatchCandidates(candidates:MatchCandidate[],limit=12,feedbac
   if(candidate.priceKnown&&!candidate.priceOk){budgetExcluded+=1;return false}
   return true
  })
+ const adjustedScore=(candidate:MatchCandidate)=>candidate.score+feedbackAdjustment(feedbackByPerfume[candidate.id])+personalSignalAdjustment(personalSignals[candidate.id])
  eligible.sort((a,b)=>{
-  const scoreDifference=(b.score+feedbackAdjustment(feedbackByPerfume[b.id])+personalSignalAdjustment(personalSignals[b.id]))-(a.score+feedbackAdjustment(feedbackByPerfume[a.id])+personalSignalAdjustment(personalSignals[a.id]))
+  const scoreDifference=adjustedScore(b)-adjustedScore(a)
   if(scoreDifference!==0)return scoreDifference
   const lovedDifference=b.loved.length-a.loved.length
   if(lovedDifference!==0)return lovedDifference
   return a.name.localeCompare(b.name)
  })
- return{avoidExcluded,budgetExcluded,eligibleMatchCount:eligible.length,matches:eligible.slice(0,limit)}
+ // Preserve ranking quality while preventing one brand or near-identical accord cluster
+ // from monopolizing the recommendation shelf. Only candidates within 8 adjusted
+ // points of the best remaining result can be reordered for diversity.
+ const remaining=[...eligible],matches:MatchCandidate[]=[]
+ while(remaining.length&&matches.length<limit){
+  const bestScore=adjustedScore(remaining[0]),windowEnd=remaining.findIndex(x=>bestScore-adjustedScore(x)>8),window=remaining.slice(0,windowEnd===-1?remaining.length:windowEnd)
+  const brandCounts=new Map<string,number>(),signatureCounts=new Map<string,number>()
+  for(const picked of matches){const brand=String(picked.brands?.name||'').toLowerCase();if(brand)brandCounts.set(brand,(brandCounts.get(brand)||0)+1);const sig=accordRows(picked).sort((a,b)=>Number(b.strength)-Number(a.strength)).slice(0,2).map(x=>String(x.accords?.name||'').toLowerCase()).filter(Boolean).join('|');if(sig)signatureCounts.set(sig,(signatureCounts.get(sig)||0)+1)}
+  let chosen=window[0],chosenPenalty=Infinity
+  for(const candidate of window){const brand=String(candidate.brands?.name||'').toLowerCase(),sig=accordRows(candidate).sort((a,b)=>Number(b.strength)-Number(a.strength)).slice(0,2).map(x=>String(x.accords?.name||'').toLowerCase()).filter(Boolean).join('|'),penalty=(brandCounts.get(brand)||0)*3+(signatureCounts.get(sig)||0)*2+(bestScore-adjustedScore(candidate))
+   if(penalty<chosenPenalty){chosen=candidate;chosenPenalty=penalty}
+  }
+  matches.push(chosen);remaining.splice(remaining.indexOf(chosen),1)
+ }
+ return{avoidExcluded,budgetExcluded,eligibleMatchCount:eligible.length,matches}
 }
