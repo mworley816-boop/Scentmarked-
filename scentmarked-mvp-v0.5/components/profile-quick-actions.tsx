@@ -25,8 +25,10 @@ export default function ProfileQuickActions({perfumeId,name,initialFavorite=fals
  }
  async function share(){
   const url=window.location.href
-  if(navigator.share){try{await navigator.share({title:name,url})}catch{}}
-  else if(navigator.clipboard){try{await navigator.clipboard.writeText(url);setMessage('Link copied.')}catch{setMessage('Could not copy the link.')}}
+  setMessage('')
+  if(navigator.share){try{await navigator.share({title:name,url});return}catch(e:any){if(e?.name==='AbortError')return}}
+  if(navigator.clipboard){try{await navigator.clipboard.writeText(url);setMessage('Link copied.');return}catch{}}
+  setMessage('Could not share the link. Please copy it from your browser.')
  }
  return <div><div className="profile-quick-actions"><button type="button" aria-label={favorite?'Remove from favorites':'Add to favorites'} aria-pressed={favorite} onClick={toggle} disabled={busy}>{favorite?'♥':'♡'}</button><button type="button" aria-label={'Share '+name} onClick={share}>↗</button></div>{message&&<span className="profile-action-message" role="status">{message}</span>}</div>
 }
