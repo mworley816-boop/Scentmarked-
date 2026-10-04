@@ -102,10 +102,13 @@ button,.button,a,select{touch-action:manipulation}
  .header-actions{margin-left:auto;flex:0 0 auto}
  .header-actions>a,.header-actions button{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
  .mobile-nav{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);left:0;right:0;bottom:0;z-index:50;background:rgba(255,250,244,.97);border-top:1px solid var(--line);padding:7px max(8px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));box-shadow:0 -8px 24px #43200f12}
- .mobile-nav a{min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink);text-decoration:none;font-size:9px}
- .mobile-nav b{font-size:18px;font-weight:400}
+ .mobile-nav{min-width:0;overflow:hidden}
+ .mobile-nav a{min-width:0;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:2px 3px;color:var(--ink);text-decoration:none;font-size:9px;line-height:1.1;text-align:center;overflow:hidden}
+ .mobile-nav a span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .mobile-nav b{font-size:18px;font-weight:400;line-height:1}
  .footer-grid{grid-template-columns:1fr 1fr}
 }
+@media(max-width:360px){.mobile-nav{padding-left:max(4px,env(safe-area-inset-left));padding-right:max(4px,env(safe-area-inset-right))}.mobile-nav a{font-size:8px;padding-left:1px;padding-right:1px}.mobile-nav b{font-size:17px}}
 @media(max-width:600px){
  main{width:100%;overflow:hidden}
  section:not(.editorial-hero):not(.craving-section):not(.trending):not(.home-actions):not(.brand-strip){padding:30px 18px}
