@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import ScheduleFields from '../ScheduleFields'
 
 export const dynamic='force-dynamic'
 export const metadata={title:'Edit Email Campaign',robots:{index:false,follow:false}}
@@ -71,9 +72,12 @@ async function scheduleCampaign(formData:FormData){
   'use server'
   const id=String(formData.get('id')||'')
   const when=String(formData.get('scheduled_at')||'')
+  const offset=Number(formData.get('timezone_offset'))
   const s=await requireAdmin('/admin/email/'+id)
-  const date=new Date(when)
-  if(!id||!when||Number.isNaN(date.getTime())||date.getTime()<=Date.now())redirect('/admin/email/'+id+'?error='+encodeURIComponent('Choose a future send date and time.'))
+  const match=when.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/)
+  const localMs=match?Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3]),Number(match[4]),Number(match[5])):NaN
+  const date=new Date(localMs+offset*60_000)
+  if(!id||!when||!Number.isFinite(offset)||Math.abs(offset)>14*60||Number.isNaN(date.getTime())||date.getTime()<=Date.now())redirect('/admin/email/'+id+'?error='+encodeURIComponent('Choose a future send date and time.'))
   const {error}=await s.rpc('schedule_email_campaign',{p_campaign_id:id,p_scheduled_at:date.toISOString()})
   if(error)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Campaign could not be scheduled. Prepare its audience first.'))
   redirect('/admin/email/'+id+'?scheduled=1')
@@ -180,7 +184,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
 
     {editable&&<article className="admin-card"><p className="eyebrow">AUDIENCE PREPARATION</p><h2>{audiencePreview} currently eligible recipient{audiencePreview===1?'':'s'}</h2><p>{campaign.segment_id?'This preview uses the selected segment plus current marketing consent.':'No segment is selected, so this preview includes all currently active, explicitly consented contacts.'} Preparing creates queued delivery records only; it does not send email.</p><form action={prepareCampaign}><input type="hidden" name="id" value={id}/><button type="submit" disabled={audiencePreview===0}>Prepare audience</button></form></article>}
 
-    {editable&&(counts.queued||0)>0&&<article className="admin-card"><p className="eyebrow">SCHEDULE CAMPAIGN</p><h2>Send later</h2><p>Choose a future date and time. The campaign remains queued until a trusted scheduled worker processes it.</p><form action={scheduleCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><label>Send date and time<input type="datetime-local" name="scheduled_at" required/></label><button type="submit">Schedule campaign</button></form></article>}
+    {editable&&(counts.queued||0)>0&&<article className="admin-card"><p className="eyebrow">SCHEDULE CAMPAIGN</p><h2>Send later</h2><p>Choose a future date and time. The campaign remains queued until a trusted scheduled worker processes it.</p><form action={scheduleCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><ScheduleFields/><button type="submit">Schedule campaign</button></form></article>}
 
     {campaign.status==='scheduled'&&<article className="admin-card"><p className="eyebrow">SCHEDULED</p><h2>{campaign.scheduled_at?new Date(campaign.scheduled_at).toLocaleString():'Scheduled campaign'}</h2><p>The campaign is waiting for its scheduled processing time.</p><form action={cancelSchedule}><input type="hidden" name="id" value={id}/><button className="button ghost" type="submit">Cancel schedule</button></form></article>}
 
