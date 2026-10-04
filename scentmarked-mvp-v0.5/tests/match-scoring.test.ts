@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildMatchCandidate, rankMatchCandidates, feedbackAdjustment, personalSignalAdjustment, scentSimilarityScore, type MatchPerfume } from '../lib/match-scoring.ts'
+import { buildMatchCandidate, rankMatchCandidates, feedbackAdjustment, personalSignalAdjustment, learnedPatternAdjustment, scentSimilarityScore, type MatchPerfume } from '../lib/match-scoring.ts'
 
 const perfume=(overrides:Partial<MatchPerfume>={}):MatchPerfume=>({
  id:'p1',name:'Test Scent',slug:'test-scent',brands:{name:'Test House'},
@@ -224,4 +224,41 @@ test('owned and want remain small collection-state adjustments separate from res
  assert.equal(personalSignalAdjustment({owned:true}),1)
  assert.equal(personalSignalAdjustment({want:true}),1)
  assert.equal(personalSignalAdjustment({owned:true,want:true}),2)
+})
+
+
+test('learned pattern confidence scales bounded ranking support',()=>{
+ const p=perfume({perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
+ const possible=learnedPatternAdjustment(p,[{name:'Vanilla',kind:'note',net:1,confidence:'possible'}])
+ const emerging=learnedPatternAdjustment(p,[{name:'Vanilla',kind:'note',net:1,confidence:'emerging'}])
+ const strong=learnedPatternAdjustment(p,[{name:'Vanilla',kind:'note',net:2,confidence:'strong'}])
+ assert.ok(possible<emerging)
+ assert.ok(emerging<strong)
+ assert.ok(strong<=4)
+})
+
+test('learned patterns do not boost fragrances without the learned note or accord',()=>{
+ const p=perfume({perfume_notes:[{position:'base',notes:{name:'Musk'}}],perfume_accords:[{strength:90,accords:{name:'Woody'}}]})
+ assert.equal(learnedPatternAdjustment(p,[{name:'Vanilla',kind:'note',net:3,confidence:'strong'},{name:'Gourmand',kind:'accord',net:3,confidence:'strong'}]),0)
+})
+
+test('multiple learned pattern matches are capped at four ranking points',()=>{
+ const p=perfume({perfume_notes:[{position:'base',notes:{name:'Vanilla'}},{position:'heart',notes:{name:'Caramel'}}],perfume_accords:[{strength:90,accords:{name:'Gourmand'}}]})
+ const patterns=[
+  {name:'Vanilla',kind:'note' as const,net:5,confidence:'strong' as const},
+  {name:'Caramel',kind:'note' as const,net:5,confidence:'strong' as const},
+  {name:'Gourmand',kind:'accord' as const,net:5,confidence:'strong' as const}
+ ]
+ assert.equal(learnedPatternAdjustment(p,patterns),4)
+})
+
+test('learned patterns can reorder close matches but not overpower a clearly stronger core match',()=>{
+ const prefs={love:[],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}
+ const learned={...buildMatchCandidate(perfume({id:'learned',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]}),undefined,new Map(),2,prefs),score:80}
+ const close={...buildMatchCandidate(perfume({id:'close',perfume_notes:[{position:'base',notes:{name:'Musk'}}]}),undefined,new Map(),2,prefs),score:82}
+ const strong={...buildMatchCandidate(perfume({id:'strong',perfume_notes:[{position:'base',notes:{name:'Musk'}}]}),undefined,new Map(),2,prefs),score:90}
+ const patterns=[{name:'Vanilla',kind:'note' as const,net:3,confidence:'strong' as const}]
+ assert.equal(rankMatchCandidates([close,learned],12,{}, {},patterns).matches[0].id,'learned')
+ assert.equal(rankMatchCandidates([strong,learned],12,{}, {},patterns).matches[0].id,'strong')
+ assert.equal(learned.score,80)
 })
