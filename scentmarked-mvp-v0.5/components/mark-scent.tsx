@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const options=[['owned','Own It','✓'],['want','Want It','＋'],['tried','Tried It','◌']] as const
+const statusLabels:Record<string,string>={owned:'Owned',want:'Want It',tried:'Tried It'}
 
 export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initial?:string[]}){
  const [saved,setSaved]=useState<string[]>(initial)
@@ -19,11 +20,11 @@ export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initi
    if(saved.includes(status)){
     const {error}=await supabase.from('collection_items').delete().eq('user_id',user.id).eq('perfume_id',perfumeId).eq('status',status)
     if(error)throw error
-    setSaved(v=>v.filter(x=>x!==status))
+    setSaved(v=>v.filter(x=>x!==status));setMessage(`Removed ${statusLabels[status]||'mark'}.`)
    }else{
     const {error}=await supabase.from('collection_items').upsert({user_id:user.id,perfume_id:perfumeId,status},{onConflict:'user_id,perfume_id,status',ignoreDuplicates:true})
     if(error)throw error
-    setSaved(v=>v.includes(status)?v:[...v,status])
+    setSaved(v=>v.includes(status)?v:[...v,status]);setMessage(`Marked as ${statusLabels[status]||status}.`)
    }
   }catch{setMessage('Could not update your Marks. Please try again.')}
   finally{setBusy(null)}
