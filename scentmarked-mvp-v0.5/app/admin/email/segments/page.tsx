@@ -29,6 +29,18 @@ async function createSegment(formData:FormData){
   const description=String(formData.get('description')||'').trim().slice(0,300)
   const submitted=fields.map(field=>({field,value:String(formData.get(field)||'').trim().slice(0,100)})).filter(x=>x.value)
   if(!name)redirect('/admin/email/segments?error='+encodeURIComponent('Segment name is required.'))
+  const allowed:Record<string,string[]>={
+    loved_note:scentChoices,avoided_note:scentNotes,vibe:vibes,occasion:occasions,presentation:presentations,
+    sweetness_min:['1','2','3','4','5'],projection_min:['1','2','3','4','5'],longevity_min:['1','2','3','4','5']
+  }
+  for(const {field,value} of submitted){
+    if(field==='max_price'){
+      const n=Number(value)
+      if(!Number.isSafeInteger(n)||n<1)redirect('/admin/email/segments?error='+encodeURIComponent('Maximum budget must be a positive whole number.'))
+    }else if(!allowed[field]?.includes(value)){
+      redirect('/admin/email/segments?error='+encodeURIComponent('Choose valid questionnaire values for every segment condition.'))
+    }
+  }
   const rules:any={contact:{status:'active',marketing_consent:true},profile:{}}
   for(const {field,value} of submitted)rules.profile[field]=value
   const {error}=await s.from('crm_segments').insert({name,description:description||null,rules,is_active:true})
