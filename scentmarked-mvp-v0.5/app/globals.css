@@ -461,3 +461,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Taste recommendation activity */
 .taste-history{display:grid;gap:8px;margin:12px 0 10px}.taste-history>div{display:flex;justify-content:space-between;gap:18px;padding:12px 14px;border:1px solid var(--line);border-radius:10px}.taste-history span{color:var(--muted);text-align:right}@media(max-width:600px){.taste-history>div{align-items:flex-start;flex-direction:column;gap:3px}.taste-history span{text-align:left}}
+
+
+/* Evidence-based taste evolution */
+.taste-evolution{margin:12px 0 18px;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:#faf8f5}.taste-evolution p{margin:6px 0}.taste-evolution p:first-child{margin-bottom:10px}
