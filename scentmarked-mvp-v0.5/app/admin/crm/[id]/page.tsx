@@ -14,6 +14,19 @@ async function requireAdmin(next:string){
   return {s,user}
 }
 
+const statuses=['active','unsubscribed','bounced','suppressed'] as const
+
+async function updateContactStatus(formData:FormData){
+  'use server'
+  const contactId=String(formData.get('contact_id')||'')
+  const status=String(formData.get('status')||'')
+  const {s}=await requireAdmin('/admin/crm/'+contactId)
+  if(!contactId||!statuses.includes(status as any))redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Choose a valid contact status.'))
+  const {error}=await s.from('crm_contacts').update({status,updated_at:new Date().toISOString()}).eq('id',contactId)
+  if(error)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status could not be updated.'))
+  redirect('/admin/crm/'+contactId+'?saved=status')
+}
+
 async function addNote(formData:FormData){
   'use server'
   const contactId=String(formData.get('contact_id')||'')
@@ -48,7 +61,7 @@ async function removeTag(formData:FormData){
   redirect('/admin/crm/'+contactId)
 }
 
-export default async function CrmContact({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string}>}){
+export default async function CrmContact({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string;saved?:string}>}){
   const {id}=await params
   const p=await searchParams
   const {s}=await requireAdmin('/admin/crm/'+id)
@@ -79,6 +92,9 @@ export default async function CrmContact({params,searchParams}:{params:Promise<{
   return <main><section className="admin-page">
     <div className="crm-profile-hero"><div className="crm-profile-identity"><div className="crm-profile-avatar">{name.slice(0,1).toUpperCase()}</div><div><p className="eyebrow">CRM CONTACT</p><h1>{name}</h1><a href={'mailto:'+c.email}>{c.email}</a><div className="crm-badges"><span className={'crm-status '+c.status}>{c.status}</span><span>{c.user_id?'ScentMarked member':'CRM only'}</span><span className={c.marketing_consent&&c.status==='active'?'consented':'muted'}>{c.marketing_consent&&c.status==='active'?'Email eligible':'No marketing'}</span></div></div></div><div className="crm-profile-actions"><Link className="button ghost" href="/admin/crm">← Contacts</Link><Link className="button" href="/admin/email">Email marketing</Link></div></div>
     {p.error&&<div className="notice error">{p.error}</div>}
+    {p.saved==='status'&&<div className="notice">Contact status updated.</div>}
+
+    <article className="admin-card crm-contact-controls"><div><p className="eyebrow">CONTACT STATUS</p><h2>CRM delivery state</h2><p>Use suppression states to prevent inappropriate marketing delivery. Marketing consent remains a separate permission.</p></div><form action={updateContactStatus}><input type="hidden" name="contact_id" value={id}/><label>Status<select name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x}>{x}</option>)}</select></label><button type="submit">Update status</button></form></article>
 
     <div className="admin-grid">
       <article className="admin-card"><p className="eyebrow">EMAIL CONSENT</p><h2>{c.marketing_consent?'Consented':'Not consented'}</h2><p>{c.marketing_consented_at?'Since '+new Date(c.marketing_consented_at).toLocaleDateString():c.unsubscribed_at?'Unsubscribed '+new Date(c.unsubscribed_at).toLocaleDateString():'No consent timestamp'}</p></article>
