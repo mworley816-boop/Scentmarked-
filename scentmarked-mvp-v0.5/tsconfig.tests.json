@@ -35,7 +35,9 @@
     "lib/scent-profile.ts",
     "lib/scent-relationships.ts",
     "lib/supabase/config.ts",
-    "lib/account-deletion.ts"
+    "lib/account-deletion.ts",
+    "lib/email-footer.ts",
+    "lib/email-provider.ts"
   ],
   "exclude": [
     "node_modules"
