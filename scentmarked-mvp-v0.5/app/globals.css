@@ -557,3 +557,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
  .segment-actions{grid-template-columns:1fr}
  .segment-builder .quiz-check-grid,.segment-editor-form .quiz-check-grid{grid-template-columns:1fr}
 }
+
+
+/* Community taste identity */
+.review-author{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem .5rem}
+.review-author .taste-badge{display:inline-flex;width:max-content;padding:.2rem .55rem;border:1px solid currentColor;border-radius:999px;font-size:.72rem;font-weight:700;line-height:1.2;letter-spacing:.02em;opacity:.82}
