@@ -4,6 +4,8 @@ import { siteUrl } from '@/lib/site'
 
 type DbClient=any
 
+export function emailFirstName(value:unknown){return String(value||'').trim()||'ScentMarked Friend'}
+
 export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=25){
   const safeBatchSize=Math.max(1,Math.min(100,Math.trunc(batchSize)||25))
   const {data:campaign,error:campaignError}=await s.from('email_campaigns')
@@ -55,7 +57,7 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
     }
 
     const unsubscribeUrl=siteUrl+'/unsubscribe?token='+encodeURIComponent(String(contact.unsubscribe_token))
-    const firstName=String(contact.first_name||'').trim()||'ScentMarked Friend'
+    const firstName=emailFirstName(contact.first_name)
     const personalize=(value:string)=>value.replaceAll('{{first_name}}',firstName)
     const body=withMarketingFooter(personalize(campaign.html_body),personalize(campaign.text_body||''),unsubscribeUrl)
 
