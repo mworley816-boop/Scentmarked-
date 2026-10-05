@@ -1,3 +1,6 @@
+import {resolve} from 'node:path'
+import {pathToFileURL} from 'node:url'
+
 export function validateProductionEnv(env=process.env){
  const publicUrl=(env.NEXT_PUBLIC_SUPABASE_URL||'').trim()
  const publicKey=(env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||'').trim()
@@ -22,7 +25,9 @@ if(siteUrl){
  return problems
 }
 
-if(import.meta.url===new URL(process.argv[1], 'file:').href){
+const isDirectRun=Boolean(process.argv[1])&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href
+
+if(isDirectRun){
  const problems=validateProductionEnv()
  if(problems.length){
   console.error('ScentMarked production configuration is not ready:')
