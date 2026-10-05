@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import FavoritePerfumeChecks from '@/components/favorite-perfume-checks'
 import PresentationChecks from '@/components/presentation-checks'
@@ -7,6 +8,7 @@ import NotePreferenceChecks from '@/components/note-preference-checks'
 import ScentProfileForm from '@/components/scent-profile-form'
 import ScentProfileSubmit from '@/components/scent-profile-submit'
 import { hasScentProfileRankingSignal } from '@/lib/scent-profile'
+import { encodeOnboardingHandoff,onboardingCookie } from '@/lib/onboarding-handoff'
 
 export const metadata={title:'Build Your Scent Profile',robots:{index:false,follow:false}}
 
@@ -40,7 +42,6 @@ async function saveProfile(formData:FormData){
  'use server'
  const s=await createClient()
  const {data:{user}}=await s.auth.getUser()
- if(!user)redirect('/login?next='+encodeURIComponent('/onboarding'))
  const loved=[...checked(formData,'families',families),...checked(formData,'lovedNotes',notes)]
  const avoided=checked(formData,'avoidedNotes',notes)
  const selectedOccasions=checked(formData,'occasions',occasions)
@@ -63,6 +64,7 @@ async function saveProfile(formData:FormData){
  const marketingConsent=formData.get('marketingConsent')==='yes'
  const hasRankingSignal=hasScentProfileRankingSignal({loved:resolvedLoved,avoided,favoriteIds,presentations:selectedPresentations,sweetness,projection,longevity,budget})
  if(!hasRankingSignal)redirect('/onboarding?error=choose-preference')
+ if(!user){const jar=await cookies();jar.set(onboardingCookie,encodeOnboardingHandoff({loved:resolvedLoved,avoided,occasions:selectedOccasions,vibes:selectedVibes,presentations:selectedPresentations,favoriteIds,sweetness,projection,longevity,budget:Number.isSafeInteger(budget)&&budget>0?budget:null,marketingConsent}),{httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',path:'/',maxAge:3600});redirect('/login?signup=finish&next='+encodeURIComponent('/matches?profile=ready'))}
  let failed=false
  try{
   const {data,error}=await s.from('profiles').update({
