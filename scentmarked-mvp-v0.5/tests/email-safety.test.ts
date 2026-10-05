@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { marketingFooter, withMarketingFooter } from '../lib/email-footer.ts'
 import { getEmailProvider } from '../lib/email-provider.ts'
+import { emailFirstName } from '../lib/email-queue.ts'
 
 test('marketing footer includes the supplied unsubscribe URL in html and text',()=>{
   const url='https://scentmarked.example/unsubscribe?token=abc%20123'
