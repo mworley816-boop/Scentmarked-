@@ -535,3 +535,25 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 .campaign-template-tools{grid-column:1/-1;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fffaf4}.campaign-template-tools p{margin:0 0 9px;color:var(--muted);font-size:11px}.campaign-template-tools form,.campaign-test-card form{display:flex;align-items:end;gap:8px;flex-wrap:wrap}.campaign-template-tools select,.campaign-test-card input{min-height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}.campaign-template-tools select{min-width:240px}.campaign-test-card form label{display:grid;gap:5px;flex:1 1 260px}.campaign-test-card button,.campaign-template-tools button{min-height:44px}
 @media(max-width:600px){.campaign-template-tools form,.campaign-test-card form{align-items:stretch;flex-direction:column}.campaign-template-tools select,.campaign-template-tools button,.campaign-test-card input,.campaign-test-card button{width:100%;min-width:0}}
+
+
+/* Email admin mobile finishing pass */
+@media(max-width:620px){
+ .email-admin-hero .email-hero-actions,.email-subpage-hero .campaign-editor-actions,.campaign-editor-hero .campaign-editor-actions{width:100%}
+ .email-subpage-hero .campaign-editor-actions .button,.campaign-editor-hero .campaign-editor-actions .button{flex:1 1 150px;text-align:center}
+ .email-create-form button,.template-create-form button{width:100%;min-height:44px}
+ .email-campaign-row>.button,.template-library-row>.button{width:100%;text-align:center}
+ .segment-library-main{width:100%}
+ .segment-library-main>form,.segment-library-main>div>form,.segment-library-row form{max-width:100%}
+ .segment-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+ .segment-actions .button,.segment-actions form,.segment-actions form button{width:100%;text-align:center}
+ .segment-library-main>form:last-child button,.segment-library-row form>button{min-height:44px}
+ .segment-builder fieldset,.segment-editor-form fieldset{padding:12px}
+ .segment-builder .quiz-check-grid,.segment-editor-form .quiz-check-grid{grid-template-columns:1fr 1fr}
+ .campaign-send-card form button,.campaign-audience-card form button,.campaign-delivery-card form button{min-height:44px}
+}
+@media(max-width:420px){
+ .campaign-steps{grid-template-columns:1fr}
+ .segment-actions{grid-template-columns:1fr}
+ .segment-builder .quiz-check-grid,.segment-editor-form .quiz-check-grid{grid-template-columns:1fr}
+}
