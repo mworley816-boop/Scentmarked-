@@ -317,15 +317,15 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .quiz-radio-grid .quiz-check span{min-height:52px}
 .quiz-actions{display:flex;align-items:center;gap:18px;padding:10px 2px}
 .quiz-actions button{min-height:48px;padding:0 22px;border:1px solid var(--ink);border-radius:999px;background:var(--ink);color:#fff;font:inherit;font-size:11px;font-weight:750;cursor:pointer}
-.quiz-actions button:hover{opacity:.9}
+.quiz-actions button:hover{opacity:.9}.quiz-actions button:disabled{cursor:wait;opacity:.65}
 .quiz-actions button:focus-visible,.quiz-actions a:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .quiz-actions a{color:var(--muted);font-size:10px;font-weight:650;text-underline-offset:3px}
 @media(max-width:800px){.quiz-check-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){
  .quiz-page{padding:32px 16px calc(92px + env(safe-area-inset-bottom))}
  .quiz-shell>h1{font-size:clamp(36px,12vw,50px)}
- .quiz-form{gap:12px}
- .quiz-form fieldset{padding:18px 14px;border-radius:14px}
+ .quiz-form{gap:12px;padding-bottom:112px}
+ .quiz-form fieldset{padding:18px 14px;border-radius:14px;scroll-margin-bottom:170px}
  .quiz-form legend{font-size:15px}
  .quiz-check-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
  .quiz-check span{min-height:52px;padding:8px;font-size:10px}
