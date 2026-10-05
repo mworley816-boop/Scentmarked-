@@ -25,6 +25,9 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Use project npm version
+        run: npm install --global npm@10.9.2
+
       - name: Install dependencies
         run: npm install
 
