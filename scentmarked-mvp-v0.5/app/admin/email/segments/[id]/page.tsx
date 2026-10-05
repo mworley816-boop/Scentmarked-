@@ -72,7 +72,7 @@ export default async function EditSegment({params,searchParams}:{params:Promise<
 
  return <main><section className="admin-page">
   <div className="email-subpage-hero"><div><span className={'segment-status '+(segment.is_active?'active':'inactive')}>{segment.is_active?'ACTIVE':'INACTIVE'}</span><p className="eyebrow">EMAIL · AUDIENCE</p><h1>{segment.name}</h1><p>Update this reusable audience. Email consent remains required automatically.</p></div><div className="campaign-editor-actions"><Link className="button ghost" href="/admin/email/segments">← Segments</Link><Link className="button ghost" href="/admin/crm">CRM contacts</Link></div></div>
-  {p.error&&<div className="notice error">{p.error}</div>}
+  {p.error&&<div className="notice error" role="alert">{p.error}</div>}
   <article className="admin-card segment-editor-card"><p className="eyebrow">SEGMENT RULES</p><h2>Audience definition</h2><form action={save} className="segment-editor-form">
    <label>Name<input name="name" defaultValue={segment.name} maxLength={100} required/></label>
    <label>Description<input name="description" defaultValue={segment.description||''} maxLength={300}/></label>
