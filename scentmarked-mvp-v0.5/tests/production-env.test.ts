@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+// @ts-expect-error JavaScript deployment validator intentionally has no generated declaration file.
 import {validateProductionEnv} from '../scripts/check-production-env.mjs'
 
 const validEnv={
@@ -20,8 +21,8 @@ test('production env accepts complete HTTPS origin configuration',()=>{
 test('production env reports missing server secrets',()=>{
  const env={...validEnv,RESEND_API_KEY:'',EMAIL_WORKER_SECRET:''}
  const problems=validateProductionEnv(env)
- assert.ok(problems.some(x=>x.includes('RESEND_API_KEY')))
- assert.ok(problems.some(x=>x.includes('EMAIL_WORKER_SECRET')))
+ assert.ok(problems.some((x:string)=>x.includes('RESEND_API_KEY')))
+ assert.ok(problems.some((x:string)=>x.includes('EMAIL_WORKER_SECRET')))
 })
 
 test('production env rejects non-HTTPS public URLs',()=>{
