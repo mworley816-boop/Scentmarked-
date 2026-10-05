@@ -81,3 +81,9 @@ test('production env CLI fails for an invalid configured site origin',()=>{
  assert.match(result.stderr,/NEXT_PUBLIC_SITE_URL must use HTTPS/)
  assert.match(result.stderr,/NEXT_PUBLIC_SITE_URL must be an origin only/)
 })
+
+
+test('production env rejects an example.com site placeholder',()=>{
+ const problems=validateProductionEnv({...validEnv,NEXT_PUBLIC_SITE_URL:'https://www.example.com'})
+ assert.ok(problems.some(x=>x.includes('example.com placeholder')))
+})
