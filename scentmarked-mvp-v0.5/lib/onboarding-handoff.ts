@@ -32,6 +32,10 @@ export function decodeOnboardingHandoff(value?:string|null):OnboardingHandoff|nu
 }
 
 
+export function parseOnboardingHandoff(value:unknown):OnboardingHandoff|null{
+ try{return decodeOnboardingHandoff(Buffer.from(JSON.stringify(value),'utf8').toString('base64url'))}catch{return null}
+}
+
 export async function applyOnboardingHandoff(supabase:any,userId:string,value:OnboardingHandoff){
  const now=new Date().toISOString()
  const {data,error}=await supabase.from('profiles').update({
