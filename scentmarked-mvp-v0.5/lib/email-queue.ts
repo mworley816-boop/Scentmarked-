@@ -55,7 +55,7 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
     }
 
     const unsubscribeUrl=siteUrl+'/unsubscribe?token='+encodeURIComponent(String(contact.unsubscribe_token))
-    const firstName=String(contact.first_name||'').trim()
+    const firstName=String(contact.first_name||'').trim()||'ScentMarked Friend'
     const personalize=(value:string)=>value.replaceAll('{{first_name}}',firstName)
     const body=withMarketingFooter(personalize(campaign.html_body),personalize(campaign.text_body||''),unsubscribeUrl)
 
