@@ -64,7 +64,7 @@ async function saveProfile(formData:FormData){
  const marketingConsent=formData.get('marketingConsent')==='yes'
  const hasRankingSignal=hasScentProfileRankingSignal({loved:resolvedLoved,avoided,favoriteIds,presentations:selectedPresentations,sweetness,projection,longevity,budget})
  if(!hasRankingSignal)redirect('/onboarding?error=choose-preference')
- if(!user){const jar=await cookies();jar.set(onboardingCookie,encodeOnboardingHandoff({loved:resolvedLoved,avoided,occasions:selectedOccasions,vibes:selectedVibes,presentations:selectedPresentations,favoriteIds,sweetness,projection,longevity,budget:Number.isSafeInteger(budget)&&budget>0?budget:null,marketingConsent}),{httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',path:'/',maxAge:3600});redirect('/login?signup=finish&next='+encodeURIComponent('/matches?profile=ready'))}
+ if(!user){const jar=await cookies();jar.set(onboardingCookie,encodeOnboardingHandoff({loved:resolvedLoved,avoided,occasions:selectedOccasions,vibes:selectedVibes,presentations:selectedPresentations,favoriteIds,sweetness,projection,longevity,budget:Number.isSafeInteger(budget)&&budget>0?budget:null,marketingConsent}),{httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',path:'/',maxAge:86400});redirect('/login?signup=finish&next='+encodeURIComponent('/matches?profile=ready'))}
  let failed=false
  try{
   const {data,error}=await s.from('profiles').update({
@@ -160,7 +160,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
    <fieldset><legend>10. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity} selected={saved?.scent_longevity}/></fieldset>
    <fieldset><legend>11. What do you usually want to spend?</legend><Radios name="budget" items={budgets} selected={saved?.scent_max_price}/></fieldset>
    <fieldset><legend>Stay in the scent loop?</legend><p>Optional. Get ScentMarked perfume finds, match updates and occasional news by email. You can unsubscribe anytime.</p><label className="quiz-check"><input type="checkbox" name="marketingConsent" value="yes"/><span>Yes, send me ScentMarked marketing emails.</span></label></fieldset>
-   <div className="quiz-actions"><ScentProfileSubmit completed={completed}/><Link href="/matches">{completed?'Cancel':'Skip for now'}</Link></div>
+   <div className="quiz-actions"><ScentProfileSubmit completed={completed}/>{user?<Link href="/matches">{completed?'Cancel':'Skip for now'}</Link>:<Link href="/login">Already have an account? Sign in</Link>}</div>
   </ScentProfileForm>
  </section></main>
 }
