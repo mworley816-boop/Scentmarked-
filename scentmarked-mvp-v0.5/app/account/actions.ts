@@ -22,11 +22,12 @@ export async function updateMarketingPreference(formData:FormData){
  const supabase=await createClient()
  const {data:{user}}=await supabase.auth.getUser()
  if(!user)redirect('/login?next='+encodeURIComponent('/account'))
- const {data:contact,error:loadError}=await supabase.from('crm_contacts').select('id,status').eq('user_id',user.id).maybeSingle()
- if(loadError||!contact)redirect(accountUrl('error','Email preferences could not be loaded. Please try again.'))
- if(enabled&&['bounced','suppressed'].includes(String(contact.status)))redirect(accountUrl('error','Marketing email cannot be re-enabled for this address yet. Please contact Scentmarked so we can resolve the delivery issue.'))
- const {data:updated,error}=await supabase.from('crm_contacts').update({marketing_consent:enabled}).eq('id',contact.id).eq('user_id',user.id).select('id').maybeSingle()
- if(error||!updated)redirect(accountUrl('error','Email preferences could not be saved. Please try again.'))
+ const {data:updated,error}=await supabase.rpc('set_my_marketing_consent',{p_enabled:enabled})
+ if(error){
+  const suppressed=enabled&&/suppressed/i.test(String(error.message||''))
+  redirect(accountUrl('error',suppressed?'Marketing email cannot be re-enabled for this address yet. Please contact Scentmarked so we can resolve the delivery issue.':'Email preferences could not be saved. Please try again.'))
+ }
+ if(!updated)redirect(accountUrl('error','Email preferences are not available for this account yet.'))
  redirect(accountUrl('message',enabled?'Marketing emails are enabled.':'Marketing emails are turned off.'))
 }
 
