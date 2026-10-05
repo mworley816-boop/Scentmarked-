@@ -91,7 +91,7 @@ async function saveProfile(formData:FormData){
  else if(!unchanged){const {error:revisionError}=await s.from('taste_profile_revisions').insert(revision);if(revisionError)console.error('Taste revision snapshot failed',revisionError.message)}
  if(marketingConsent){
   const {data:consentSaved,error:consentError}=await s.rpc('set_my_marketing_consent',{p_enabled:true})
-  if(consentError||!consentSaved)console.error('Marketing consent could not be saved during onboarding.')
+  if(consentError||!consentSaved)redirect('/onboarding?error=consent-save-failed')
  }
  redirect('/matches?profile=ready')
 }
