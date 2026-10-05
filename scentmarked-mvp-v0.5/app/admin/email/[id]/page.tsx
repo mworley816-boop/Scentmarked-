@@ -175,6 +175,12 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   const complained=counts.complained||0
   const unsubscribed=counts.unsubscribed||0
   const rate=(value:number,base:number)=>base>0?Math.round((value/base)*1000)/10:0
+  const hasSubject=Boolean(String(campaign.subject||'').trim())
+  const hasHtml=Boolean(String(campaign.html_body||'').trim())
+  const hasPlainText=Boolean(String(campaign.text_body||'').trim())
+  const hasAudience=audiencePreview>0
+  const hasLegacyUnsubscribe=[campaign.html_body,campaign.text_body].some(value=>String(value||'').includes('{{unsubscribe_url}}'))
+  const readyToPrepare=hasSubject&&hasHtml&&hasAudience&&!hasLegacyUnsubscribe
 
   return <main><section className="admin-page">
     <div className="campaign-editor-hero"><div><div className="email-campaign-meta"><span className={'email-status '+campaign.status}>{campaign.status}</span></div><p className="eyebrow">EMAIL CAMPAIGN</p><h1>{campaign.name}</h1><p>{campaign.subject} · Created {new Date(campaign.created_at).toLocaleDateString()}</p></div><div className="campaign-editor-actions"><Link className="button ghost" href="/admin/email">← Email</Link><a className="button ghost" href="#preview">Preview</a></div></div>
@@ -207,6 +213,8 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
       </div>
     </article>
 
+    {editable&&<article className="admin-card campaign-readiness-card"><p className="eyebrow">PRE-SEND READINESS</p><h2>{readyToPrepare?'Ready to prepare':'Review before preparing'}</h2><div className="admin-grid"><div><strong>{hasSubject?'✓':'—'} Subject</strong><p>{hasSubject?'Subject is set.':'Add a subject.'}</p></div><div><strong>{hasHtml?'✓':'—'} HTML body</strong><p>{hasHtml?'Email content is saved.':'Add email content.'}</p></div><div><strong>{hasAudience?'✓':'—'} Audience</strong><p>{hasAudience?audiencePreview+' eligible recipient'+(audiencePreview===1?'':'s'):'No eligible recipients yet.'}</p></div><div><strong>{!hasLegacyUnsubscribe?'✓':'—'} Unsubscribe footer</strong><p>{hasLegacyUnsubscribe?'Remove the legacy {{unsubscribe_url}} placeholder.':'Secure footer is added automatically at send time.'}</p></div><div><strong>{hasPlainText?'✓':'○'} Plain text</strong><p>{hasPlainText?'Plain-text version is available.':'Recommended for accessibility and fallback.'}</p></div></div></article>}
+
     <form action={saveCampaign} className="campaign-edit-form" id="setup">
       <input type="hidden" name="id" value={id}/>
       <article className="admin-card campaign-setup-card"><p className="eyebrow">STEP 1 · SETUP</p><h2>Campaign details</h2>
@@ -225,7 +233,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
       </article>
     </form>
 
-    {editable&&<article className="admin-card campaign-audience-card" id="audience"><p className="eyebrow">STEP 2 · AUDIENCE</p><h2>{audiencePreview} currently eligible recipient{audiencePreview===1?'':'s'}</h2><p>{campaign.segment_id?'This preview uses the selected segment plus current marketing consent.':'No segment is selected, so this preview includes all currently active, explicitly consented contacts.'} Preparing creates queued delivery records only; it does not send email.</p><form action={prepareCampaign}><input type="hidden" name="id" value={id}/><button type="submit" disabled={audiencePreview===0}>Prepare audience</button></form></article>}
+    {editable&&<article className="admin-card campaign-audience-card" id="audience"><p className="eyebrow">STEP 2 · AUDIENCE</p><h2>{audiencePreview} currently eligible recipient{audiencePreview===1?'':'s'}</h2><p>{campaign.segment_id?'This preview uses the selected segment plus current marketing consent.':'No segment is selected, so this preview includes all currently active, explicitly consented contacts.'} Preparing creates queued delivery records only; it does not send email.</p><form action={prepareCampaign}><input type="hidden" name="id" value={id}/><button type="submit" disabled={!readyToPrepare}>Prepare audience</button></form></article>}
 
     {editable&&(counts.queued||0)>0&&<article className="admin-card campaign-delivery-card" id="delivery"><p className="eyebrow">STEP 3 · SCHEDULE</p><h2>Send later</h2><p>Choose a future date and time. The campaign remains queued until a trusted scheduled worker processes it.</p><form action={scheduleCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><ScheduleFields/><button type="submit">Schedule campaign</button></form></article>}
 
