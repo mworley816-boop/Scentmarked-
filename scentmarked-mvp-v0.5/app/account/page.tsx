@@ -13,15 +13,16 @@ export default async function AccountPage({searchParams}:{searchParams:Promise<{
  const supabase=await createClient()
  const {data:{user}}=await supabase.auth.getUser()
  if(!user)redirect('/login?next='+encodeURIComponent('/account'))
- const [{data:profile,error:profileError},{data:feedback},{data:collection},{data:ratings},{data:history},{data:revisions},{data:crmContact}]=await Promise.all([
+ const [{data:profile,error:profileError},{data:feedback},{data:collection},{data:ratings},{data:history},{data:revisions},{data:marketingPreference}]=await Promise.all([
   supabase.from('profiles').select('display_name,is_admin,scent_profile_completed_at,scent_loved_notes,scent_avoided_notes,scent_presentations,scent_sweetness,scent_projection,scent_longevity,scent_max_price').eq('id',user.id).maybeSingle(),
   supabase.from('recommendation_feedback').select('perfume_id,feedback,updated_at').eq('user_id',user.id).in('feedback',['more_like_this','less_like_this']).order('updated_at',{ascending:false}),
   supabase.from('collection_items').select('perfume_id,status,updated_at').eq('user_id',user.id),
   supabase.from('ratings').select('perfume_id,overall,updated_at').eq('user_id',user.id),
   supabase.from('recommendation_history').select('created_at,result_count').eq('user_id',user.id).order('created_at',{ascending:false}).limit(5),
   supabase.from('taste_profile_revisions').select('created_at,loved_notes,avoided_notes,presentations,favorite_perfume_ids,sweetness,projection,longevity,max_price').eq('user_id',user.id).order('created_at',{ascending:false}).limit(2),
-  supabase.from('crm_contacts').select('status,marketing_consent,marketing_consented_at,unsubscribed_at').eq('user_id',user.id).maybeSingle()
+  supabase.rpc('get_my_marketing_preference')
  ])
+ const crmContact=Array.isArray(marketingPreference)?marketingPreference[0]:marketingPreference
  const taste={more:(feedback||[]).filter((x:any)=>x.feedback==='more_like_this').length,less:(feedback||[]).filter((x:any)=>x.feedback==='less_like_this').length,favorites:(collection||[]).filter((x:any)=>x.status==='favorite').length,highRated:(ratings||[]).filter((x:any)=>Number(x.overall)>=4).length}
  const recentFeedback=(feedback||[]).slice(0,5),feedbackPerfumeIds=[...new Set(recentFeedback.map((x:any)=>String(x.perfume_id)))]
  const resolvedEvidence=resolveLatestTasteEvidence([
