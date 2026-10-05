@@ -14,7 +14,10 @@ export default async function Community(){
   if(reviews.error)loadError=true
   const comparisons=await s.from('comparison_votes').select('id,similarity,created_at,perfume_a_id,perfume_b_id').order('created_at',{ascending:false}).limit(50)
   const popular=await s.from('ratings').select('overall,perfume_id')
-  const reviewerIds=[...new Set((reviews.data||[]).map((x:any)=>x.user_id).filter(Boolean))]\n  const communityProfiles=reviewerIds.length?await s.from('community_profiles').select('user_id,display_name,taste_label,show_taste_badge').in('user_id',reviewerIds):null\n  const communityById=new Map((communityProfiles?.data||[]).map((x:any)=>[x.user_id,x]))\n  const perfumeIds=[...new Set([...(reviews.data||[]).map((x:any)=>x.perfume_id),...(comparisons.data||[]).flatMap((x:any)=>[x.perfume_a_id,x.perfume_b_id]),...(popular.data||[]).map((x:any)=>x.perfume_id)].filter(Boolean))]
+  const reviewerIds=[...new Set((reviews.data||[]).map((x:any)=>x.user_id).filter(Boolean))]
+  const communityProfiles=reviewerIds.length?await s.from('community_profiles').select('user_id,display_name,taste_label,show_taste_badge').in('user_id',reviewerIds):null
+  const communityById=new Map((communityProfiles?.data||[]).map((x:any)=>[x.user_id,x]))
+  const perfumeIds=[...new Set([...(reviews.data||[]).map((x:any)=>x.perfume_id),...(comparisons.data||[]).flatMap((x:any)=>[x.perfume_a_id,x.perfume_b_id]),...(popular.data||[]).map((x:any)=>x.perfume_id)].filter(Boolean))]
   const published=perfumeIds.length?await s.from('perfumes').select('id,name,slug,brands(name)').in('id',perfumeIds).eq('status','published'):null
   if(published?.error)loadError=true
   const byId=new Map((published?.data||[]).map((p:any)=>[p.id,p]))
