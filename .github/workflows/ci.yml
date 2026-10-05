@@ -34,9 +34,6 @@ jobs:
       - name: Report dependency advisories
         run: npm audit --omit=dev || true
 
-      - name: Report deprecated dependency paths
-        run: npm ls glob node-domexception || true
-
       - name: Typecheck, test, and build for Cloudflare
         run: npm run check
         env:
