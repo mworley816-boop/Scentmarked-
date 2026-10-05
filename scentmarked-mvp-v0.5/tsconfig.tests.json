@@ -37,7 +37,8 @@
     "lib/supabase/config.ts",
     "lib/account-deletion.ts",
     "lib/email-footer.ts",
-    "lib/email-provider.ts"
+    "lib/email-provider.ts",
+    "lib/email-personalization.ts"
   ],
   "exclude": [
     "node_modules"
