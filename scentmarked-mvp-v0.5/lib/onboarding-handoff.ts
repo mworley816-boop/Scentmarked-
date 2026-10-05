@@ -47,16 +47,23 @@ export function parseOnboardingHandoff(value:unknown):OnboardingHandoff|null{
 
 export async function applyOnboardingHandoff(supabase:any,userId:string,value:OnboardingHandoff){
  const now=new Date().toISOString()
+ let favoriteIds:string[]=[]
+ if(value.favoriteIds.length){
+  const {data:published,error:favoriteError}=await supabase.from('perfumes').select('id').eq('status','published').in('id',value.favoriteIds)
+  if(favoriteError)return false
+  const publishedIds=new Set((published||[]).map((row:any)=>String(row.id)))
+  favoriteIds=value.favoriteIds.filter(id=>publishedIds.has(id))
+ }
  const {data,error}=await supabase.from('profiles').update({
   scent_loved_notes:value.loved,scent_avoided_notes:value.avoided,scent_sweetness:value.sweetness,
   scent_projection:value.projection,scent_longevity:value.longevity,scent_max_price:value.budget,
   scent_occasions:value.occasions,scent_vibes:value.vibes,scent_presentations:value.presentations,
-  scent_favorite_perfume_ids:value.favoriteIds,scent_profile_completed_at:now
+  scent_favorite_perfume_ids:favoriteIds,scent_profile_completed_at:now
  }).eq('id',userId).select('id').maybeSingle()
  if(error||!data)return false
  const {error:revisionError}=await supabase.from('taste_profile_revisions').insert({
   user_id:userId,loved_notes:value.loved,avoided_notes:value.avoided,presentations:value.presentations,
-  favorite_perfume_ids:value.favoriteIds,sweetness:value.sweetness,projection:value.projection,
+  favorite_perfume_ids:favoriteIds,sweetness:value.sweetness,projection:value.projection,
   longevity:value.longevity,max_price:value.budget
  })
  if(revisionError)console.error('Onboarding taste revision snapshot failed',revisionError.message)
