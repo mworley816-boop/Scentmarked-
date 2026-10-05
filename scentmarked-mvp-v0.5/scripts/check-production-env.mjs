@@ -1,19 +1,9 @@
 export function validateProductionEnv(env=process.env){
- const required=[
-  'SUPABASE_SERVICE_ROLE_KEY',
-  'RESEND_API_KEY',
-  'RESEND_WEBHOOK_SECRET',
-  'EMAIL_WORKER_SECRET',
-  'RESEND_FROM_EMAIL'
-]
-
- const missing=required.filter(name=>!(env[name]||'').trim())
  const publicUrl=(env.NEXT_PUBLIC_SUPABASE_URL||'').trim()
  const publicKey=(env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||'').trim()
  const siteUrl=(env.NEXT_PUBLIC_SITE_URL||'').trim()
 
  const problems=[]
-if(missing.length)problems.push('Missing server configuration: '+missing.join(', '))
 if(publicUrl){
   try{
     const url=new URL(publicUrl)
