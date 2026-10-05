@@ -13,15 +13,6 @@
     // Use the site origin only (no path). Until then, lib/site.ts uses the workers.dev fallback.
   },
 
-  "secrets": {
-    "required": [
-      "SUPABASE_SERVICE_ROLE_KEY",
-      "RESEND_API_KEY",
-      "RESEND_WEBHOOK_SECRET",
-      "EMAIL_WORKER_SECRET",
-      "RESEND_FROM_EMAIL"
-    ]
-  },
 
   "assets": {
     "directory": ".open-next/assets",
