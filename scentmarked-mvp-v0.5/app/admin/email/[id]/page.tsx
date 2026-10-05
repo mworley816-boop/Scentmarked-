@@ -193,14 +193,14 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   return <main><section className="admin-page">
     <div className="campaign-editor-hero"><div><div className="email-campaign-meta"><span className={'email-status '+campaign.status}>{campaign.status}</span></div><p className="eyebrow">EMAIL CAMPAIGN</p><h1>{campaign.name}</h1><p>{campaign.subject} · Created {new Date(campaign.created_at).toLocaleDateString()}</p></div><div className="campaign-editor-actions"><Link className="button ghost" href="/admin/email">← Email</Link><a className="button ghost" href="#preview">Preview</a></div></div>
     <nav className="campaign-steps" aria-label="Campaign workflow"><a href="#setup"><span>1</span><strong>Content</strong></a><a href="#audience"><span>2</span><strong>Audience</strong></a><a href="#delivery"><span>3</span><strong>Schedule / Send</strong></a><a href="#preview"><span>4</span><strong>Preview</strong></a></nav>
-    {p.error&&<div className="notice error">{p.error}</div>}
-    {p.saved&&<div className="notice">Draft saved.</div>}{p.queued!==undefined&&<div className="notice">Campaign audience prepared: {p.queued} new eligible recipient{p.queued==='1'?'':'s'} queued. No email has been sent.</div>}
-    {p.sent!==undefined&&<div className="notice">Batch finished: {p.sent} sent · {p.failed||'0'} failed · {p.skipped||'0'} skipped{Number(p.remaining||0)>0?' · '+p.remaining+' still queued. Send the next batch to continue.':' · campaign complete.'}</div>}
-    {p.retried!==undefined&&<div className="notice">{p.retried} failed recipient{p.retried==='1'?'':'s'} prepared for retry.</div>}
-    {p.scheduled&&<div className="notice">Campaign scheduled successfully.</div>}
-    {p.unscheduled&&<div className="notice">Campaign schedule cancelled. It is a draft again.</div>}
-    {p.templated&&<div className="notice">Template applied to this draft. Review and save any additional edits before preparing the audience.</div>}
-    {p.tested&&<div className="notice">Test email sent. Test sends do not create campaign delivery records.</div>}
+    {p.error&&<div className="notice error" role="alert">{p.error}</div>}
+    {p.saved&&<div className="notice" role="status">Draft saved.</div>}{p.queued!==undefined&&<div className="notice" role="status">Campaign audience prepared: {p.queued} new eligible recipient{p.queued==='1'?'':'s'} queued. No email has been sent.</div>}
+    {p.sent!==undefined&&<div className="notice" role="status">Batch finished: {p.sent} sent · {p.failed||'0'} failed · {p.skipped||'0'} skipped{Number(p.remaining||0)>0?' · '+p.remaining+' still queued. Send the next batch to continue.':' · campaign complete.'}</div>}
+    {p.retried!==undefined&&<div className="notice" role="status">{p.retried} failed recipient{p.retried==='1'?'':'s'} prepared for retry.</div>}
+    {p.scheduled&&<div className="notice" role="status">Campaign scheduled successfully.</div>}
+    {p.unscheduled&&<div className="notice" role="status">Campaign schedule cancelled. It is a draft again.</div>}
+    {p.templated&&<div className="notice" role="status">Template applied to this draft. Review and save any additional edits before preparing the audience.</div>}
+    {p.tested&&<div className="notice" role="status">Test email sent. Test sends do not create campaign delivery records.</div>}
     <div className="notice"><strong>Provider-gated sending.</strong> Campaign sending only works when the Resend environment variables are configured. Recipient consent is checked again immediately before each send.</div>
 
     <div className="admin-grid">
