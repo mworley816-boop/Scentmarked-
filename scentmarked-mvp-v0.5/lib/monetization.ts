@@ -25,3 +25,9 @@ export function monetizationSummary(rows:MonetizationTransaction[]){
  for(const row of included)byType.set(row.revenue_type,(byType.get(row.revenue_type)||0)+netCents(row))
  return {grossCents:gross,feeCents:fees,netCents:Math.max(0,gross-fees),byType}
 }
+
+export function affiliateMetrics(clicks:number,rows:MonetizationTransaction[]){
+ const conversions=rows.filter(x=>x.revenue_type==='affiliate'&&!['refunded','void'].includes(x.status))
+ const earnings=conversions.reduce((sum,x)=>sum+netCents(x),0)
+ return {clicks,conversions:conversions.length,earningsCents:earnings,conversionRate:clicks?conversions.length/clicks:0,epcCents:clicks?earnings/clicks:0,averageCommissionCents:conversions.length?earnings/conversions.length:0}
+}
