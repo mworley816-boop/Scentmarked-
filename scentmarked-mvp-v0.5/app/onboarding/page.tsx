@@ -89,12 +89,10 @@ async function saveProfile(formData:FormData){
  const unchanged=!!lastRevision&&sameList(lastRevision.loved_notes,revision.loved_notes)&&sameList(lastRevision.avoided_notes,revision.avoided_notes)&&sameList(lastRevision.presentations,revision.presentations)&&sameList(lastRevision.favorite_perfume_ids,revision.favorite_perfume_ids)&&lastRevision.sweetness===revision.sweetness&&lastRevision.projection===revision.projection&&lastRevision.longevity===revision.longevity&&Number(lastRevision.max_price??0)===Number(revision.max_price??0)
  if(revisionLookupError)console.error('Taste revision lookup failed',revisionLookupError.message)
  else if(!unchanged){const {error:revisionError}=await s.from('taste_profile_revisions').insert(revision);if(revisionError)console.error('Taste revision snapshot failed',revisionError.message)}
- try{
-  const now=new Date().toISOString()
-  if(marketingConsent){
-   await s.from('crm_contacts').update({marketing_consent:true,marketing_consented_at:now,status:'active',unsubscribed_at:null,updated_at:now}).eq('user_id',user.id).not('status','in','("bounced","suppressed")')
-  }
- }catch{}
+ if(marketingConsent){
+  const {data:consentSaved,error:consentError}=await s.rpc('set_my_marketing_consent',{p_enabled:true})
+  if(consentError||!consentSaved)console.error('Marketing consent could not be saved during onboarding.')
+ }
  redirect('/matches?profile=ready')
 }
 
