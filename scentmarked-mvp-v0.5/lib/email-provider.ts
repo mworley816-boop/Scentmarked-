@@ -13,7 +13,13 @@ export interface EmailProvider{
 }
 
 class ResendProvider implements EmailProvider{
-  constructor(private apiKey:string,private from:string){}
+  private apiKey:string
+  private from:string
+
+  constructor(apiKey:string,from:string){
+    this.apiKey=apiKey
+    this.from=from
+  }
 
   async send(message:OutboundEmail):Promise<ProviderSendResult>{
     const response=await fetch('https://api.resend.com/emails',{
