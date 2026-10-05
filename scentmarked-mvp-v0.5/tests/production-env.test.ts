@@ -37,3 +37,17 @@ test('production env requires site origin without path, query, or fragment',()=>
  const problems=validateProductionEnv(env)
  assert.ok(problems.includes('NEXT_PUBLIC_SITE_URL must be an origin only, with no path, query, or fragment.'))
 })
+
+
+test('production env allows public Supabase values to come from Wrangler',()=>{
+ const env={...validEnv}
+ delete (env as Partial<typeof validEnv>).NEXT_PUBLIC_SUPABASE_URL
+ delete (env as Partial<typeof validEnv>).NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+ assert.deepEqual(validateProductionEnv(env),[])
+})
+
+test('production env rejects the CI publishable-key placeholder when supplied',()=>{
+ const env={...validEnv,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_ci_placeholder'}
+ const problems=validateProductionEnv(env)
+ assert.ok(problems.includes('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY cannot use the CI placeholder in production.'))
+})
