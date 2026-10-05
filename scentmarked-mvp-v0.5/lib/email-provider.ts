@@ -3,7 +3,7 @@ export type OutboundEmail={
   subject:string
   html:string
   text:string
-  deliveryId:number
+  deliveryId:number|string
 }
 
 export type ProviderSendResult={providerMessageId:string}
