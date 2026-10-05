@@ -52,8 +52,8 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
   return <main><section className="admin-page">
     <div className="admin-heading"><div><p className="eyebrow">ADMIN · CRM</p><h1>Contacts</h1><p>Manage members, email consent, scent-profile context and customer status.</p></div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><Link className="button ghost" href="/admin">Back to Admin</Link><Link className="button" href="/admin/email">Email</Link></div></div>
 
-    {p.error&&<div className="notice error">{p.error}</div>}
-    {error&&<div className="notice error">CRM contacts could not be loaded. Apply the CRM migration before using this page.</div>}
+    {p.error&&<div className="notice error" role="alert">{p.error}</div>}
+    {error&&<div className="notice error" role="alert">CRM contacts could not be loaded. Apply the CRM migration before using this page.</div>}
 
     <div className="admin-grid">
       <article className="admin-card"><p className="eyebrow">RESULTS</p><h2>{contacts.length}</h2><p>Contacts shown</p></article>
