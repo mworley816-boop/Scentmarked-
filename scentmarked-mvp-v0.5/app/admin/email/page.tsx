@@ -64,8 +64,8 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   return <main><section className="admin-page">
     <div className="email-admin-hero"><div><p className="eyebrow">SCENTMARKED ADMIN</p><h1>Email Marketing</h1><p>Create campaigns, organize audiences and monitor email performance.</p></div><div className="email-hero-actions"><Link className="button ghost" href="/admin">← Admin</Link><a className="button" href="#new-campaign">+ New campaign</a></div></div>
     <nav className="email-workspaces" aria-label="Email marketing tools"><a href="#new-campaign"><span>CREATE</span><strong>New campaign</strong><small>Start a new email draft</small></a><Link href="/admin/email/templates"><span>DESIGN</span><strong>Templates</strong><small>{templateRows.length} reusable designs</small></Link><Link href="/admin/email/segments"><span>AUDIENCE</span><strong>Segments</strong><small>{segmentRows.length} saved audiences</small></Link><Link href="/admin/crm"><span>CRM</span><strong>Contacts</strong><small>{emailable||0} currently emailable</small></Link></nav>
-    {p.error&&<div className="notice error">{p.error}</div>}
-    {error&&<div className="notice error">Campaign data could not be loaded. Apply the CRM/email migration before using this page.</div>}
+    {p.error&&<div className="notice error" role="alert">{p.error}</div>}
+    {error&&<div className="notice error" role="alert">Campaign data could not be loaded. Apply the CRM/email migration before using this page.</div>}
     <div className="notice"><strong>Provider-gated sending:</strong> Campaigns can send only when the Resend environment variables are configured. Consent checks, unsubscribe processing, and verified webhook handling remain enforced.</div>
 
     <div className="admin-grid">
