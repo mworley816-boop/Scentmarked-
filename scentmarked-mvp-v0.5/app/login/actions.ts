@@ -19,8 +19,14 @@ export async function login(formData:FormData){
  if(!validEmail(email))redirect(loginUrl('error','invalid-email',next))
  try{
   const supabase=await createClient()
-  const {error}=await supabase.auth.signInWithPassword({email,password})
+  const {data,error}=await supabase.auth.signInWithPassword({email,password})
   if(error)redirect(loginUrl('error','invalid-credentials',next))
+  const jar=await cookies(),handoff=decodeOnboardingHandoff(jar.get(onboardingCookie)?.value)
+  if(handoff&&data.user){
+   const applied=await applyOnboardingHandoff(supabase,data.user.id,handoff)
+   if(applied){jar.delete(onboardingCookie);redirect('/matches?profile=ready')}
+   redirect('/onboarding?error=save-failed')
+  }
  }catch(error:any){
   if(error?.digest)throw error
   redirect(loginUrl('error','signin-unavailable',next))
