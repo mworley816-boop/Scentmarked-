@@ -57,15 +57,15 @@ export default function SiteMediaUpload({name,label,initialUrl='',guidance=''}:{
    {url&&<button className="button ghost" type="button" onClick={()=>setUrl('')}>Remove from content</button>}
   </div>
   {showLibrary&&<div className="site-media-library">
-   <form onSubmit={e=>{e.preventDefault();void runSearch()}} className="result-actions site-media-search"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search media filenames…"/><button className="button ghost" type="submit" disabled={busy}>Search</button>{activeSearch&&<button className="button ghost" type="button" disabled={busy} onClick={()=>void clearSearch()}>Clear</button>}</form>
+   <form onSubmit={e=>{e.preventDefault();void runSearch()}} className="result-actions site-media-search"><label className="sr-only" htmlFor={name+"-media-search"}>Search media filenames</label><input id={name+"-media-search"} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search media filenames…"/><button className="button ghost" type="submit" disabled={busy}>Search</button>{activeSearch&&<button className="button ghost" type="button" disabled={busy} onClick={()=>void clearSearch()}>Clear</button>}</form>
    <p className="muted">{library.length} media file{library.length===1?'':'s'} loaded{activeSearch?' for “'+activeSearch+'”':''}.</p>
    <div className="site-media-grid">
-    {shown.length?shown.map(item=><button key={item.name} type="button" title={item.name} onClick={()=>{setUrl(item.url);setShowLibrary(false)}} className={url===item.url?'selected':''}>
+    {shown.length?shown.map(item=><button key={item.name} type="button" title={item.name} aria-label={"Choose media "+item.name} aria-pressed={url===item.url} onClick={()=>{setUrl(item.url);setShowLibrary(false)}} className={url===item.url?'selected':''}>
      <img src={item.url} alt="" />
     </button>):libraryLoaded?<p>{activeSearch?'No media matches that filename.':'No media uploaded yet.'}</p>:null}
    </div>
    {hasMore&&<div className="result-actions" ><button className="button ghost" type="button" disabled={busy} onClick={()=>void loadLibrary(storageOffset,activeSearch)}>{busy?'Loading…':'Load more media'}</button><span className="muted">Loads the next {PAGE_SIZE} files.</span></div>}
   </div>}
-  {error&&<p className="notice error">{error}</p>}
+  {error&&<p className="notice error" role="alert">{error}</p>}
  </div>
 }
