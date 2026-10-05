@@ -506,3 +506,26 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Profile keyboard and touch accessibility */
 .mark-actions .mark{min-height:44px}.rating-form select,.rating-form textarea{box-sizing:border-box}.rating-form select:focus-visible,.rating-form textarea:focus-visible,.mark-actions .mark:focus-visible,.profile-actions .button:focus-visible,.dna-bar a:focus-visible,.note-cloud a:focus-visible,.relationship-card a:focus-visible,.source-row a:focus-visible{outline:2px solid var(--gold);outline-offset:3px}.source-row>a{min-height:44px;display:inline-flex;align-items:center}.rating-actions button{min-height:44px}@media(max-width:650px){.source-row>a{width:100%;justify-content:center}.mark-actions .mark{flex:1 1 120px;justify-content:center}}
+
+/* Admin mobile usability */
+@media(max-width:600px){
+ .admin-catalog{overflow-x:hidden}
+ .admin-filters input,.admin-filters select,.admin-filters button{width:100%;min-height:44px}
+ .admin-filters>a{min-height:44px;display:flex;align-items:center;justify-content:center}
+ .admin-card .admin-heading{align-items:stretch;flex-direction:column}
+ .admin-card .admin-heading>.result-actions,.site-content-library .admin-heading>.result-actions{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;scrollbar-width:thin}
+ .admin-card .admin-heading>.result-actions a,.site-content-library .admin-heading>.result-actions a{flex:0 0 auto;min-height:44px;display:inline-flex;align-items:center}
+ .site-content-row>.result-actions{width:100%;flex-wrap:wrap}
+ .site-content-row>.result-actions a,.site-content-row>.result-actions form,.site-content-row>.result-actions button{flex:1 1 120px}
+ .site-content-row>.result-actions a,.site-content-row>.result-actions button{min-height:44px;display:flex;align-items:center;justify-content:center}
+ .media-asset-card .result-actions{flex-wrap:wrap}
+ .media-asset-card .result-actions>a,.media-asset-card .result-actions>form{flex:1 1 120px}
+ .media-asset-card .result-actions>a,.media-asset-card .result-actions button{min-height:44px;display:flex;align-items:center;justify-content:center;width:100%}
+ .site-preview-links{align-items:stretch}
+ .site-preview-links>span{width:100%}
+ .site-preview-links a{min-height:44px;display:flex;align-items:center}
+}
+@media(max-width:390px){
+ .media-workspaces{grid-template-columns:1fr}
+ .admin-stats{grid-template-columns:1fr}
+}
