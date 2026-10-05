@@ -48,10 +48,10 @@ export async function applyOnboardingHandoff(supabase:any,userId:string,value:On
  })
  if(revisionError)console.error('Onboarding taste revision snapshot failed',revisionError.message)
  if(value.marketingConsent){
-  const {error:crmError}=await supabase.from('crm_contacts').update({
+  const {data:crm,error:crmError}=await supabase.from('crm_contacts').update({
    marketing_consent:true,marketing_consented_at:now,status:'active',unsubscribed_at:null,updated_at:now
-  }).eq('user_id',userId).not('status','in','("bounced","suppressed")')
-  if(crmError)console.error('Onboarding CRM consent sync failed',crmError.message)
+  }).eq('user_id',userId).not('status','in','("bounced","suppressed")').select('id').maybeSingle()
+  if(crmError||!crm)console.error('Onboarding CRM consent sync did not update a contact',crmError?.message||'contact unavailable')
  }
  return true
 }
