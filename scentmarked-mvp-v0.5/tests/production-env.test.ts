@@ -18,11 +18,9 @@ test('production env accepts complete HTTPS origin configuration',()=>{
  assert.deepEqual(validateProductionEnv(validEnv),[])
 })
 
-test('production env reports missing server secrets',()=>{
- const env={...validEnv,RESEND_API_KEY:'',EMAIL_WORKER_SECRET:''}
- const problems=validateProductionEnv(env)
- assert.ok(problems.some((x:string)=>x.includes('RESEND_API_KEY')))
- assert.ok(problems.some((x:string)=>x.includes('EMAIL_WORKER_SECRET')))
+test('production env leaves remote Worker secret validation to Wrangler',()=>{
+ const env={...validEnv,RESEND_API_KEY:'',EMAIL_WORKER_SECRET:'',SUPABASE_SERVICE_ROLE_KEY:''}
+ assert.deepEqual(validateProductionEnv(env),[])
 })
 
 test('production env rejects non-HTTPS public URLs',()=>{
