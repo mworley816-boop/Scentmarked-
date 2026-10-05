@@ -60,3 +60,9 @@ test('Resend request uses a stable delivery idempotency key',async()=>{
     else process.env.RESEND_FROM_EMAIL=previousFrom
   }
 })
+
+test('campaign personalization uses a safe first-name fallback',()=>{
+  assert.equal(emailFirstName(null),'ScentMarked Friend')
+  assert.equal(emailFirstName('   '),'ScentMarked Friend')
+  assert.equal(emailFirstName('Member'),'Member')
+})
