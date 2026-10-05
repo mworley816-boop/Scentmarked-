@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { safeAuthNext } from '@/lib/auth-redirect';
+import { applyOnboardingHandoff,decodeOnboardingHandoff,onboardingCookie } from '@/lib/onboarding-handoff';
 
 
 export async function GET(request:Request){
@@ -12,7 +13,10 @@ export async function GET(request:Request){
    const supabase=await createClient();
    const {data,error}=await supabase.auth.exchangeCodeForSession(code);
    if(!error){
+    const handoff=decodeOnboardingHandoff(request.headers.get('cookie')?.split(';').map(x=>x.trim()).find(x=>x.startsWith(onboardingCookie+'='))?.slice(onboardingCookie.length+1));
+    const applied=handoff&&data.user?await applyOnboardingHandoff(supabase,data.user.id,handoff):false;
     const response=NextResponse.redirect(new URL(next,url.origin));
+    if(applied)response.cookies.delete(onboardingCookie);
     if(next.split(/[?#]/,1)[0]==='/reset-password'&&data.user){
      response.cookies.set('scent_password_recovery',data.user.id,{httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',path:'/reset-password',maxAge:900});
     }
