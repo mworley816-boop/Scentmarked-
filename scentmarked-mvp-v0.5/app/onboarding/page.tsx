@@ -108,10 +108,9 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
  const p=await searchParams
  const s=await createClient()
  const {data:{user}}=await s.auth.getUser()
- if(!user)redirect('/login?next='+encodeURIComponent('/onboarding'))
  type ScentProfile={scent_loved_notes:string[]|null;scent_avoided_notes:string[]|null;scent_sweetness:number|null;scent_projection:number|null;scent_longevity:number|null;scent_max_price:number|null;scent_occasions:string[]|null;scent_vibes:string[]|null;scent_presentations:string[]|null;scent_profile_completed_at:string|null;scent_favorite_perfume_ids:string[]|null}
  let saved:ScentProfile|null=null,loadError=false
- try{const {data,error}=await s.from('profiles').select('scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at,scent_favorite_perfume_ids').eq('id',user.id).maybeSingle();if(error)loadError=true;else saved=data as ScentProfile|null}catch{loadError=true}
+ if(user)try{const {data,error}=await s.from('profiles').select('scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at,scent_favorite_perfume_ids').eq('id',user.id).maybeSingle();if(error)loadError=true;else saved=data as ScentProfile|null}catch{loadError=true}
  const savedFavoriteIds=saved?.scent_favorite_perfume_ids||[]
  const [{data:catalogFavorites},{data:savedFavoriteRows}]=await Promise.all([
   s.from('perfumes').select('id,name,brands(name)').eq('status','published').order('name'),
