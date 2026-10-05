@@ -3,6 +3,7 @@ const CHECKS = [
   { path: '/discover' },
   { path: '/compare' },
   { path: '/login' },
+  { path: '/api/health', contentType: 'application/json' },
   { path: '/robots.txt', contentType: 'text/plain' },
   { path: '/sitemap.xml', contentType: 'xml' },
 ]
