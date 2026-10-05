@@ -1,4 +1,5 @@
-const required=[
+export function validateProductionEnv(env=process.env){
+ const required=[
   'SUPABASE_SERVICE_ROLE_KEY',
   'RESEND_API_KEY',
   'RESEND_WEBHOOK_SECRET',
@@ -6,12 +7,12 @@ const required=[
   'RESEND_FROM_EMAIL'
 ]
 
-const missing=required.filter(name=>!(process.env[name]||'').trim())
-const publicUrl=(process.env.NEXT_PUBLIC_SUPABASE_URL||'').trim()
-const publicKey=(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||'').trim()
-const siteUrl=(process.env.NEXT_PUBLIC_SITE_URL||'').trim()
+ const missing=required.filter(name=>!(env[name]||'').trim())
+ const publicUrl=(env.NEXT_PUBLIC_SUPABASE_URL||'').trim()
+ const publicKey=(env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||'').trim()
+ const siteUrl=(env.NEXT_PUBLIC_SITE_URL||'').trim()
 
-const problems=[]
+ const problems=[]
 if(missing.length)problems.push('Missing server configuration: '+missing.join(', '))
 if(!publicUrl)problems.push('NEXT_PUBLIC_SUPABASE_URL is missing.')
 else{
@@ -30,10 +31,15 @@ else{
   }catch{problems.push('NEXT_PUBLIC_SITE_URL must be a valid URL.')}
 }
 
-if(problems.length){
+ return problems
+}
+
+if(import.meta.url===new URL(process.argv[1], 'file:').href){
+ const problems=validateProductionEnv()
+ if(problems.length){
   console.error('ScentMarked production configuration is not ready:')
   for(const problem of problems)console.error('- '+problem)
   process.exit(1)
+ }
+ console.log('ScentMarked production configuration check passed.')
 }
-
-console.log('ScentMarked production configuration check passed.')
