@@ -23,7 +23,7 @@ npm run check
 
 Public configuration is documented in `scentmarked-mvp-v0.5/.env.example`. The Supabase URL and publishable key are intentionally public client configuration. Server secrets must be stored in the deployment environment and must never use the `NEXT_PUBLIC_` prefix.
 
-Required server-side production values for the full application include:
+Server-side values required to enable the corresponding privileged/email features include:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `RESEND_API_KEY`
 - `RESEND_WEBHOOK_SECRET`
@@ -44,7 +44,7 @@ npm run preview
 npm run deploy
 ```
 
-Before a production deploy, confirm the required server secrets exist in the Cloudflare environment and set `NEXT_PUBLIC_SITE_URL` when the final custom domain is ready.
+Before enabling email sending, webhooks, or service-role operations, configure the corresponding server secrets in Cloudflare. These integrations fail closed when their secrets are absent and do not need to block deployment of the public site. Set `NEXT_PUBLIC_SITE_URL` when the final custom domain is ready.
 
 ## Secret safety
 
