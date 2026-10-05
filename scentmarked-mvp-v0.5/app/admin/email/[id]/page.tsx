@@ -151,6 +151,8 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   ])
   if(error||!c)notFound()
   const campaign=c as any
+  const segmentOptions=segments||[]
+  const templateOptions=templates||[]
   const rows=deliveryRows||[]
   const counts=rows.reduce((a:any,x:any)=>{a[x.status]=(a[x.status]||0)+1;return a},{})
   const editable=campaign.status==='draft'
@@ -211,9 +213,9 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
         <label>Campaign name<input name="name" maxLength={120} defaultValue={campaign.name} disabled={!editable} required/></label>
         <label>Subject<input name="subject" maxLength={200} defaultValue={campaign.subject} disabled={!editable} required/></label>
         <label>Preview text<input name="preview_text" maxLength={240} defaultValue={campaign.preview_text||''} disabled={!editable} placeholder="Short inbox preview"/></label>
-        <label>Audience<select name="segment_id" defaultValue={campaign.segment_id||''} disabled={!editable}><option value="">Choose a segment</option>{segments?.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-        <label>Template<select name="template_id" defaultValue={campaign.template_id||''} disabled={!editable}><option value="">No linked template</option>{templates?.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-        {editable&&templates?.length>0&&<div className="campaign-template-tools"><p>Selecting a template above links it when you save. To replace this draft's subject and body with a template now, use Apply Template.</p><form action={applyTemplate}><input type="hidden" name="id" value={id}/><select name="template_id" defaultValue={campaign.template_id||''} required><option value="">Choose template to apply</option>{templates.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select><button className="button ghost" type="submit">Apply template</button></form></div>}
+        <label>Audience<select name="segment_id" defaultValue={campaign.segment_id||''} disabled={!editable}><option value="">Choose a segment</option>{segmentOptions.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+        <label>Template<select name="template_id" defaultValue={campaign.template_id||''} disabled={!editable}><option value="">No linked template</option>{templateOptions.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+        {editable&&templateOptions.length>0&&<div className="campaign-template-tools"><p>Selecting a template above links it when you save. To replace this draft's subject and body with a template now, use Apply Template.</p><form action={applyTemplate}><input type="hidden" name="id" value={id}/><select name="template_id" defaultValue={campaign.template_id||''} required><option value="">Choose template to apply</option>{templateOptions.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select><button className="button ghost" type="submit">Apply template</button></form></div>}
       </article>
 
       <article className="admin-card campaign-content-card"><p className="eyebrow">STEP 1 · CONTENT</p><h2>Email body</h2>
