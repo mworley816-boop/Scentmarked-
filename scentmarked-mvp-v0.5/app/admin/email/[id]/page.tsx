@@ -134,9 +134,17 @@ async function prepareCampaign(formData:FormData){
   const id=String(formData.get('id')||'')
   const s=await requireAdmin('/admin/email/'+id)
   if(!id)redirect('/admin/email')
+  const {data:campaign,error:campaignError}=await s.from('email_campaigns').select('subject,html_body,text_body,status').eq('id',id).maybeSingle()
+  if(campaignError||!campaign||campaign.status!=='draft')redirect('/admin/email/'+id+'?error='+encodeURIComponent('Only a valid draft campaign can prepare an audience.'))
+  const subject=String(campaign.subject||'').trim()
+  const htmlBody=String(campaign.html_body||'').trim()
+  const textBody=String(campaign.text_body||'')
+  if(!subject||!htmlBody)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Add a subject and email content before preparing the audience.'))
+  if(htmlBody.includes('{{unsubscribe_url}}')||textBody.includes('{{unsubscribe_url}}'))redirect('/admin/email/'+id+'?error='+encodeURIComponent('Remove the legacy unsubscribe placeholder before preparing the audience. ScentMarked adds the secure footer automatically.'))
   const {data,error}=await s.rpc('queue_email_campaign',{p_campaign_id:id})
   if(error)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Campaign audience could not be prepared.'))
-  redirect('/admin/email/'+id+'?queued='+String(data||0))
+  if(!Number(data))redirect('/admin/email/'+id+'?error='+encodeURIComponent('No eligible recipients are available for this campaign.'))
+  redirect('/admin/email/'+id+'?queued='+String(data))
 }
 
 export default async function EditCampaign({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string,saved?:string,queued?:string,sent?:string,failed?:string,skipped?:string,remaining?:string,retried?:string,scheduled?:string,unscheduled?:string,templated?:string,tested?:string}>}){
