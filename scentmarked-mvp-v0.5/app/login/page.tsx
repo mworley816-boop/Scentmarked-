@@ -18,7 +18,7 @@ const errorMessages:Record<string,string>={
 }
 const statusMessages:Record<string,string>={
  'recovery-sent':'If an account exists for that email, a password reset link has been sent.',
- 'confirm-email':'Check your email to confirm your account, then sign in.',
+ 'confirm-email':'Check your email and confirm your account. After confirmation, Scentmarked will finish signing you in.',
  'password-updated':'Password updated. You can sign in now.'
 }
 export default async function LoginPage({searchParams}:{searchParams:Promise<{error?:string,message?:string,next?:string,signup?:string}>}) {
