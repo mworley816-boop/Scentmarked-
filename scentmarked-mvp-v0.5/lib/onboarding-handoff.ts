@@ -1,5 +1,12 @@
 export const onboardingCookie='scentmarked_onboarding'
 
+const allowedLoved=['Gourmand','Fruity','Floral','Fresh','Citrus','Woody','Amber','Spicy','Musky','Aquatic','Green','Smoky','Vanilla','Marshmallow','Caramel','Strawberry','Cherry','Peach','Mango','Pear','Coconut','Chocolate','Coffee','Praline','Rose','Jasmine','Orange Blossom','Bergamot','Lemon','Sandalwood','Oud','Musk','Patchouli']
+const allowedAvoided=['Vanilla','Marshmallow','Caramel','Strawberry','Cherry','Peach','Mango','Pear','Coconut','Chocolate','Coffee','Praline','Rose','Jasmine','Orange Blossom','Bergamot','Lemon','Sandalwood','Oud','Musk','Amber','Patchouli']
+const allowedOccasions=['Everyday','Work or School','Date Night','Going Out','Special Occasions','Cozy at Home','Vacation or Summer','Cold Weather']
+const allowedVibes=['Cozy & Comforting','Sexy & Seductive','Clean & Polished','Playful & Sweet','Elegant & Sophisticated','Bold & Mysterious','Fresh & Energetic','Dark & Luxurious']
+const allowedPresentations=['Feminine-leaning','Masculine-leaning','Unisex / Gender-neutral','No preference']
+const allowedBudgets=new Set([30,60,100,150,250])
+
 export type OnboardingHandoff={
  loved:string[]
  avoided:string[]
@@ -25,9 +32,11 @@ export function decodeOnboardingHandoff(value?:string|null):OnboardingHandoff|nu
   if(!parsed||typeof parsed!=='object')return null
   const clean=(value:unknown,max=80)=>typeof value==='string'?value.trim().replace(/\s+/g,' ').slice(0,max):''
   const list=(key:string)=>{const seen=new Set<string>();return Array.isArray(parsed[key])?parsed[key].map((x:unknown)=>clean(x)).filter((x:string)=>{const k=x.toLocaleLowerCase();if(!x||seen.has(k))return false;seen.add(k);return true}).slice(0,30):[]}
+  const allowedList=(key:string,allowed:string[])=>{const byKey=new Map(allowed.map(x=>[x.toLocaleLowerCase(),x]));return list(key).map(x=>byKey.get(x.toLocaleLowerCase())).filter((x):x is string=>!!x)}
   const score=(key:string)=>{const n=Number(parsed[key]);return Number.isInteger(n)&&n>=1&&n<=5?n:null}
   const rawBudget=Number(parsed.budget),favoriteIds=list('favoriteIds').filter((x:string)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x)).slice(0,8)
-  return {loved:list('loved'),avoided:list('avoided'),occasions:list('occasions'),vibes:list('vibes'),presentations:list('presentations'),favoriteIds,sweetness:score('sweetness'),projection:score('projection'),longevity:score('longevity'),budget:Number.isSafeInteger(rawBudget)&&rawBudget>0&&rawBudget<=10000?rawBudget:null,marketingConsent:parsed.marketingConsent===true}
+  const presentations=allowedList('presentations',allowedPresentations)
+  return {loved:allowedList('loved',allowedLoved),avoided:allowedList('avoided',allowedAvoided),occasions:allowedList('occasions',allowedOccasions),vibes:allowedList('vibes',allowedVibes),presentations:presentations.includes('No preference')?['No preference']:presentations,favoriteIds,sweetness:score('sweetness'),projection:score('projection'),longevity:score('longevity'),budget:Number.isSafeInteger(rawBudget)&&allowedBudgets.has(rawBudget)?rawBudget:null,marketingConsent:parsed.marketingConsent===true}
  }catch{return null}
 }
 
