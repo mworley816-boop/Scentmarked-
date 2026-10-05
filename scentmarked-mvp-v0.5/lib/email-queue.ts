@@ -1,10 +1,9 @@
 import { getEmailProvider } from '@/lib/email-provider'
 import { withMarketingFooter } from '@/lib/email-footer'
 import { siteUrl } from '@/lib/site'
+import { emailFirstName } from '@/lib/email-personalization'
 
 type DbClient=any
-
-export function emailFirstName(value:unknown){return String(value||'').trim()||'ScentMarked Friend'}
 
 export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=25){
   const safeBatchSize=Math.max(1,Math.min(100,Math.trunc(batchSize)||25))
