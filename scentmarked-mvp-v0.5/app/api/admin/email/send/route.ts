@@ -10,6 +10,9 @@ export async function POST(request:Request){
   const {data:profile}=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle()
   if(!profile?.is_admin)return new NextResponse('Forbidden',{status:403})
 
+  const emailConfigured=Boolean((process.env.RESEND_API_KEY||'').trim()&&(process.env.RESEND_FROM_EMAIL||'').trim())
+  if(!emailConfigured)return new NextResponse('Email sending is not configured',{status:503})
+
   let body:any
   try{body=await request.json()}catch{return new NextResponse('Invalid request',{status:400})}
   const campaignId=String(body?.campaignId||'')
