@@ -17,6 +17,19 @@ export async function updateProfile(formData:FormData){
  redirect(accountUrl('message','Profile updated.'))
 }
 
+export async function updateMarketingPreference(formData:FormData){
+ const enabled=String(formData.get('marketing_consent')||'')==='yes'
+ const supabase=await createClient()
+ const {data:{user}}=await supabase.auth.getUser()
+ if(!user)redirect('/login?next='+encodeURIComponent('/account'))
+ const {data:contact,error:loadError}=await supabase.from('crm_contacts').select('id,status').eq('user_id',user.id).maybeSingle()
+ if(loadError||!contact)redirect(accountUrl('error','Email preferences could not be loaded. Please try again.'))
+ if(enabled&&['bounced','suppressed'].includes(String(contact.status)))redirect(accountUrl('error','Marketing email cannot be re-enabled for this address yet. Please contact Scentmarked so we can resolve the delivery issue.'))
+ const {data:updated,error}=await supabase.from('crm_contacts').update({marketing_consent:enabled}).eq('id',contact.id).eq('user_id',user.id).select('id').maybeSingle()
+ if(error||!updated)redirect(accountUrl('error','Email preferences could not be saved. Please try again.'))
+ redirect(accountUrl('message',enabled?'Marketing emails are enabled.':'Marketing emails are turned off.'))
+}
+
 export async function deleteAccount(formData:FormData){
  if(!hasAccountDeletionConfirmation(formData.get('confirmation')))redirect(accountUrl('error','Type DELETE to confirm permanent account deletion.'))
  const supabase=await createClient()
