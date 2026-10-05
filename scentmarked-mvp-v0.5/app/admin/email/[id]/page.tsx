@@ -38,6 +38,42 @@ async function saveCampaign(formData:FormData){
   redirect('/admin/email/'+id+'?saved=1')
 }
 
+async function applyTemplate(formData:FormData){
+  'use server'
+  const id=String(formData.get('id')||'')
+  const templateId=Number(formData.get('template_id'))
+  const s=await requireAdmin('/admin/email/'+id)
+  if(!id||!Number.isSafeInteger(templateId))redirect('/admin/email/'+id+'?error='+encodeURIComponent('Choose a valid template.'))
+  const {data:template,error:templateError}=await s.from('email_templates').select('id,subject,preview_text,html_body,text_body').eq('id',templateId).maybeSingle()
+  if(templateError||!template)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Template could not be loaded.'))
+  const {error}=await s.from('email_campaigns').update({template_id:templateId,subject:template.subject,preview_text:template.preview_text,html_body:template.html_body,text_body:template.text_body,updated_at:new Date().toISOString()}).eq('id',id).eq('status','draft')
+  if(error)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Template could not be applied to this draft.'))
+  redirect('/admin/email/'+id+'?templated=1')
+}
+
+async function sendTestEmail(formData:FormData){
+  'use server'
+  const id=String(formData.get('id')||'')
+  const email=String(formData.get('test_email')||'').trim().toLowerCase().slice(0,320)
+  const s=await requireAdmin('/admin/email/'+id)
+  if(!id||!/^\S+@\S+\.\S+$/.test(email))redirect('/admin/email/'+id+'?error='+encodeURIComponent('Enter a valid test email address.'))
+  const {data:campaign,error}=await s.from('email_campaigns').select('subject,html_body,text_body').eq('id',id).maybeSingle()
+  if(error||!campaign)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Campaign could not be loaded for testing.'))
+  try{
+    const {getEmailProvider}=await import('@/lib/email-provider')
+    const {withMarketingFooter}=await import('@/lib/email-footer')
+    const {siteUrl}=await import('@/lib/site')
+    const provider=getEmailProvider()
+    const personalize=(value:string)=>value.replaceAll('{{first_name}}','ScentMarked Friend')
+    const body=withMarketingFooter(personalize(campaign.html_body),personalize(campaign.text_body||''),siteUrl+'/privacy-choices')
+    await provider.send({to:email,subject:'[TEST] '+personalize(campaign.subject),html:body.html,text:body.text,deliveryId:'test-'+id+'-'+Date.now()})
+    redirect('/admin/email/'+id+'?tested=1')
+  }catch(error){
+    const message=error instanceof Error?error.message:'Test email could not be sent.'
+    redirect('/admin/email/'+id+'?error='+encodeURIComponent(message))
+  }
+}
+
 async function retryFailed(formData:FormData){
   'use server'
   const id=String(formData.get('id')||'')
@@ -102,7 +138,7 @@ async function prepareCampaign(formData:FormData){
   redirect('/admin/email/'+id+'?queued='+String(data||0))
 }
 
-export default async function EditCampaign({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string,saved?:string,queued?:string,sent?:string,failed?:string,skipped?:string,remaining?:string,retried?:string,scheduled?:string,unscheduled?:string}>}){
+export default async function EditCampaign({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{error?:string,saved?:string,queued?:string,sent?:string,failed?:string,skipped?:string,remaining?:string,retried?:string,scheduled?:string,unscheduled?:string,templated?:string,tested?:string}>}){
   const {id}=await params
   const p=await searchParams
   const s=await requireAdmin('/admin/email/'+id)
@@ -146,6 +182,8 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
     {p.retried!==undefined&&<div className="notice">{p.retried} failed recipient{p.retried==='1'?'':'s'} prepared for retry.</div>}
     {p.scheduled&&<div className="notice">Campaign scheduled successfully.</div>}
     {p.unscheduled&&<div className="notice">Campaign schedule cancelled. It is a draft again.</div>}
+    {p.templated&&<div className="notice">Template applied to this draft. Review and save any additional edits before preparing the audience.</div>}
+    {p.tested&&<div className="notice">Test email sent. Test sends do not create campaign delivery records.</div>}
     <div className="notice"><strong>Provider-gated sending.</strong> Campaign sending only works when the Resend environment variables are configured. Recipient consent is checked again immediately before each send.</div>
 
     <div className="admin-grid">
@@ -174,6 +212,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
         <label>Preview text<input name="preview_text" maxLength={240} defaultValue={campaign.preview_text||''} disabled={!editable} placeholder="Short inbox preview"/></label>
         <label>Audience<select name="segment_id" defaultValue={campaign.segment_id||''} disabled={!editable}><option value="">Choose a segment</option>{segments?.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
         <label>Template<select name="template_id" defaultValue={campaign.template_id||''} disabled={!editable}><option value="">No linked template</option>{templates?.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+        {editable&&templates?.length>0&&<div className="campaign-template-tools"><p>Selecting a template above links it when you save. To replace this draft's subject and body with a template now, use Apply Template.</p><form action={applyTemplate}><input type="hidden" name="id" value={id}/><select name="template_id" defaultValue={campaign.template_id||''} required><option value="">Choose template to apply</option>{templates.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select><button className="button ghost" type="submit">Apply template</button></form></div>}
       </article>
 
       <article className="admin-card campaign-content-card"><p className="eyebrow">STEP 1 · CONTENT</p><h2>Email body</h2>
@@ -192,6 +231,8 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
     {editable&&(counts.queued||0)>0&&<article className="admin-card campaign-send-card"><p className="eyebrow">STEP 3 · SEND NOW</p><h2>Send to {counts.queued} queued recipient{counts.queued===1?'':'s'}</h2><p>This action sends real email when the Resend provider is configured. Consent is checked again immediately before each message.</p><form action={sendCampaign} style={{display:'grid',gap:12,maxWidth:420}}><input type="hidden" name="id" value={id}/><label>Type SEND to confirm<input name="confirmation" autoComplete="off" required/></label><button type="submit">Send campaign</button></form></article>}
 
     {(counts.failed||0)>0&&<article className="admin-card"><p className="eyebrow">FAILED DELIVERIES</p><h2>{counts.failed} recipient{counts.failed===1?'':'s'} failed</h2><p>Requeue only failed recipients who are still eligible for marketing email. Successful recipients will not be sent again.</p><form action={retryFailed}><input type="hidden" name="id" value={id}/><button type="submit">Prepare failed recipients for retry</button></form></article>}
+
+    {editable&&<article className="admin-card campaign-test-card"><p className="eyebrow">TEST DELIVERY</p><h2>Send yourself a test</h2><p>Send the currently saved draft to one email address before preparing the audience. This does not queue contacts or affect campaign analytics.</p><form action={sendTestEmail}><input type="hidden" name="id" value={id}/><label>Test email<input type="email" name="test_email" autoComplete="email" placeholder="you@example.com" required/></label><button type="submit">Send test email</button></form></article>}
 
     <article className="admin-card campaign-preview-card" id="preview"><p className="eyebrow">STEP 4 · PREVIEW</p><h2>{campaign.subject}</h2>{campaign.preview_text&&<p>{campaign.preview_text}</p>}<div style={{border:'1px solid currentColor',borderRadius:12,padding:20,marginTop:12,background:'white',color:'black'}} dangerouslySetInnerHTML={{__html:campaign.html_body}}/></article>
   </section></main>
