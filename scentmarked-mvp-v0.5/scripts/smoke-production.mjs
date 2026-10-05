@@ -3,7 +3,7 @@ const CHECKS = [
   { path: '/discover' },
   { path: '/compare' },
   { path: '/login' },
-  { path: '/api/health', contentType: 'application/json' },
+  { path: '/api/health', contentType: 'application/json', json: { status: 'ok', service: 'scentmarked' } },
   { path: '/robots.txt', contentType: 'text/plain' },
   { path: '/sitemap.xml', contentType: 'xml' },
 ]
@@ -30,9 +30,23 @@ async function checkPath(baseUrl, check) {
   const statusOk = response.status >= 200 && response.status < 400
   const contentType = response.headers.get('content-type') || ''
   const contentTypeOk = !check.contentType || contentType.includes(check.contentType)
-  const ok = statusOk && contentTypeOk
-  const detail = contentTypeOk ? '' : ` (expected content-type containing ${check.contentType}, got ${contentType || 'none'})`
-  console.log(`${ok ? 'PASS' : 'FAIL'} ${response.status} ${check.path} -> ${response.url}${detail}`)
+  let payloadOk = true
+  let payloadDetail = ''
+
+  if (check.json && statusOk && contentTypeOk) {
+    try {
+      const payload = await response.json()
+      payloadOk = Object.entries(check.json).every(([key, value]) => payload?.[key] === value)
+      if (!payloadOk) payloadDetail = ' (unexpected JSON payload)'
+    } catch {
+      payloadOk = false
+      payloadDetail = ' (invalid JSON payload)'
+    }
+  }
+
+  const ok = statusOk && contentTypeOk && payloadOk
+  const typeDetail = contentTypeOk ? '' : ` (expected content-type containing ${check.contentType}, got ${contentType || 'none'})`
+  console.log(`${ok ? 'PASS' : 'FAIL'} ${response.status} ${check.path} -> ${response.url}${typeDetail}${payloadDetail}`)
   return ok
 }
 
