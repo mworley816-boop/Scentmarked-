@@ -69,8 +69,12 @@ export async function signup(formData:FormData){
   if(error)redirect(loginUrl('error','signup-failed',next,finishSignup))
   if(data.session){
    const jar=await cookies(),handoff=decodeOnboardingHandoff(jar.get(onboardingCookie)?.value)
-   if(handoff&&data.user){const applied=await applyOnboardingHandoff(supabase,data.user.id,handoff);if(applied)jar.delete(onboardingCookie)}
-   redirect(handoff?'/matches?profile=ready':onboarding)
+   if(handoff&&data.user){
+    const applied=await applyOnboardingHandoff(supabase,data.user.id,handoff)
+    if(applied){jar.delete(onboardingCookie);redirect('/matches?profile=ready')}
+    redirect('/onboarding?error=save-failed')
+   }
+   redirect(onboarding)
   }
  }catch(error:any){
   if(error?.digest)throw error
