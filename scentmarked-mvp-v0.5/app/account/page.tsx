@@ -20,7 +20,8 @@ export default async function AccountPage({searchParams}:{searchParams:Promise<{
   supabase.from('ratings').select('perfume_id,overall,updated_at').eq('user_id',user.id),
   supabase.from('recommendation_history').select('created_at,result_count').eq('user_id',user.id).order('created_at',{ascending:false}).limit(5),
   supabase.from('taste_profile_revisions').select('created_at,loved_notes,avoided_notes,presentations,favorite_perfume_ids,sweetness,projection,longevity,max_price').eq('user_id',user.id).order('created_at',{ascending:false}).limit(2),
-  supabase.rpc('get_my_marketing_preference')
+  supabase.rpc('get_my_marketing_preference'),
+  supabase.from('community_profiles').select('taste_label,show_taste_badge').eq('user_id',user.id).maybeSingle()
  ])
  const crmContact=Array.isArray(marketingPreference)?marketingPreference[0]:marketingPreference
  const taste={more:(feedback||[]).filter((x:any)=>x.feedback==='more_like_this').length,less:(feedback||[]).filter((x:any)=>x.feedback==='less_like_this').length,favorites:(collection||[]).filter((x:any)=>x.status==='favorite').length,highRated:(ratings||[]).filter((x:any)=>Number(x.overall)>=4).length}
