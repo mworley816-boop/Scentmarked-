@@ -16,7 +16,7 @@
     "typecheck:tests": "tsc --noEmit -p tsconfig.tests.json",
     "check:production-env": "node scripts/check-production-env.mjs",
     "smoke:production": "node scripts/smoke-production.mjs",
-    "deploy:production": "npm run check:production-env && npm run check && opennextjs-cloudflare deploy"
+    "deploy:production": "npm run check:production-env && npm run check && opennextjs-cloudflare deploy && npm run smoke:production"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "1.20.7",
