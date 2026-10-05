@@ -15,7 +15,9 @@ export async function GET(request:Request){
    if(!error){
     const handoff=decodeOnboardingHandoff(request.headers.get('cookie')?.split(';').map(x=>x.trim()).find(x=>x.startsWith(onboardingCookie+'='))?.slice(onboardingCookie.length+1));
     const applied=handoff&&data.user?await applyOnboardingHandoff(supabase,data.user.id,handoff):false;
-    const response=NextResponse.redirect(new URL(next,url.origin));
+    const requestedPath=next.split(/[?#]/,1)[0];
+    const destination=handoff&&requestedPath==='/matches'&&!applied?'/onboarding?error=save-failed':next;
+    const response=NextResponse.redirect(new URL(destination,url.origin));
     if(applied)response.cookies.delete(onboardingCookie);
     if(next.split(/[?#]/,1)[0]==='/reset-password'&&data.user){
      response.cookies.set('scent_password_recovery',data.user.id,{httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',path:'/reset-password',maxAge:900});
