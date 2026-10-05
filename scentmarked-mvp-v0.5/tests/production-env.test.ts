@@ -49,3 +49,10 @@ test('production env rejects the CI publishable-key placeholder when supplied',(
  const problems=validateProductionEnv(env)
  assert.ok(problems.includes('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY cannot use the CI placeholder in production.'))
 })
+
+
+test('production env allows the workers.dev fallback when no custom site origin is configured',()=>{
+ const env={...validEnv}
+ delete (env as Partial<typeof validEnv>).NEXT_PUBLIC_SITE_URL
+ assert.deepEqual(validateProductionEnv(env),[])
+})
