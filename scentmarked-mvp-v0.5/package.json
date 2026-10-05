@@ -13,7 +13,9 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run typecheck:tests && npm test && npm run build:cloudflare",
     "test": "node --test --experimental-strip-types tests/*.test.ts",
-    "typecheck:tests": "tsc --noEmit -p tsconfig.tests.json"
+    "typecheck:tests": "tsc --noEmit -p tsconfig.tests.json",
+    "check:production-env": "node scripts/check-production-env.mjs",
+    "deploy:production": "npm run check:production-env && npm run check && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "1.20.7",
