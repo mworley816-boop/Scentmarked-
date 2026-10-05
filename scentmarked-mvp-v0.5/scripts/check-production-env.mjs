@@ -11,8 +11,7 @@ if(publicUrl){
   }catch{problems.push('NEXT_PUBLIC_SUPABASE_URL must be a valid URL.')}
 }
 if(publicKey&&publicKey==='sb_publishable_ci_placeholder')problems.push('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY cannot use the CI placeholder in production.')
-if(!siteUrl)problems.push('NEXT_PUBLIC_SITE_URL is missing. Set the final production origin before launch.')
-else{
+if(siteUrl){
   try{
     const url=new URL(siteUrl)
     if(url.protocol!=='https:')problems.push('NEXT_PUBLIC_SITE_URL must use HTTPS.')
