@@ -4,6 +4,10 @@ import ComparisonVote from '@/components/comparison-vote';
 import PerfumeSearchPicker from '@/components/perfume-search-picker';
 import SaveComparison from '@/components/save-comparison';
 
+const publicText=(value:any,max=160)=>typeof value==='string'?value.trim().replace(/\s+/g,' ').slice(0,max):'';
+const safeUrl=(value:any)=>{try{const u=new URL(String(value||''));return ['http:','https:'].includes(u.protocol)?u.toString():null}catch{return null}};
+const safeCtaUrl=(value:any)=>{const raw=publicText(value,500);if(!raw)return null;if(raw.startsWith('/')&&!raw.startsWith('//'))return raw;return safeUrl(raw)};
+
 function names(p:any){return(p?.perfume_notes||[]).map((n:any)=>n.notes?.name).filter(Boolean)}
 function group(p:any,pos:string){return(p?.perfume_notes||[]).filter((n:any)=>n.position===pos).map((n:any)=>n.notes?.name).filter(Boolean)}
 function dna(p:any){return(p?.perfume_accords||[]).filter((x:any)=>x.accords?.name&&Number(x.strength)>0).sort((a:any,b:any)=>Number(b.strength)-Number(a.strength))}
@@ -21,6 +25,8 @@ export default async function Compare({searchParams}:{searchParams:Promise<{a?:s
   if(result.error)loadError=true;else perfumes=result.data||[];
   if(!content.error&&content.data){const now=Date.now(),x=content.data;if((!x.starts_at||new Date(x.starts_at).getTime()<=now)&&(!x.ends_at||new Date(x.ends_at).getTime()>=now))pageBanner=x}
  }catch{loadError=true}
+ perfumes=perfumes.map((p:any)=>({...p,name:publicText(p.name,120),slug:publicText(p.slug,200),image_url:safeUrl(p.image_url),concentration:publicText(p.concentration,80),brands:p.brands?{...p.brands,name:publicText(p.brands.name,120)}:p.brands,perfume_notes:(p.perfume_notes||[]).map((row:any)=>({...row,position:publicText(row.position,40),notes:row.notes?{...row.notes,name:publicText(row.notes.name,80)}:row.notes})).filter((row:any)=>row.notes?.name),perfume_accords:(p.perfume_accords||[]).map((row:any)=>({...row,source_type:publicText(row.source_type,40),accords:row.accords?{...row.accords,name:publicText(row.accords.name,80)}:row.accords})).filter((row:any)=>row.accords?.name)})).filter((p:any)=>p.name&&p.slug)
+ if(pageBanner)pageBanner={...pageBanner,image_url:safeUrl(pageBanner.image_url),mobile_image_url:safeUrl(pageBanner.mobile_image_url),subtitle:publicText(pageBanner.subtitle,80),title:publicText(pageBanner.title,140),body:publicText(pageBanner.body,500),cta_url:safeCtaUrl(pageBanner.cta_url),cta_label:publicText(pageBanner.cta_label,80)}
  const requestedA=q.a?perfumes.find(p=>p.slug===q.a):undefined;
  const requestedB=q.b?perfumes.find(p=>p.slug===q.b):undefined;
  const a=requestedA;
@@ -47,7 +53,7 @@ export default async function Compare({searchParams}:{searchParams:Promise<{a?:s
  const shared:string[]=a&&b&&!same?Array.from(new Set<string>((names(a) as string[]).filter((x:string)=>(names(b) as string[]).includes(x)))):[];
  const dnaTakeaway=a&&b&&!same?dnaSummary(a,b):{shared:[],differences:[]};
  const catalogScore=a&&b&&!same?catalogSimilarity(a,b):null;
- const card=(p:any)=><div className="compare-profile"><div className="compare-bottle">{p.image_url?<img src={p.image_url} alt={p.name+" by "+(p.brands?.name||"Scentmarked")}/>:<div className="catalog-placeholder"><small>{p.brands?.name||"Scentmarked"}</small><b>{p.name}</b></div>}</div><small>{p.brands?.name}</small><h3>{p.name}</h3><p>{p.concentration||'Fragrance'}{p.release_year?' · '+p.release_year:''}</p><div className="result-actions"><Link className="text-link" href={'/perfume/'+p.slug}>VIEW PROFILE →</Link>{retailerIds.has(String(p.id))&&<Link className="text-link" href={'/perfume/'+p.slug+'#where-to-buy'}>WHERE TO BUY →</Link>}</div></div>;
+ const card=(p:any)=><div className="compare-profile"><div className="compare-bottle">{p.image_url?<img src={p.image_url} alt={p.name+" by "+(p.brands?.name||"Scentmarked")}/>:<div className="catalog-placeholder"><small>{p.brands?.name||"Scentmarked"}</small><b>{p.name}</b></div>}</div><small>{p.brands?.name}</small><h3>{p.name}</h3><p>{p.concentration||'Fragrance'}{p.release_year?' · '+p.release_year:''}</p><div className="result-actions"><Link className="text-link" href={'/perfume/'+encodeURIComponent(p.slug)}>VIEW PROFILE →</Link>{retailerIds.has(String(p.id))&&<Link className="text-link" href={'/perfume/'+encodeURIComponent(p.slug)+'#where-to-buy'}>WHERE TO BUY →</Link>}</div></div>;
 
  return <main>{pageBanner&&<section className="admin-card site-content-bg" style={pageBanner.image_url?{'--desktop-bg':`url(${pageBanner.image_url})`,'--mobile-bg':`url(${pageBanner.mobile_image_url||pageBanner.image_url})`,marginBottom:24} as React.CSSProperties: {marginBottom:24}}><p className="eyebrow">{pageBanner.subtitle||"SCENT COMPARISON"}</p>{pageBanner.title&&<h1>{pageBanner.title}</h1>}{pageBanner.body&&<p>{pageBanner.body}</p>}{pageBanner.cta_url&&<Link className="button ghost" href={pageBanner.cta_url}>{pageBanner.cta_label||"Explore"}</Link>}</section>}<section className="compare-page"><p className="eyebrow">SIDE BY SIDE</p><h1 className="page-title">Compare Scents</h1><p className="lede">Compare verified fragrance details without the guesswork.</p>
   {loadError?<div className="empty-state"><h2>Comparison data is temporarily unavailable.</h2><p>Please refresh in a moment.</p></div>:invalidSelection?<div className="empty-state"><h2>That comparison link is no longer available.</h2><p>One of the requested fragrances could not be found in the published catalog.</p><Link className="button" href="/compare">Start a new comparison</Link></div>:perfumes.length<2?<div className="empty-state"><h2>More fragrances are needed to compare.</h2></div>:<>
