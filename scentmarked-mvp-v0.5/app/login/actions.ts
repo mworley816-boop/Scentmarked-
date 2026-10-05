@@ -71,7 +71,15 @@ export async function signup(formData:FormData){
    const jar=await cookies(),handoff=decodeOnboardingHandoff(jar.get(onboardingCookie)?.value)
    if(handoff&&data.user){
     const applied=await applyOnboardingHandoff(supabase,data.user.id,handoff)
-    if(applied){jar.delete(onboardingCookie);redirect('/matches?profile=ready')}
+    if(applied){
+     jar.delete(onboardingCookie)
+     if(data.user.user_metadata?.onboarding_profile){
+      const metadata={...(data.user.user_metadata||{})};delete metadata.onboarding_profile
+      const {error:metadataError}=await supabase.auth.updateUser({data:metadata})
+      if(metadataError)console.error('Could not clear temporary onboarding metadata',metadataError.message)
+     }
+     redirect('/matches?profile=ready')
+    }
     redirect('/onboarding?error=save-failed')
    }
    redirect(onboarding)
