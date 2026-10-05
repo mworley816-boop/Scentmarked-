@@ -64,8 +64,8 @@ export async function signup(formData:FormData){
  try{
   const supabase=await createClient()
   const origin=siteUrl
-  const jar=await cookies(),hasHandoff=!!decodeOnboardingHandoff(jar.get(onboardingCookie)?.value),callbackNext=hasHandoff?'/matches?profile=ready':onboarding
-  const {data,error}=await supabase.auth.signUp({email,password,options:{data:{display_name:displayName},emailRedirectTo:`${origin}/auth/callback?next=${encodeURIComponent(callbackNext)}`}})
+  const jar=await cookies(),handoff=decodeOnboardingHandoff(jar.get(onboardingCookie)?.value),hasHandoff=!!handoff,callbackNext=hasHandoff?'/matches?profile=ready':onboarding
+  const {data,error}=await supabase.auth.signUp({email,password,options:{data:{display_name:displayName,...(handoff?{onboarding_profile:handoff}: {})},emailRedirectTo:`${origin}/auth/callback?next=${encodeURIComponent(callbackNext)}`}})
   if(error)redirect(loginUrl('error','signup-failed',next,finishSignup))
   if(data.session){
    const jar=await cookies(),handoff=decodeOnboardingHandoff(jar.get(onboardingCookie)?.value)
