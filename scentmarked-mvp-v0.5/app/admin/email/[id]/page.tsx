@@ -29,6 +29,7 @@ async function saveCampaign(formData:FormData){
   const segmentId=segmentRaw?Number(segmentRaw):null
   const templateId=templateRaw?Number(templateRaw):null
   if(!id||!name||!subject||!htmlBody)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Name, subject, and email content are required.'))
+  if(htmlBody.includes('{{unsubscribe_url}}')||textBody.includes('{{unsubscribe_url}}'))redirect('/admin/email/'+id+'?error='+encodeURIComponent('Remove the legacy unsubscribe placeholder. ScentMarked adds the secure unsubscribe footer automatically at send time.'))
   if((segmentRaw&&!Number.isSafeInteger(segmentId))||(templateRaw&&!Number.isSafeInteger(templateId)))redirect('/admin/email/'+id+'?error='+encodeURIComponent('Invalid campaign selection.'))
   const {error}=await s.from('email_campaigns').update({
     name,subject,preview_text:previewText||null,html_body:htmlBody,text_body:textBody||null,
