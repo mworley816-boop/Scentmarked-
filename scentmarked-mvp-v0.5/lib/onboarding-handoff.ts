@@ -23,10 +23,11 @@ export function decodeOnboardingHandoff(value?:string|null):OnboardingHandoff|nu
  try{
   const parsed=JSON.parse(Buffer.from(value,'base64url').toString('utf8'))
   if(!parsed||typeof parsed!=='object')return null
-  const list=(key:string)=>Array.isArray(parsed[key])?parsed[key].map(String).slice(0,30):[]
+  const clean=(value:unknown,max=80)=>typeof value==='string'?value.trim().replace(/\s+/g,' ').slice(0,max):''
+  const list=(key:string)=>{const seen=new Set<string>();return Array.isArray(parsed[key])?parsed[key].map((x:unknown)=>clean(x)).filter((x:string)=>{const k=x.toLocaleLowerCase();if(!x||seen.has(k))return false;seen.add(k);return true}).slice(0,30):[]}
   const score=(key:string)=>{const n=Number(parsed[key]);return Number.isInteger(n)&&n>=1&&n<=5?n:null}
-  const rawBudget=Number(parsed.budget)
-  return {loved:list('loved'),avoided:list('avoided'),occasions:list('occasions'),vibes:list('vibes'),presentations:list('presentations'),favoriteIds:list('favoriteIds').slice(0,8),sweetness:score('sweetness'),projection:score('projection'),longevity:score('longevity'),budget:Number.isSafeInteger(rawBudget)&&rawBudget>0?rawBudget:null,marketingConsent:parsed.marketingConsent===true}
+  const rawBudget=Number(parsed.budget),favoriteIds=list('favoriteIds').filter((x:string)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x)).slice(0,8)
+  return {loved:list('loved'),avoided:list('avoided'),occasions:list('occasions'),vibes:list('vibes'),presentations:list('presentations'),favoriteIds,sweetness:score('sweetness'),projection:score('projection'),longevity:score('longevity'),budget:Number.isSafeInteger(rawBudget)&&rawBudget>0&&rawBudget<=10000?rawBudget:null,marketingConsent:parsed.marketingConsent===true}
  }catch{return null}
 }
 
