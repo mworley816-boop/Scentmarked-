@@ -24,7 +24,7 @@ export default function ScentProfileForm({children,action}:Props){
    longevity:numberOrNull('longevity'),
    budget
   })
-  if(!hasSignal){event.preventDefault();setError('Choose at least one recommendation preference before saving, or use “Skip for now.”');requestAnimationFrame(()=>errorRef.current?.focus());return}
+  if(!hasSignal){event.preventDefault();setError('Choose at least one recommendation preference before continuing.');requestAnimationFrame(()=>errorRef.current?.focus());return}
   setError('')
  }
  return <form action={action} className="quiz-form" onSubmit={submit}>
