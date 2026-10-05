@@ -2,11 +2,13 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { affiliateMetrics, money, monetizationSummary } from '@/lib/monetization'\nimport { createSponsorship, recordRevenue, updateSponsorshipStatus } from './actions'
+import { affiliateMetrics, money, monetizationSummary } from '@/lib/monetization'
+import { createSponsorship, recordRevenue, updateSponsorshipStatus } from './actions'
 
 export const metadata={title:'Monetization | ScentMarked Studio',robots:{index:false,follow:false}}
 
-export default async function MonetizationPage({searchParams}:{searchParams:Promise<{error?:string;message?:string}>}){\n const params=await searchParams
+export default async function MonetizationPage({searchParams}:{searchParams:Promise<{error?:string;message?:string}>}){
+ const params=await searchParams
  const s=await createClient()
  const {data:{user}}=await s.auth.getUser()
  if(!user)redirect('/login?next=/admin/monetization')
@@ -26,7 +28,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   clickCount=clicks.count||0
  }catch{configured=false}
 
- const summary=monetizationSummary(transactions)\n const affiliate=affiliateMetrics(clickCount,transactions)
+ const summary=monetizationSummary(transactions)
+ const affiliate=affiliateMetrics(clickCount,transactions)
  const types=['affiliate','sponsorship','advertising','subscription'] as const
  const activeCampaigns=campaigns.filter((x:any)=>x.status==='active'||x.status==='scheduled')
 
@@ -38,7 +41,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   <div className="admin-card"><h2>Create sponsorship campaign</h2><form action={createSponsorship} className="admin-filters"><input name="name" required placeholder="Campaign name"/><input name="sponsor_name" required placeholder="Sponsor"/><input name="placement" required placeholder="Placement, e.g. homepage_banner"/><input name="destination_url" type="url" placeholder="https://…"/><input name="budget" type="number" min="0" step="0.01" placeholder="Budget $"/><input name="currency" defaultValue="USD" maxLength={3}/><input name="starts_at" type="datetime-local"/><input name="ends_at" type="datetime-local"/><select name="status"><option value="draft">Draft</option><option value="scheduled">Scheduled</option><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select><input name="disclosure_label" defaultValue="Sponsored" placeholder="Disclosure label"/><button className="button">Create Campaign</button></form></div>
   {!configured&&<div className="empty-state"><h2>Revenue reporting is not connected in this environment.</h2><p>Configure the server-only Supabase service role to read protected financial records. Public site functionality is unaffected.</p></div>}
   <div className="admin-stats"><span><b>{money(summary.grossCents)}</b>Gross tracked revenue</span><span><b>{money(summary.netCents)}</b>Net tracked revenue</span><span><b>{money(summary.feeCents)}</b>Tracked fees</span><span><b>{clickCount}</b>Affiliate outbound clicks</span><span><b>{activeCampaigns.length}</b>Active / scheduled sponsors</span></div>
-  <p className="muted">Affiliate clicks are traffic signals, not sales. Revenue totals include only imported or recorded monetization transactions and exclude refunded or void transactions.</p>\n  <h2>Affiliate conversion funnel</h2><div className="admin-stats"><span><b>{affiliate.clicks}</b>Tracked clicks</span><span><b>{affiliate.conversions}</b>Recorded conversions</span><span><b>{(affiliate.conversionRate*100).toFixed(2)}%</b>Conversion rate</span><span><b>{money(affiliate.epcCents)}</b>Earnings per click</span><span><b>{money(affiliate.averageCommissionCents)}</b>Average commission</span></div><p className="muted">Conversion metrics become meaningful as affiliate network sale/commission reports are imported. A click alone is never counted as a conversion.</p>
+  <p className="muted">Affiliate clicks are traffic signals, not sales. Revenue totals include only imported or recorded monetization transactions and exclude refunded or void transactions.</p>
+  <h2>Affiliate conversion funnel</h2><div className="admin-stats"><span><b>{affiliate.clicks}</b>Tracked clicks</span><span><b>{affiliate.conversions}</b>Recorded conversions</span><span><b>{(affiliate.conversionRate*100).toFixed(2)}%</b>Conversion rate</span><span><b>{money(affiliate.epcCents)}</b>Earnings per click</span><span><b>{money(affiliate.averageCommissionCents)}</b>Average commission</span></div><p className="muted">Conversion metrics become meaningful as affiliate network sale/commission reports are imported. A click alone is never counted as a conversion.</p>
   <h2>Revenue streams</h2>
   <div className="admin-stats">{types.map(type=><span key={type}><b>{money(summary.byType.get(type)||0)}</b>{type[0].toUpperCase()+type.slice(1)}</span>)}</div>
   <h2>Sponsorship inventory</h2>
