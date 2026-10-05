@@ -1,5 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import {spawnSync} from 'node:child_process'
+import {resolve} from 'node:path'
 // @ts-expect-error JavaScript deployment validator intentionally has no generated declaration file.
 import {validateProductionEnv} from '../scripts/check-production-env.mjs'
 
@@ -55,4 +57,27 @@ test('production env allows the workers.dev fallback when no custom site origin 
  const env={...validEnv}
  delete (env as Partial<typeof validEnv>).NEXT_PUBLIC_SITE_URL
  assert.deepEqual(validateProductionEnv(env),[])
+})
+
+
+test('production env CLI exits successfully with workers.dev fallback',()=>{
+ const script=resolve(process.cwd(),'scripts/check-production-env.mjs')
+ const env={...process.env}
+ delete env.NEXT_PUBLIC_SITE_URL
+ delete env.NEXT_PUBLIC_SUPABASE_URL
+ delete env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+ const result=spawnSync(process.execPath,[script],{env,encoding:'utf8'})
+ assert.equal(result.status,0,result.stderr)
+ assert.match(result.stdout,/production configuration check passed/)
+})
+
+test('production env CLI fails for an invalid configured site origin',()=>{
+ const script=resolve(process.cwd(),'scripts/check-production-env.mjs')
+ const result=spawnSync(process.execPath,[script],{
+  env:{...process.env,NEXT_PUBLIC_SITE_URL:'http://scentmarked.com/private?preview=1'},
+  encoding:'utf8'
+ })
+ assert.notEqual(result.status,0)
+ assert.match(result.stderr,/NEXT_PUBLIC_SITE_URL must use HTTPS/)
+ assert.match(result.stderr,/NEXT_PUBLIC_SITE_URL must be an origin only/)
 })
