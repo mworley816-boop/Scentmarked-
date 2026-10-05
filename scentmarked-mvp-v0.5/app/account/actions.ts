@@ -17,6 +17,16 @@ export async function updateProfile(formData:FormData){
  redirect(accountUrl('message','Profile updated.'))
 }
 
+export async function updateTasteBadgeVisibility(formData:FormData){
+ const enabled=String(formData.get('show_taste_badge')||'')==='yes'
+ const supabase=await createClient()
+ const {data:{user}}=await supabase.auth.getUser()
+ if(!user)redirect('/login?next='+encodeURIComponent('/account'))
+ const {data:updated,error}=await supabase.from('community_profiles').update({show_taste_badge:enabled,updated_at:new Date().toISOString()}).eq('user_id',user.id).select('user_id').maybeSingle()
+ if(error||!updated)redirect(accountUrl('error','Community profile preference could not be saved. Please try again.'))
+ redirect(accountUrl('message',enabled?'Your Scent Profile badge is visible on public reviews.':'Your Scent Profile badge is hidden from public reviews.'))
+}
+
 export async function updateMarketingPreference(formData:FormData){
  const enabled=String(formData.get('marketing_consent')||'')==='yes'
  const supabase=await createClient()
