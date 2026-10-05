@@ -108,8 +108,8 @@ export default async function Segments({searchParams}:{searchParams:Promise<{err
 
   return <main><section className="admin-page">
     <div className="email-subpage-hero"><div><p className="eyebrow">EMAIL · AUDIENCES</p><h1>Audience Segments</h1><p>Build reusable audiences from marketing consent and ScentMarked taste signals.</p></div><div className="campaign-editor-actions"><Link className="button ghost" href="/admin/email">← Email dashboard</Link><Link className="button ghost" href="/admin/crm">CRM contacts</Link></div></div>
-    {p.error&&<div className="notice error">{p.error}</div>}
-    {error&&<div className="notice error">Segments could not be loaded.</div>}
+    {p.error&&<div className="notice error" role="alert">{p.error}</div>}
+    {error&&<div className="notice error" role="alert">Segments could not be loaded.</div>}
 
     <article className="admin-card segment-builder"><p className="eyebrow">NEW SEGMENT</p><h2>Create an audience</h2><p>Every email segment automatically requires an active CRM contact with marketing consent.</p>
       <form action={createSegment} style={{display:'grid',gap:12}}>
