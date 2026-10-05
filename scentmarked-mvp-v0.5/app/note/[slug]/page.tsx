@@ -5,7 +5,7 @@ import { getDefaultPerfumeImage } from '@/lib/site-content'
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params
- try{const s=await createClient();const {data}=await s.from('notes').select('name,description').eq('slug',slug).maybeSingle();if(data?.name)return{title:`${data.name} Fragrance Note`,description:data.description||`Explore fragrances with ${data.name} and discover their verified scent profiles on Scentmarked.`,alternates:{canonical:'/note/'+slug},openGraph:{title:`${data.name} Fragrance Note`,description:data.description||`Explore fragrances with ${data.name} on Scentmarked.`,url:'/note/'+slug,type:'website'}}}catch{}
+ try{const s=await createClient();const {data}=await s.from('notes').select('name,description,perfume_notes!inner(perfumes!inner(id,status))').eq('slug',slug).eq('perfume_notes.perfumes.status','published').maybeSingle();if(data?.name)return{title:`${data.name} Fragrance Note`,description:data.description||`Explore fragrances with ${data.name} and discover their verified scent profiles on Scentmarked.`,alternates:{canonical:'/note/'+slug},openGraph:{title:`${data.name} Fragrance Note`,description:data.description||`Explore fragrances with ${data.name} on Scentmarked.`,url:'/note/'+slug,type:'website'}}}catch{}
  return{title:'Fragrance Note',robots:{index:false,follow:true}}
 }
 export default async function NotePage({params}:{params:Promise<{slug:string}>}){
