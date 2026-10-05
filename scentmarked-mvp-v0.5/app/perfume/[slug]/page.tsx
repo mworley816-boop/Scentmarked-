@@ -54,7 +54,7 @@ export default async function PerfumePage({params}:{params:Promise<{slug:string}
  const cleanText=(value:any,max=200)=>typeof value==='string'?value.trim().replace(/\s+/g,' ').slice(0,max):''
  const reviewerIds=[...new Set(ratings.map((r:any)=>r.user_id).filter(Boolean))]
  const communityProfiles=reviewerIds.length?await s.from('community_profiles').select('user_id,display_name,taste_label,show_taste_badge').in('user_id',reviewerIds):null
- const communityById=new Map((communityProfiles?.data||[]).map((x:any)=>[x.user_id,x]))
+ const communityById=new Map<string,{display_name:string|null;taste_label:string|null;show_taste_badge:boolean}>((communityProfiles?.data||[]).map((x:any)=>[String(x.user_id),x]))
  const reviewerName=(r:any)=>cleanText(communityById.get(r.user_id)?.display_name,80)||'Scentmarked member'
  const writtenReviews=ratings.map((r:any)=>({...r,cleanReview:cleanText(r.review,1000)})).filter((r:any)=>r.cleanReview).sort((a:any,b:any)=>{const at=new Date(a.created_at).getTime(),bt=new Date(b.created_at).getTime();return (Number.isFinite(bt)?bt:0)-(Number.isFinite(at)?at:0)}).slice(0,6)
  const factText=(value:any,max=80)=>typeof value==='string'?value.trim().replace(/\s+/g,' ').slice(0,max):''
