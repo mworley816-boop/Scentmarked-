@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { parseAffiliateCommissionCsv } from '@/lib/affiliate-import'
+import { parseAffiliateCommissionCsv, affiliateImportQuality } from '@/lib/affiliate-import'
 
 const clean=(v:FormDataEntryValue|null,max=200)=>String(v||'').trim().slice(0,max)
 const cents=(v:FormDataEntryValue|null)=>Math.max(0,Math.round(Number(v||0)*100))
@@ -84,7 +84,11 @@ export async function importAffiliateCommissions(formData:FormData){
  const parsed=parseAffiliateCommissionCsv(await file.text(),source)
  if(parsed.errors.length)redirect('/admin/monetization?error='+encodeURIComponent(parsed.errors.slice(0,3).join(' ')))
  if(!parsed.rows.length)redirect('/admin/monetization?error=No+valid+commission+rows+were+found')
- const payload=parsed.rows.map(row=>({...row,revenue_type:'affiliate'}))
- const {error}=await service.from('monetization_transactions').upsert(payload,{onConflict:'source_name,external_id',ignoreDuplicates:true})
- redirect('/admin/monetization?'+(error?'error=Affiliate+commissions+could+not+be+imported':'message='+encodeURIComponent(parsed.rows.length+' affiliate commission rows processed')))
+ const keys=parsed.rows.map(x=>x.external_id),{data:existing}=await service.from('monetization_transactions').select('external_id').eq('source_name',source).in('external_id',keys)
+ const existingIds=new Set((existing||[]).map((x:any)=>String(x.external_id))),fresh=parsed.rows.filter(x=>!existingIds.has(x.external_id)),quality=affiliateImportQuality(fresh)
+ const payload=fresh.map(row=>({...row,revenue_type:'affiliate'}))
+ const {error}=payload.length?await service.from('monetization_transactions').insert(payload):{error:null}
+ const duplicateCount=parsed.rows.length-fresh.length
+ const summary=quality.total+' inserted, '+duplicateCount+' duplicates skipped, '+quality.unattributed+' need attribution'
+ redirect('/admin/monetization?'+(error?'error=Affiliate+commissions+could+not+be+imported':'message='+encodeURIComponent(summary)))
 }
