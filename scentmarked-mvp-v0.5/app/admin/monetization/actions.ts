@@ -127,22 +127,24 @@ export async function updateAffiliateAttribution(formData:FormData){
 
 
 export async function bulkEnrichAffiliateAttribution(){
- const service=await requireAdmin()
- const tx:any[]=[];const pageSize=500
- for(let from=0;;from+=pageSize){const {data,error}=await service.from('monetization_transactions').select('id,source_name,external_id,gross_cents,fee_cents,currency,status,occurred_at,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').eq('revenue_type','affiliate').not('affiliate_click_id','is',null).order('id',{ascending:true}).range(from,from+pageSize-1);if(error)redirect('/admin/monetization/review?error=Affiliate+commissions+could+not+be+loaded');const batch=data||[];tx.push(...batch);if(batch.length<pageSize)break}
- const incomplete=tx.filter((x:any)=>!x.affiliate_offer_id||!x.affiliate_merchant||!x.affiliate_placement||!x.perfume_id)
- const clickIds=[...new Set(incomplete.map((x:any)=>x.affiliate_click_id).filter(Boolean))]
- const {data:clicks}=clickIds.length?await service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').in('id',clickIds):{data:[]}
- const offerIds=[...new Set((clicks||[]).map((x:any)=>x.offer_id).filter(Boolean))]
- const {data:offers}=offerIds.length?await service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').in('id',offerIds):{data:[]}
- const enriched=enrichAffiliateRows(incomplete as any,clicks||[],offers||[]);let updated=0
- for(let i=0;i<incomplete.length;i++){const before:any=incomplete[i],after:any=enriched[i]
-  const click:any=(clicks||[]).find((x:any)=>x.id===before.affiliate_click_id)
-  if(!click)continue
-  if(before.affiliate_offer_id&&click.offer_id&&before.affiliate_offer_id!==click.offer_id)continue
-  if(before.perfume_id&&click.perfume_id&&before.perfume_id!==click.perfume_id)continue
-  const patch:any={};for(const k of ['affiliate_offer_id','affiliate_merchant','affiliate_placement','perfume_id'])if(!before[k]&&after[k])patch[k]=after[k]
-  if(Object.keys(patch).length){const {data:saved}=await service.rpc('enrich_affiliate_attribution_with_audit',{p_transaction_id:before.id,p_offer_id:patch.affiliate_offer_id||null,p_merchant:patch.affiliate_merchant||null,p_placement:patch.affiliate_placement||null,p_perfume_id:patch.perfume_id||null});if(saved===true)updated++}
+ const service=await requireAdmin(),pageSize=250;let updated=0,lastId=0
+ for(;;){
+  const {data,error}=await service.from('monetization_transactions').select('id,source_name,external_id,gross_cents,fee_cents,currency,status,occurred_at,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').eq('revenue_type','affiliate').not('affiliate_click_id','is',null).gt('id',lastId).order('id',{ascending:true}).limit(pageSize)
+  if(error)redirect('/admin/monetization/review?error=Affiliate+commissions+could+not+be+loaded')
+  const batch=data||[];if(!batch.length)break;lastId=batch[batch.length-1].id
+  const incomplete=batch.filter((x:any)=>!x.affiliate_offer_id||!x.affiliate_merchant||!x.affiliate_placement||!x.perfume_id)
+  if(!incomplete.length){if(batch.length<pageSize)break;continue}
+  const clickIds=[...new Set(incomplete.map((x:any)=>x.affiliate_click_id).filter(Boolean))],clicks:any[]=[]
+  for(let i=0;i<clickIds.length;i+=100){const {data:rows,error:e}=await service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').in('id',clickIds.slice(i,i+100));if(e)redirect('/admin/monetization/review?error=Affiliate+clicks+could+not+be+loaded');clicks.push(...(rows||[]))}
+  const offerIds=[...new Set([...incomplete.map((x:any)=>x.affiliate_offer_id),...clicks.map((x:any)=>x.offer_id)].filter(Boolean))],offers:any[]=[]
+  for(let i=0;i<offerIds.length;i+=100){const {data:rows,error:e}=await service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').in('id',offerIds.slice(i,i+100));if(e)redirect('/admin/monetization/review?error=Affiliate+offers+could+not+be+loaded');offers.push(...(rows||[]))}
+  const enriched=enrichAffiliateRows(incomplete as any,clicks,offers)
+  for(let i=0;i<incomplete.length;i++){const before:any=incomplete[i],after:any=enriched[i]
+   if(reconcileAffiliateRow(before,clicks,offers).state!=='enrichable')continue
+   const patch:any={};for(const k of ['affiliate_offer_id','affiliate_merchant','affiliate_placement','perfume_id'])if(!before[k]&&after[k])patch[k]=after[k]
+   if(Object.keys(patch).length){const {data:saved}=await service.rpc('enrich_affiliate_attribution_with_audit',{p_transaction_id:before.id,p_offer_id:patch.affiliate_offer_id||null,p_merchant:patch.affiliate_merchant||null,p_placement:patch.affiliate_placement||null,p_perfume_id:patch.perfume_id||null});if(saved===true)updated++}
+  }
+  if(batch.length<pageSize)break
  }
  redirect('/admin/monetization/review?message='+encodeURIComponent(updated+' verified commission records auto-filled'))
 }
