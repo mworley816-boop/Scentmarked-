@@ -42,14 +42,15 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  const {data:profile}=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle()
  if(profile?.is_admin!==true)redirect('/discover')
 
- let transactions:any[]=[],campaigns:any[]=[],sponsorEvents:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],perfumes:any[]=[],goalHistory:any[]=[],expenses:any[]=[],goalSettings:any=null,clickCount=0,configured=true
+ let transactions:any[]=[],campaigns:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],perfumes:any[]=[],goalHistory:any[]=[],expenses:any[]=[],goalSettings:any=null,clickCount=0,sponsorImpressions=0,sponsorClicks=0,configured=true
  try{
   const service=createServiceClient()
-  const [txRows,expenseAll,sp,events,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows,settingsRow,goalHistoryRows]=await Promise.all([
+  const [txRows,expenseAll,sp,impressionCount,clickEventCount,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows,settingsRow,goalHistoryRows]=await Promise.all([
    loadAll<any>((from,to)=>service.from('monetization_transactions').select('revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).range(from,to)),
    loadAll<any>((from,to)=>service.from('monetization_expenses').select('id,category,vendor,description,amount_cents,currency,incurred_at').order('incurred_at',{ascending:false}).range(from,to)),
    service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
-   service.from('sponsorship_events').select('campaign_id,event_type,placement,occurred_at').order('occurred_at',{ascending:false}).limit(10000),
+   service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','impression'),
+   service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','click'),
    service.from('membership_plans').select('id,slug,name,description,price_cents,billing_interval,currency,entitlements,is_active,sort_order').order('sort_order'),
    service.from('member_subscriptions').select('id,user_id,plan_id,provider,status,current_period_end,cancel_at_period_end').in('status',['trialing','active','past_due']).limit(5000),
    service.from('affiliate_clicks').select('*',{count:'exact',head:true}),
@@ -62,7 +63,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   transactions=txRows
   expenses=expenseAll
   if(!sp.error)campaigns=sp.data||[]
-  if(!events.error)sponsorEvents=events.data||[]
+  sponsorImpressions=impressionCount.count||0
+  sponsorClicks=clickEventCount.count||0
   if(!planRows.error)plans=planRows.data||[]
   if(!subscriptionRows.error)subscriptions=subscriptionRows.data||[]
   clickCount=clicks.count||0
@@ -97,7 +99,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  const types=['affiliate','sponsorship','advertising','subscription'] as const
  const activeCampaigns=campaigns.filter((x:any)=>x.status==='active'||x.status==='scheduled')
  const membershipStats=subscriptionMetrics(subscriptions),premiumMembers=membershipStats.active
- const sponsorImpressions=sponsorEvents.filter((x:any)=>x.event_type==='impression').length,sponsorClicks=sponsorEvents.filter((x:any)=>x.event_type==='click').length,sponsorCtr=sponsorImpressions?sponsorClicks/sponsorImpressions:0
+ const sponsorCtr=sponsorImpressions?sponsorClicks/sponsorImpressions:0
  const healthAlerts=monetizationHealthAlerts({goal,pendingCents:trends.pendingCents,realizedCents:trends.realizedCents,reconciliation,affiliateClicks:clickCount,affiliateConversions:affiliateRows.length,streams:streamForecast})
 
  return <main><section className="admin-catalog">
