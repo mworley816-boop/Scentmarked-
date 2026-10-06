@@ -69,7 +69,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
 
  const summary=monetizationSummary(transactions)
  const trends=revenueTrendMetrics(transactions)
- const goal=revenueGoalMetrics(trends.currentNetCents,Number(goalSettings?.monthly_revenue_goal_cents||100000))
+ const goal=revenueGoalMetrics(trends.currentNetCents,Number(goalSettings?.monthly_revenue_goal_cents??100000))
  const streamForecast=revenueStreamForecast(transactions)
  const history=monthlyRevenueHistory(transactions,goalHistory,12)
  const profitability=profitabilityMetrics(trends.currentNetCents,expenses)
