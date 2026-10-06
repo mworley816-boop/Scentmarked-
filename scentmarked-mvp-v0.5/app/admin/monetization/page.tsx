@@ -7,6 +7,7 @@ import { affiliateImportQuality } from '@/lib/affiliate-import'
 import { affiliateReconciliationSummary } from '@/lib/affiliate-reconciliation'
 import { subscriptionMetrics } from '@/lib/subscription-metrics'
 import { revenueTrendMetrics } from '@/lib/revenue-trends'
+import { rankAffiliateRevenue } from '@/lib/revenue-breakdowns'
 import { createSponsorship, recordRevenue, updateSponsorshipStatus, updateMembershipPlan, grantMembership, endManualMembership, importAffiliateCommissions } from './actions'
 
 export const metadata={title:'Monetization | ScentMarked Studio',robots:{index:false,follow:false}}
@@ -19,10 +20,10 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  const {data:profile}=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle()
  if(profile?.is_admin!==true)redirect('/discover')
 
- let transactions:any[]=[],campaigns:any[]=[],sponsorEvents:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],clickCount=0,configured=true
+ let transactions:any[]=[],campaigns:any[]=[],sponsorEvents:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],perfumes:any[]=[],clickCount=0,configured=true
  try{
   const service=createServiceClient()
-  const [tx,sp,events,planRows,subscriptionRows,clicks,clickRows,offerRows]=await Promise.all([
+  const [tx,sp,events,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows]=await Promise.all([
    service.from('monetization_transactions').select('revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).limit(5000),
    service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
    service.from('sponsorship_events').select('campaign_id,event_type,placement,occurred_at').order('occurred_at',{ascending:false}).limit(10000),
@@ -30,7 +31,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
    service.from('member_subscriptions').select('id,user_id,plan_id,provider,status,current_period_end,cancel_at_period_end').in('status',['trialing','active','past_due']).limit(5000),
    service.from('affiliate_clicks').select('*',{count:'exact',head:true}),
    service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').limit(10000),
-   service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').limit(10000)
+   service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').limit(10000),
+   service.from('perfumes').select('id,name').limit(10000)
   ])
   if(!tx.error)transactions=tx.data||[]
   if(!sp.error)campaigns=sp.data||[]
@@ -40,10 +42,13 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   clickCount=clicks.count||0
   if(!clickRows.error)affiliateClicks=clickRows.data||[]
   if(!offerRows.error)affiliateOffers=offerRows.data||[]
+  if(!perfumeRows.error)perfumes=perfumeRows.data||[]
  }catch{configured=false}
 
  const summary=monetizationSummary(transactions)
  const trends=revenueTrendMetrics(transactions)
+ const topSources=rankAffiliateRevenue(transactions,'source_name'),topMerchants=rankAffiliateRevenue(transactions,'affiliate_merchant'),topPlacements=rankAffiliateRevenue(transactions,'affiliate_placement'),topPerfumes=rankAffiliateRevenue(transactions,'perfume_id')
+ const perfumeNames=new Map(perfumes.map((x:any)=>[String(x.id),x.name]))
  const affiliate=affiliateMetrics(clickCount,transactions)
  const affiliateRows=transactions.filter((x:any)=>x.revenue_type==='affiliate'&&!['refunded','void'].includes(x.status)),affiliateQuality=affiliateImportQuality(affiliateRows)
  const reconciliation=affiliateReconciliationSummary(affiliateRows,affiliateClicks,affiliateOffers)
@@ -65,6 +70,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   <h2>Revenue momentum</h2><div className="admin-stats"><span><b>{money(trends.currentNetCents)}</b>This month net</span><span><b>{money(trends.previousNetCents)}</b>Previous month net</span><span><b>{trends.growthRate>=0?'+':''}{(trends.growthRate*100).toFixed(1)}%</b>Month-over-month</span><span><b>{money(trends.realizedCents)}</b>Confirmed / paid net</span><span><b>{money(trends.pendingCents)}</b>Pending net</span></div><p className="muted">{trends.currentTransactions} monetization transaction{trends.currentTransactions===1?'':'s'} this month versus {trends.previousTransactions} last month. Month-over-month compares net revenue after tracked fees and excludes refunded or void transactions.</p>
   <h2>Affiliate data quality</h2><div className="admin-stats"><span><b>{affiliateQuality.total}</b>Commission records</span><span><b>{affiliateQuality.fullyAttributed}</b>Fully attributed</span><span><b>{affiliateQuality.unattributed}</b>Need attribution</span><span><b>{(affiliateQuality.attributionRate*100).toFixed(1)}%</b>Attribution rate</span></div><p className="muted">A fully attributed commission has a tracked click, offer, merchant, perfume and placement. Incomplete records still count as revenue but cannot support every performance breakdown.</p>
   <h3>Reconciliation queue</h3><div className="admin-stats"><span><b>{reconciliation.complete}</b>Complete</span><span><b>{reconciliation.enrichable}</b>Safe to auto-fill</span><span><b>{reconciliation.conflict}</b>Conflicts — review</span><span><b>{reconciliation.unresolved}</b>Unresolved</span></div><p className="muted">Only records backed by exact click or offer tracking are eligible for automatic enrichment. Conflicting imported values stay untouched for manual review.</p>{affiliateQuality.unattributed>0&&<div className="admin-filters"><Link className="button ghost" href="/admin/monetization/review">Review commissions</Link><a className="button ghost" href="/admin/monetization/reconciliation">Export review queue</a>{reconciliation.enrichable>0&&<form action="/admin/monetization/reconcile" method="post"><button className="button ghost">Auto-fill {reconciliation.enrichable} exact match{reconciliation.enrichable===1?'':'es'}</button></form>}</div>}
+  <h2>Top affiliate revenue drivers</h2><div className="admin-card"><h3>Networks / sources</h3><div className="admin-list">{topSources.length?topSources.map(x=><div key={x.key}><b>{x.key}</b><span>{money(x.netCents)} net · {x.transactions} commission{x.transactions===1?'':'s'}</span></div>):<p className="muted">No attributed affiliate revenue yet.</p>}</div><h3>Merchants</h3><div className="admin-list">{topMerchants.length?topMerchants.map(x=><div key={x.key}><b>{x.key}</b><span>{money(x.netCents)} net · {x.transactions} commission{x.transactions===1?'':'s'}</span></div>):<p className="muted">Merchant attribution will appear after commission imports are reconciled.</p>}</div><h3>Placements</h3><div className="admin-list">{topPlacements.length?topPlacements.map(x=><div key={x.key}><b>{x.key}</b><span>{money(x.netCents)} net · {x.transactions} commission{x.transactions===1?'':'s'}</span></div>):<p className="muted">Placement attribution will appear after tracked clicks are matched to commissions.</p>}</div><h3>Perfumes</h3><div className="admin-list">{topPerfumes.length?topPerfumes.map(x=><div key={x.key}><b>{perfumeNames.get(x.key)||x.key}</b><span>{money(x.netCents)} net · {x.transactions} commission{x.transactions===1?'':'s'}</span></div>):<p className="muted">Perfume revenue rankings will appear after commissions are attributed to fragrances.</p>}</div></div>
+  <p className="muted">Rankings use net affiliate revenue after tracked fees and exclude refunded, void, and unattributed records from dimensions they cannot support.</p>
   <h2>Affiliate conversion funnel</h2><div className="admin-stats"><span><b>{affiliate.clicks}</b>Tracked clicks</span><span><b>{affiliate.conversions}</b>Recorded conversions</span><span><b>{(affiliate.conversionRate*100).toFixed(2)}%</b>Conversion rate</span><span><b>{money(affiliate.epcCents)}</b>Earnings per click</span><span><b>{money(affiliate.averageCommissionCents)}</b>Average commission</span></div><p className="muted">Conversion metrics become meaningful as affiliate network sale/commission reports are imported. A click alone is never counted as a conversion.</p>
   <h2>Revenue streams</h2>
   <div className="admin-stats">{types.map(type=><span key={type}><b>{money(summary.byType.get(type)||0)}</b>{type[0].toUpperCase()+type.slice(1)}</span>)}</div>
