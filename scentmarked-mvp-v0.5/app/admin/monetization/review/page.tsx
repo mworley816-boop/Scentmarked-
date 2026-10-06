@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { reconcileAffiliateRow } from '@/lib/affiliate-reconciliation'
+import { reconcileAffiliateRow,affiliateReconciliationReasonLabel } from '@/lib/affiliate-reconciliation'
 import { money } from '@/lib/monetization'
 import { bulkEnrichAffiliateAttribution, updateAffiliateAttribution } from '../actions'
 
@@ -35,7 +35,7 @@ export default async function AffiliateReconciliationPage({searchParams}:{search
    const click:any=row.affiliate_click_id?clickById.get(Number(row.affiliate_click_id)):null,offer:any=(row.affiliate_offer_id||click?.offer_id)?offerById.get(Number(row.affiliate_offer_id||click?.offer_id)):null
    const suggestedOffer=row.affiliate_offer_id||click?.offer_id||null,suggestedMerchant=row.affiliate_merchant||offer?.merchant_name||null,suggestedPlacement=row.affiliate_placement||click?.placement||null,suggestedPerfume=row.perfume_id||click?.perfume_id||offer?.perfume_id||null
    return <article key={row.id}>
-    <div><small>{result.state.toUpperCase()} · {row.source_name} · {row.external_id||'No external ID'}</small><h2>{money(Number(row.gross_cents||0)-Number(row.fee_cents||0),row.currency)} commission</h2><div className="admin-record-meta"><span>{new Date(row.occurred_at).toLocaleString()}</span><span>{row.status}</span><span>{result.reasons.join(', ').replaceAll('_',' ')}</span></div></div>
+    <div><small>{result.state.toUpperCase()} · {row.source_name} · {row.external_id||'No external ID'}</small><h2>{money(Number(row.gross_cents||0)-Number(row.fee_cents||0),row.currency)} commission</h2><div className="admin-record-meta"><span>{new Date(row.occurred_at).toLocaleString()}</span><span>{row.status}</span><span>{result.reasons.map(affiliateReconciliationReasonLabel).join(' ')}</span></div></div>
     {result.state==='enrichable'&&<p className="muted"><b>Verified suggestion:</b> offer {suggestedOffer||'—'} · {suggestedMerchant||'merchant unknown'} · {suggestedPlacement||'placement unknown'} · perfume {suggestedPerfume||'unknown'}</p>}
     <form action={updateAffiliateAttribution} className="admin-filters">
      <input type="hidden" name="id" value={row.id}/>
