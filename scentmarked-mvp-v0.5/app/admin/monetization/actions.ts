@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { parseAffiliateCommissionCsv } from '@/lib/affiliate-import'
 
 const clean=(v:FormDataEntryValue|null,max=200)=>String(v||'').trim().slice(0,max)
 const cents=(v:FormDataEntryValue|null)=>Math.max(0,Math.round(Number(v||0)*100))
@@ -75,4 +76,15 @@ export async function endManualMembership(formData:FormData){
  if(!Number.isInteger(id))redirect('/admin/monetization?error=Invalid+membership')
  const {error}=await service.from('member_subscriptions').update({status:'cancelled',current_period_end:new Date().toISOString(),cancel_at_period_end:true,updated_at:new Date().toISOString()}).eq('id',id).eq('provider','manual')
  redirect('/admin/monetization?'+(error?'error=Membership+could+not+be+ended':'message=Manual+membership+ended'))
+}
+
+export async function importAffiliateCommissions(formData:FormData){
+ const service=await requireAdmin(),file=formData.get('file'),source=clean(formData.get('source_name'),120)||'affiliate_import'
+ if(!(file instanceof File)||file.size===0||file.size>2_000_000)redirect('/admin/monetization?error=Choose+a+CSV+file+under+2MB')
+ const parsed=parseAffiliateCommissionCsv(await file.text(),source)
+ if(parsed.errors.length)redirect('/admin/monetization?error='+encodeURIComponent(parsed.errors.slice(0,3).join(' ')))
+ if(!parsed.rows.length)redirect('/admin/monetization?error=No+valid+commission+rows+were+found')
+ const payload=parsed.rows.map(row=>({...row,revenue_type:'affiliate'}))
+ const {error}=await service.from('monetization_transactions').upsert(payload,{onConflict:'source_name,external_id',ignoreDuplicates:true})
+ redirect('/admin/monetization?'+(error?'error=Affiliate+commissions+could+not+be+imported':'message='+encodeURIComponent(parsed.rows.length+' affiliate commission rows processed')))
 }
