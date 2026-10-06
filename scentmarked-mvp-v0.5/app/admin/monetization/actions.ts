@@ -128,8 +128,9 @@ export async function updateAffiliateAttribution(formData:FormData){
 
 export async function bulkEnrichAffiliateAttribution(){
  const service=await requireAdmin()
- const {data:tx}=await service.from('monetization_transactions').select('id,source_name,external_id,gross_cents,fee_cents,currency,status,occurred_at,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').eq('revenue_type','affiliate').not('affiliate_click_id','is',null)
- const incomplete=(tx||[]).filter((x:any)=>!x.affiliate_offer_id||!x.affiliate_merchant||!x.affiliate_placement||!x.perfume_id)
+ const tx:any[]=[];const pageSize=500
+ for(let from=0;;from+=pageSize){const {data,error}=await service.from('monetization_transactions').select('id,source_name,external_id,gross_cents,fee_cents,currency,status,occurred_at,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').eq('revenue_type','affiliate').not('affiliate_click_id','is',null).order('id',{ascending:true}).range(from,from+pageSize-1);if(error)redirect('/admin/monetization/review?error=Affiliate+commissions+could+not+be+loaded');const batch=data||[];tx.push(...batch);if(batch.length<pageSize)break}
+ const incomplete=tx.filter((x:any)=>!x.affiliate_offer_id||!x.affiliate_merchant||!x.affiliate_placement||!x.perfume_id)
  const clickIds=[...new Set(incomplete.map((x:any)=>x.affiliate_click_id).filter(Boolean))]
  const {data:clicks}=clickIds.length?await service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').in('id',clickIds):{data:[]}
  const offerIds=[...new Set((clicks||[]).map((x:any)=>x.offer_id).filter(Boolean))]
