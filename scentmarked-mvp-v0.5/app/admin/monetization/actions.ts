@@ -98,3 +98,19 @@ export async function importAffiliateCommissions(formData:FormData){
  const summary=quality.total+' inserted, '+duplicateCount+' duplicates skipped, '+quality.unattributed+' need attribution'
  redirect('/admin/monetization?'+(error?'error=Affiliate+commissions+could+not+be+imported':'message='+encodeURIComponent(summary)))
 }
+
+
+export async function updateAffiliateAttribution(formData:FormData){
+ const service=await requireAdmin()
+ const id=Number(formData.get('id'))
+ if(!Number.isInteger(id)||id<=0)redirect('/admin/monetization/review?error=Invalid+commission')
+ const numberOrNull=(name:string)=>{const raw=clean(formData.get(name),40);if(!raw)return null;const n=Number(raw);return Number.isInteger(n)&&n>0?n:null}
+ const offerId=numberOrNull('affiliate_offer_id'),clickId=numberOrNull('affiliate_click_id')
+ const merchant=clean(formData.get('affiliate_merchant'),160)||null,placement=clean(formData.get('affiliate_placement'),160)||null,perfumeId=clean(formData.get('perfume_id'),160)||null
+ if(formData.get('affiliate_offer_id')&&offerId===null)redirect('/admin/monetization/review?error=Offer+ID+must+be+a+positive+number')
+ if(formData.get('affiliate_click_id')&&clickId===null)redirect('/admin/monetization/review?error=Click+ID+must+be+a+positive+number')
+ if(clickId){const {data:click}=await service.from('affiliate_clicks').select('id').eq('id',clickId).maybeSingle();if(!click)redirect('/admin/monetization/review?error=Tracked+click+was+not+found')}
+ if(offerId){const {data:offer}=await service.from('perfume_affiliate_offers').select('id').eq('id',offerId).maybeSingle();if(!offer)redirect('/admin/monetization/review?error=Affiliate+offer+was+not+found')}
+ const {error}=await service.from('monetization_transactions').update({affiliate_offer_id:offerId,affiliate_click_id:clickId,affiliate_merchant:merchant,affiliate_placement:placement,perfume_id:perfumeId}).eq('id',id).eq('revenue_type','affiliate')
+ redirect('/admin/monetization/review?'+(error?'error=Commission+attribution+could+not+be+saved':'message=Commission+attribution+updated'))
+}
