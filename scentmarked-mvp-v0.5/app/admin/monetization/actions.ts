@@ -114,3 +114,24 @@ export async function updateAffiliateAttribution(formData:FormData){
  const {error}=await service.from('monetization_transactions').update({affiliate_offer_id:offerId,affiliate_click_id:clickId,affiliate_merchant:merchant,affiliate_placement:placement,perfume_id:perfumeId}).eq('id',id).eq('revenue_type','affiliate')
  redirect('/admin/monetization/review?'+(error?'error=Commission+attribution+could+not+be+saved':'message=Commission+attribution+updated'))
 }
+
+
+export async function bulkEnrichAffiliateAttribution(){
+ const service=await requireAdmin()
+ const {data:tx}=await service.from('monetization_transactions').select('id,source_name,external_id,gross_cents,fee_cents,currency,status,occurred_at,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').eq('revenue_type','affiliate').not('affiliate_click_id','is',null)
+ const incomplete=(tx||[]).filter((x:any)=>!x.affiliate_offer_id||!x.affiliate_merchant||!x.affiliate_placement||!x.perfume_id)
+ const clickIds=[...new Set(incomplete.map((x:any)=>x.affiliate_click_id).filter(Boolean))]
+ const {data:clicks}=clickIds.length?await service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').in('id',clickIds):{data:[]}
+ const offerIds=[...new Set((clicks||[]).map((x:any)=>x.offer_id).filter(Boolean))]
+ const {data:offers}=offerIds.length?await service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').in('id',offerIds):{data:[]}
+ const enriched=enrichAffiliateRows(incomplete as any,clicks||[],offers||[]);let updated=0
+ for(let i=0;i<incomplete.length;i++){const before:any=incomplete[i],after:any=enriched[i]
+  const click:any=(clicks||[]).find((x:any)=>x.id===before.affiliate_click_id)
+  if(!click)continue
+  if(before.affiliate_offer_id&&click.offer_id&&before.affiliate_offer_id!==click.offer_id)continue
+  if(before.perfume_id&&click.perfume_id&&before.perfume_id!==click.perfume_id)continue
+  const patch:any={};for(const k of ['affiliate_offer_id','affiliate_merchant','affiliate_placement','perfume_id'])if(!before[k]&&after[k])patch[k]=after[k]
+  if(Object.keys(patch).length){const {error}=await service.from('monetization_transactions').update(patch).eq('id',before.id);if(!error)updated++}
+ }
+ redirect('/admin/monetization/review?message='+encodeURIComponent(updated+' verified commission records auto-filled'))
+}
