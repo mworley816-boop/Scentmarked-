@@ -139,3 +139,11 @@ export async function bulkEnrichAffiliateAttribution(){
  }
  redirect('/admin/monetization/review?message='+encodeURIComponent(updated+' verified commission records auto-filled'))
 }
+
+export async function updateRevenueGoal(formData:FormData){
+ const service=await requireAdmin()
+ const goalCents=cents(formData.get('monthly_goal'))
+ const currency=clean(formData.get('currency'),3).toUpperCase()||'USD'
+ const {error}=await service.from('monetization_settings').upsert({id:'default',monthly_revenue_goal_cents:goalCents,currency,updated_at:new Date().toISOString()},{onConflict:'id'})
+ redirect('/admin/monetization?'+(error?'error=Revenue+goal+could+not+be+saved':'message=Revenue+goal+updated'))
+}
