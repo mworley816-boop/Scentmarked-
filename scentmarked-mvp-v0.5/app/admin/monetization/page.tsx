@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { affiliateMetrics, money, monetizationSummary } from '@/lib/monetization'
-import { createSponsorship, recordRevenue, updateSponsorshipStatus } from './actions'
+import { createSponsorship, recordRevenue, updateSponsorshipStatus, updateMembershipPlan } from './actions'
 
 export const metadata={title:'Monetization | ScentMarked Studio',robots:{index:false,follow:false}}
 
@@ -15,18 +15,22 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  const {data:profile}=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle()
  if(profile?.is_admin!==true)redirect('/discover')
 
- let transactions:any[]=[],campaigns:any[]=[],sponsorEvents:any[]=[],clickCount=0,configured=true
+ let transactions:any[]=[],campaigns:any[]=[],sponsorEvents:any[]=[],plans:any[]=[],subscriptions:any[]=[],clickCount=0,configured=true
  try{
   const service=createServiceClient()
-  const [tx,sp,events,clicks]=await Promise.all([
+  const [tx,sp,events,planRows,subscriptionRows,clicks]=await Promise.all([
    service.from('monetization_transactions').select('revenue_type,gross_cents,fee_cents,status,occurred_at,currency').order('occurred_at',{ascending:false}).limit(5000),
    service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
    service.from('sponsorship_events').select('campaign_id,event_type,placement,occurred_at').order('occurred_at',{ascending:false}).limit(10000),
+   service.from('membership_plans').select('id,slug,name,description,price_cents,billing_interval,currency,entitlements,is_active,sort_order').order('sort_order'),
+   service.from('member_subscriptions').select('id,user_id,plan_id,status,current_period_end,cancel_at_period_end').in('status',['trialing','active','past_due']).limit(5000),
    service.from('affiliate_clicks').select('*',{count:'exact',head:true})
   ])
   if(!tx.error)transactions=tx.data||[]
   if(!sp.error)campaigns=sp.data||[]
   if(!events.error)sponsorEvents=events.data||[]
+  if(!planRows.error)plans=planRows.data||[]
+  if(!subscriptionRows.error)subscriptions=subscriptionRows.data||[]
   clickCount=clicks.count||0
  }catch{configured=false}
 
@@ -34,6 +38,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  const affiliate=affiliateMetrics(clickCount,transactions)
  const types=['affiliate','sponsorship','advertising','subscription'] as const
  const activeCampaigns=campaigns.filter((x:any)=>x.status==='active'||x.status==='scheduled')
+ const premiumMembers=subscriptions.filter((x:any)=>['trialing','active'].includes(x.status)&&(!x.current_period_end||new Date(x.current_period_end).getTime()>Date.now())).length
  const sponsorImpressions=sponsorEvents.filter((x:any)=>x.event_type==='impression').length,sponsorClicks=sponsorEvents.filter((x:any)=>x.event_type==='click').length,sponsorCtr=sponsorImpressions?sponsorClicks/sponsorImpressions:0
 
  return <main><section className="admin-catalog">
@@ -48,6 +53,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   <h2>Affiliate conversion funnel</h2><div className="admin-stats"><span><b>{affiliate.clicks}</b>Tracked clicks</span><span><b>{affiliate.conversions}</b>Recorded conversions</span><span><b>{(affiliate.conversionRate*100).toFixed(2)}%</b>Conversion rate</span><span><b>{money(affiliate.epcCents)}</b>Earnings per click</span><span><b>{money(affiliate.averageCommissionCents)}</b>Average commission</span></div><p className="muted">Conversion metrics become meaningful as affiliate network sale/commission reports are imported. A click alone is never counted as a conversion.</p>
   <h2>Revenue streams</h2>
   <div className="admin-stats">{types.map(type=><span key={type}><b>{money(summary.byType.get(type)||0)}</b>{type[0].toUpperCase()+type.slice(1)}</span>)}</div>
+  <h2>Membership</h2><div className="admin-stats"><span><b>{premiumMembers}</b>Active / trialing premium members</span><span><b>{plans.filter((x:any)=>x.is_active).length}</b>Active plans</span></div><div className="admin-list">{plans.map((plan:any)=><article key={plan.id}><form action={updateMembershipPlan} className="admin-filters"><input type="hidden" name="id" value={plan.id}/><label>Plan<input name="name" defaultValue={plan.name} required/></label><label>Price<input name="price" type="number" min="0" step="0.01" defaultValue={(Number(plan.price_cents||0)/100).toFixed(2)}/></label><label>Billing<select name="billing_interval" defaultValue={plan.billing_interval}><option value="month">Monthly</option><option value="year">Yearly</option><option value="one_time">One time</option></select></label><label>Currency<input name="currency" defaultValue={plan.currency} maxLength={3}/></label><label>Entitlements<input name="entitlements" defaultValue={(plan.entitlements||[]).join(', ')}/></label><label>Description<input name="description" defaultValue={plan.description||''}/></label><label><input name="is_active" type="checkbox" defaultChecked={plan.is_active}/> Active</label><button className="button ghost">Save {plan.slug}</button></form></article>)}</div><p className="muted">Plan settings define access and display pricing only. No payment provider is connected yet, so changing a price here cannot charge a member.</p>
   <h2>Sponsorship performance</h2><div className="admin-stats"><span><b>{sponsorImpressions}</b>Impressions</span><span><b>{sponsorClicks}</b>Clicks</span><span><b>{(sponsorCtr*100).toFixed(2)}%</b>CTR</span></div>
   <h2>Sponsorship inventory</h2>
   <div className="admin-list">{campaigns.length?campaigns.map((x:any)=><article key={x.id}><div><small>{x.status.toUpperCase()} · {x.placement}</small><h2>{x.name}</h2><div className="admin-record-meta"><span>{x.sponsor_name}</span>{x.budget_cents!=null&&<span>{money(x.budget_cents,x.currency)} budget</span>}</div></div><form action={updateSponsorshipStatus} className="admin-filters"><input type="hidden" name="id" value={x.id}/><select name="status" defaultValue={x.status}><option value="draft">Draft</option><option value="scheduled">Scheduled</option><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select><button className="button ghost">Update</button></form></article>):<div className="empty-state"><h2>No sponsorship campaigns yet.</h2><p>The infrastructure is ready for direct sponsored placements without changing fragrance recommendation scores.</p></div>}</div>
