@@ -111,7 +111,11 @@ export async function updateAffiliateAttribution(formData:FormData){
  if(formData.get('affiliate_click_id')&&clickId===null)redirect('/admin/monetization/review?error=Click+ID+must+be+a+positive+number')
  if(clickId){const {data:click}=await service.from('affiliate_clicks').select('id').eq('id',clickId).maybeSingle();if(!click)redirect('/admin/monetization/review?error=Tracked+click+was+not+found')}
  if(offerId){const {data:offer}=await service.from('perfume_affiliate_offers').select('id').eq('id',offerId).maybeSingle();if(!offer)redirect('/admin/monetization/review?error=Affiliate+offer+was+not+found')}
- const {error}=await service.from('monetization_transactions').update({affiliate_offer_id:offerId,affiliate_click_id:clickId,affiliate_merchant:merchant,affiliate_placement:placement,perfume_id:perfumeId}).eq('id',id).eq('revenue_type','affiliate')
+ const {data:before}=await service.from('monetization_transactions').select('affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').eq('id',id).eq('revenue_type','affiliate').maybeSingle()
+ if(!before)redirect('/admin/monetization/review?error=Commission+was+not+found')
+ const after={affiliate_offer_id:offerId,affiliate_click_id:clickId,affiliate_merchant:merchant,affiliate_placement:placement,perfume_id:perfumeId}
+ const {error}=await service.from('monetization_transactions').update(after).eq('id',id).eq('revenue_type','affiliate')
+ if(!error)await service.from('affiliate_attribution_audit').insert({transaction_id:id,changed_by:(await (await createClient()).auth.getUser()).data.user?.id||null,change_source:'manual',before_values:before,after_values:after})
  redirect('/admin/monetization/review?'+(error?'error=Commission+attribution+could+not+be+saved':'message=Commission+attribution+updated'))
 }
 
@@ -131,7 +135,7 @@ export async function bulkEnrichAffiliateAttribution(){
   if(before.affiliate_offer_id&&click.offer_id&&before.affiliate_offer_id!==click.offer_id)continue
   if(before.perfume_id&&click.perfume_id&&before.perfume_id!==click.perfume_id)continue
   const patch:any={};for(const k of ['affiliate_offer_id','affiliate_merchant','affiliate_placement','perfume_id'])if(!before[k]&&after[k])patch[k]=after[k]
-  if(Object.keys(patch).length){const {error}=await service.from('monetization_transactions').update(patch).eq('id',before.id);if(!error)updated++}
+  if(Object.keys(patch).length){const afterValues={affiliate_offer_id:before.affiliate_offer_id,affiliate_click_id:before.affiliate_click_id,affiliate_merchant:before.affiliate_merchant,affiliate_placement:before.affiliate_placement,perfume_id:before.perfume_id,...patch};const {error}=await service.from('monetization_transactions').update(patch).eq('id',before.id);if(!error){updated++;await service.from('affiliate_attribution_audit').insert({transaction_id:before.id,changed_by:null,change_source:'automatic',before_values:{affiliate_offer_id:before.affiliate_offer_id,affiliate_click_id:before.affiliate_click_id,affiliate_merchant:before.affiliate_merchant,affiliate_placement:before.affiliate_placement,perfume_id:before.perfume_id},after_values:afterValues})}}
  }
  redirect('/admin/monetization/review?message='+encodeURIComponent(updated+' verified commission records auto-filled'))
 }
