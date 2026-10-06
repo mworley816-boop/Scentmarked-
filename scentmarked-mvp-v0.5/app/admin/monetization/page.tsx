@@ -53,8 +53,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
    service.from('membership_plans').select('id,slug,name,description,price_cents,billing_interval,currency,entitlements,is_active,sort_order').order('sort_order'),
    service.from('member_subscriptions').select('id,user_id,plan_id,provider,status,current_period_end,cancel_at_period_end').in('status',['trialing','active','past_due']).limit(5000),
    service.from('affiliate_clicks').select('*',{count:'exact',head:true}),
-   service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').limit(10000),
-   service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').limit(10000),
+   loadAll<any>((from,to)=>service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').order('id',{ascending:true}).range(from,to)),
+   loadAll<any>((from,to)=>service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').order('id',{ascending:true}).range(from,to)),
    service.from('perfumes').select('id,name').limit(10000),
    service.from('monetization_settings').select('monthly_revenue_goal_cents,currency').eq('id','default').maybeSingle(),
    service.from('monetization_goal_history').select('month_start,goal_cents,currency').order('month_start',{ascending:false}).limit(24)
@@ -66,8 +66,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   if(!planRows.error)plans=planRows.data||[]
   if(!subscriptionRows.error)subscriptions=subscriptionRows.data||[]
   clickCount=clicks.count||0
-  if(!clickRows.error)affiliateClicks=clickRows.data||[]
-  if(!offerRows.error)affiliateOffers=offerRows.data||[]
+  affiliateClicks=clickRows
+  affiliateOffers=offerRows
   if(!perfumeRows.error)perfumes=perfumeRows.data||[]
   if(!settingsRow.error)goalSettings=settingsRow.data
   if(!goalHistoryRows.error)goalHistory=goalHistoryRows.data||[]
