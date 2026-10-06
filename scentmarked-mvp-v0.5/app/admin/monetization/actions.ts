@@ -142,7 +142,7 @@ export async function bulkEnrichAffiliateAttribution(){
   if(before.affiliate_offer_id&&click.offer_id&&before.affiliate_offer_id!==click.offer_id)continue
   if(before.perfume_id&&click.perfume_id&&before.perfume_id!==click.perfume_id)continue
   const patch:any={};for(const k of ['affiliate_offer_id','affiliate_merchant','affiliate_placement','perfume_id'])if(!before[k]&&after[k])patch[k]=after[k]
-  if(Object.keys(patch).length){const afterValues={affiliate_offer_id:before.affiliate_offer_id,affiliate_click_id:before.affiliate_click_id,affiliate_merchant:before.affiliate_merchant,affiliate_placement:before.affiliate_placement,perfume_id:before.perfume_id,...patch};const {error}=await service.from('monetization_transactions').update(patch).eq('id',before.id);if(!error){updated++;await service.from('affiliate_attribution_audit').insert({transaction_id:before.id,changed_by:null,change_source:'automatic',before_values:{affiliate_offer_id:before.affiliate_offer_id,affiliate_click_id:before.affiliate_click_id,affiliate_merchant:before.affiliate_merchant,affiliate_placement:before.affiliate_placement,perfume_id:before.perfume_id},after_values:afterValues})}}
+  if(Object.keys(patch).length){const {data:saved}=await service.rpc('enrich_affiliate_attribution_with_audit',{p_transaction_id:before.id,p_offer_id:patch.affiliate_offer_id||null,p_merchant:patch.affiliate_merchant||null,p_placement:patch.affiliate_placement||null,p_perfume_id:patch.perfume_id||null});if(saved===true)updated++}
  }
  redirect('/admin/monetization/review?message='+encodeURIComponent(updated+' verified commission records auto-filled'))
 }
