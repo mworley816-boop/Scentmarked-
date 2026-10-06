@@ -144,6 +144,8 @@ export async function updateRevenueGoal(formData:FormData){
  const service=await requireAdmin()
  const goalCents=cents(formData.get('monthly_goal'))
  const currency=clean(formData.get('currency'),3).toUpperCase()||'USD'
- const {error}=await service.from('monetization_settings').upsert({id:'default',monthly_revenue_goal_cents:goalCents,currency,updated_at:new Date().toISOString()},{onConflict:'id'})
+ const now=new Date(),monthStart=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),1)).toISOString().slice(0,10)
+ const {error}=await service.from('monetization_settings').upsert({id:'default',monthly_revenue_goal_cents:goalCents,currency,updated_at:now.toISOString()},{onConflict:'id'})
+ if(!error)await service.from('monetization_goal_history').upsert({month_start:monthStart,goal_cents:goalCents,currency,updated_at:now.toISOString()},{onConflict:'month_start'})
  redirect('/admin/monetization?'+(error?'error=Revenue+goal+could+not+be+saved':'message=Revenue+goal+updated'))
 }
