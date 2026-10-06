@@ -54,3 +54,25 @@ export async function updateMembershipPlan(formData:FormData){
  const {error}=await service.from('membership_plans').update({name,description:description||null,price_cents:price,billing_interval:interval,currency,entitlements,is_active:formData.get('is_active')==='on',updated_at:new Date().toISOString()}).eq('id',id)
  redirect('/admin/monetization?'+(error?'error=Membership+plan+could+not+be+updated':'message=Membership+plan+updated'))
 }
+
+export async function grantMembership(formData:FormData){
+ const service=await requireAdmin()
+ const email=clean(formData.get('email'),320).toLowerCase(),planId=Number(formData.get('plan_id')),days=Math.min(3660,Math.max(1,Number(formData.get('days')||30)))
+ if(!email||!Number.isInteger(planId))redirect('/admin/monetization?error=Member+email+and+plan+are+required')
+ const {data:users,error:userError}=await service.auth.admin.listUsers({page:1,perPage:1000})
+ const user=users?.users?.find(x=>String(x.email||'').toLowerCase()===email)
+ if(userError||!user)redirect('/admin/monetization?error=No+account+was+found+for+that+email')
+ const {data:plan}=await service.from('membership_plans').select('id,slug').eq('id',planId).eq('is_active',true).maybeSingle()
+ if(!plan||plan.slug==='free')redirect('/admin/monetization?error=Choose+an+active+premium+plan')
+ const now=new Date(),end=new Date(now.getTime()+days*86400000)
+ await service.from('member_subscriptions').update({status:'expired',updated_at:now.toISOString()}).eq('user_id',user.id).eq('provider','manual').in('status',['trialing','active','past_due','cancelled'])
+ const {error}=await service.from('member_subscriptions').insert({user_id:user.id,plan_id:plan.id,provider:'manual',status:'active',current_period_start:now.toISOString(),current_period_end:end.toISOString(),cancel_at_period_end:false})
+ redirect('/admin/monetization?'+(error?'error=Membership+could+not+be+granted':'message=Membership+granted'))
+}
+
+export async function endManualMembership(formData:FormData){
+ const service=await requireAdmin(),id=Number(formData.get('id'))
+ if(!Number.isInteger(id))redirect('/admin/monetization?error=Invalid+membership')
+ const {error}=await service.from('member_subscriptions').update({status:'cancelled',current_period_end:new Date().toISOString(),cancel_at_period_end:true,updated_at:new Date().toISOString()}).eq('id',id).eq('provider','manual')
+ redirect('/admin/monetization?'+(error?'error=Membership+could+not+be+ended':'message=Manual+membership+ended'))
+}
