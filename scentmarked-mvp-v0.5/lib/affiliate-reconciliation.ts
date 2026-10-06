@@ -27,3 +27,16 @@ export function affiliateReconciliationSummary(rows:AffiliateImportRow[],clicks:
  const results=rows.map(row=>reconcileAffiliateRow(row,clicks,offers))
  return {complete:results.filter(x=>x.state==='complete').length,enrichable:results.filter(x=>x.state==='enrichable').length,conflict:results.filter(x=>x.state==='conflict').length,unresolved:results.filter(x=>x.state==='unresolved').length}
 }
+
+export const affiliateReconciliationReasonLabels:Record<string,string>={
+ click_not_found:'Tracked click was not found.',
+ offer_not_found:'Referenced affiliate offer was not found.',
+ offer_click_conflict:'Offer does not match the tracked click.',
+ perfume_click_conflict:'Perfume does not match the tracked click.',
+ perfume_offer_conflict:'Perfume does not match the affiliate offer.',
+ placement_click_conflict:'Placement does not match the tracked click.',
+ merchant_offer_conflict:'Merchant does not match the affiliate offer.',
+ exact_tracking_data_available:'Exact tracking data is available to safely fill missing attribution.',
+ insufficient_tracking_data:'There is not enough exact tracking data to complete this attribution.'
+}
+export function affiliateReconciliationReasonLabel(reason:string){return affiliateReconciliationReasonLabels[reason]||reason.replaceAll('_',' ')}
