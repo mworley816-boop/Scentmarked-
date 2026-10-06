@@ -1,0 +1,4 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { financialComparison,comparisonRanges } from '../lib/financial-comparison.ts'
+test('builds month comparison',()=>{const now=new Date('2026-10-06T12:00:00Z'),ranges=comparisonRanges('month',now);assert.deepEqual(ranges.current,{from:'2026-10-01',to:'2026-10-06'});assert.deepEqual(ranges.previous,{from:'2026-09-01',to:'2026-09-30'});const c=financialComparison([{revenue_type:'affiliate',gross_cents:100000,fee_cents:0,status:'paid',occurred_at:'2026-10-03T00:00:00Z'},{revenue_type:'affiliate',gross_cents:50000,fee_cents:0,status:'paid',occurred_at:'2026-09-03T00:00:00Z'}],[],'month',now);assert.equal(c.current.netRevenueCents,100000);assert.equal(c.previous.netRevenueCents,50000);assert.equal(c.changes.netRevenue,1)})
