@@ -120,9 +120,9 @@ export async function updateAffiliateAttribution(formData:FormData){
  const after={affiliate_offer_id:offerId,affiliate_click_id:clickId,affiliate_merchant:merchant,affiliate_placement:placement,perfume_id:perfumeId}
  const reconciliation=reconcileAffiliateRow({...before,...after} as any,click?[click as any]:[],offer?[offer as any]:[])
  if(reconciliation.state==='conflict')redirect('/admin/monetization/review?error='+encodeURIComponent('Attribution conflicts with tracked data: '+reconciliation.reasons.join(', ').replaceAll('_',' ')))
- const {error}=await service.from('monetization_transactions').update(after).eq('id',id).eq('revenue_type','affiliate')
- if(!error)await service.from('affiliate_attribution_audit').insert({transaction_id:id,changed_by:(await (await createClient()).auth.getUser()).data.user?.id||null,change_source:'manual',before_values:before,after_values:after})
- redirect('/admin/monetization/review?'+(error?'error=Commission+attribution+could+not+be+saved':'message=Commission+attribution+updated'))
+ const changedBy=(await (await createClient()).auth.getUser()).data.user?.id||null
+ const {data:saved,error}=await service.rpc('update_affiliate_attribution_with_audit',{p_transaction_id:id,p_offer_id:offerId,p_click_id:clickId,p_merchant:merchant,p_placement:placement,p_perfume_id:perfumeId,p_changed_by:changedBy})
+ redirect('/admin/monetization/review?'+(error||saved!==true?'error=Commission+attribution+could+not+be+saved':'message=Commission+attribution+updated'))
 }
 
 
