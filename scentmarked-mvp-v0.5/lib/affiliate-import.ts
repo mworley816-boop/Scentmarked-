@@ -14,3 +14,8 @@ export function parseAffiliateCommissionCsv(text:string,defaultSource='affiliate
  }
  return {rows,errors}
 }
+
+export function affiliateImportQuality(rows:AffiliateImportRow[]){
+ const total=rows.length,withClick=rows.filter(x=>x.affiliate_click_id).length,withOffer=rows.filter(x=>x.affiliate_offer_id).length,withMerchant=rows.filter(x=>x.affiliate_merchant).length,withPerfume=rows.filter(x=>x.perfume_id).length,fullyAttributed=rows.filter(x=>x.affiliate_click_id&&x.affiliate_offer_id&&x.affiliate_merchant&&x.perfume_id&&x.affiliate_placement).length
+ return{total,withClick,withOffer,withMerchant,withPerfume,fullyAttributed,unattributed:total-fullyAttributed,attributionRate:total?fullyAttributed/total:0}
+}
