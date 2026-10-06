@@ -9,7 +9,7 @@ export function comparisonRanges(kind:ComparisonKind,now=new Date()){
  return {current:{from:currentFrom,to:today},previous:{from:previousFrom,to:previousTo}}
 }
 function change(current:number,previous:number){return previous?(current-previous)/Math.abs(previous):current?1:0}
-export function financialComparison(revenue:PnlRevenueRow[],expenses:PnlExpenseRow[],kind:ComparisonKind,now=new Date()){
- const ranges=comparisonRanges(kind,now),current=pnlSummary(revenue,expenses,ranges.current.from,ranges.current.to),previous=pnlSummary(revenue,expenses,ranges.previous.from,ranges.previous.to)
+export function financialComparison(revenue:PnlRevenueRow[],expenses:PnlExpenseRow[],kind:ComparisonKind,now=new Date(),currency='USD'){
+ const ranges=comparisonRanges(kind,now),current=pnlSummary(revenue,expenses,ranges.current.from,ranges.current.to,currency),previous=pnlSummary(revenue,expenses,ranges.previous.from,ranges.previous.to,currency)
  return {kind,ranges,current,previous,changes:{netRevenue:change(current.netRevenueCents,previous.netRevenueCents),expenses:change(current.expenseCents,previous.expenseCents),profit:change(current.profitCents,previous.profitCents),margin:current.profitMargin-previous.profitMargin}}
 }
