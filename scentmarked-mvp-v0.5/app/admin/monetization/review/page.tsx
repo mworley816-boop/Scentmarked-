@@ -15,7 +15,7 @@ export default async function AffiliateReconciliationPage({searchParams}:{search
  if(profile?.is_admin!==true)redirect('/discover')
  const service=createServiceClient()
  const {data:transactions}=await service.from('monetization_transactions').select('id,source_name,external_id,gross_cents,fee_cents,currency,status,occurred_at,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').eq('revenue_type','affiliate').order('occurred_at',{ascending:false}).limit(1000)
- const rows=(transactions||[]).filter((x:any)=>!x.affiliate_click_id||!x.affiliate_offer_id||!x.affiliate_merchant||!x.affiliate_placement||!x.perfume_id)
+ const rows=transactions||[]
  const clickIds=[...new Set(rows.map((x:any)=>x.affiliate_click_id).filter(Boolean))],offerIds=[...new Set(rows.map((x:any)=>x.affiliate_offer_id).filter(Boolean))]
  const {data:clicks}=clickIds.length?await service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').in('id',clickIds):{data:[]}
  for(const click of clicks||[])if(click.offer_id)offerIds.push(click.offer_id)
