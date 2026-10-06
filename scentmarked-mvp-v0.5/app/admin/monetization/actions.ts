@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { parseAffiliateCommissionCsv, affiliateImportQuality } from '@/lib/affiliate-import'
 import { enrichAffiliateRows } from '@/lib/affiliate-enrichment'
+import { reconcileAffiliateRow } from '@/lib/affiliate-reconciliation'
 
 const clean=(v:FormDataEntryValue|null,max=200)=>String(v||'').trim().slice(0,max)
 const cents=(v:FormDataEntryValue|null)=>Math.max(0,Math.round(Number(v||0)*100))
@@ -109,11 +110,16 @@ export async function updateAffiliateAttribution(formData:FormData){
  const merchant=clean(formData.get('affiliate_merchant'),160)||null,placement=clean(formData.get('affiliate_placement'),160)||null,perfumeId=clean(formData.get('perfume_id'),160)||null
  if(formData.get('affiliate_offer_id')&&offerId===null)redirect('/admin/monetization/review?error=Offer+ID+must+be+a+positive+number')
  if(formData.get('affiliate_click_id')&&clickId===null)redirect('/admin/monetization/review?error=Click+ID+must+be+a+positive+number')
- if(clickId){const {data:click}=await service.from('affiliate_clicks').select('id').eq('id',clickId).maybeSingle();if(!click)redirect('/admin/monetization/review?error=Tracked+click+was+not+found')}
- if(offerId){const {data:offer}=await service.from('perfume_affiliate_offers').select('id').eq('id',offerId).maybeSingle();if(!offer)redirect('/admin/monetization/review?error=Affiliate+offer+was+not+found')}
+ const {data:click}=clickId?await service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').eq('id',clickId).maybeSingle():{data:null}
+ if(clickId&&!click)redirect('/admin/monetization/review?error=Tracked+click+was+not+found')
+ const effectiveOfferId=offerId||click?.offer_id||null
+ const {data:offer}=effectiveOfferId?await service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').eq('id',effectiveOfferId).maybeSingle():{data:null}
+ if(offerId&&!offer)redirect('/admin/monetization/review?error=Affiliate+offer+was+not+found')
  const {data:before}=await service.from('monetization_transactions').select('affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').eq('id',id).eq('revenue_type','affiliate').maybeSingle()
  if(!before)redirect('/admin/monetization/review?error=Commission+was+not+found')
  const after={affiliate_offer_id:offerId,affiliate_click_id:clickId,affiliate_merchant:merchant,affiliate_placement:placement,perfume_id:perfumeId}
+ const reconciliation=reconcileAffiliateRow({...before,...after} as any,click?[click as any]:[],offer?[offer as any]:[])
+ if(reconciliation.state==='conflict')redirect('/admin/monetization/review?error='+encodeURIComponent('Attribution conflicts with tracked data: '+reconciliation.reasons.join(', ').replaceAll('_',' ')))
  const {error}=await service.from('monetization_transactions').update(after).eq('id',id).eq('revenue_type','affiliate')
  if(!error)await service.from('affiliate_attribution_audit').insert({transaction_id:id,changed_by:(await (await createClient()).auth.getUser()).data.user?.id||null,change_source:'manual',before_values:before,after_values:after})
  redirect('/admin/monetization/review?'+(error?'error=Commission+attribution+could+not+be+saved':'message=Commission+attribution+updated'))
