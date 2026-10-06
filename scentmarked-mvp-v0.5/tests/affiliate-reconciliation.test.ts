@@ -13,3 +13,7 @@ test('marks rows without usable tracking data unresolved',()=>assert.equal(recon
 test('summarizes reconciliation states',()=>{const rows:any[]=[base,{...base,external_id:'B',perfume_id:'p2'},{...base,external_id:'C',affiliate_click_id:null}];assert.deepEqual(affiliateReconciliationSummary(rows,clicks,offers),{complete:0,enrichable:1,conflict:1,unresolved:1})})
 
 test('flags contradictions even when every attribution field is populated',()=>{const row:any={...base,affiliate_offer_id:4,affiliate_merchant:'Store',affiliate_placement:'profile_featured',perfume_id:'p2'};const r=reconcileAffiliateRow(row,clicks,offers);assert.equal(r.state,'conflict');assert.ok(r.reasons.includes('perfume_click_conflict'))})
+
+test('flags missing offer references as conflicts',()=>{const r=reconcileAffiliateRow({...base,affiliate_offer_id:99},clicks,offers);assert.equal(r.state,'conflict');assert.ok(r.reasons.includes('offer_not_found'))})
+test('flags placement contradictions against tracked clicks',()=>{const r=reconcileAffiliateRow({...base,affiliate_placement:'homepage_banner'},clicks,offers);assert.equal(r.state,'conflict');assert.ok(r.reasons.includes('placement_click_conflict'))})
+test('flags merchant contradictions against tracked offers',()=>{const r=reconcileAffiliateRow({...base,affiliate_offer_id:4,affiliate_merchant:'Other Store'},clicks,offers);assert.equal(r.state,'conflict');assert.ok(r.reasons.includes('merchant_offer_conflict'))})
