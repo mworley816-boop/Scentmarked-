@@ -2,6 +2,9 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { affiliateClickWithinPeriod, affiliateExportPeriod } from '@/lib/affiliate-export'
+import { affiliateAttribution } from '@/lib/affiliate-attribution'
+import { money } from '@/lib/monetization'
+import { createServiceClient } from '@/lib/supabase/service'
 
 export const metadata={title:'Affiliate Performance | ScentMarked Studio',robots:{index:false,follow:false}}
 
@@ -16,7 +19,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
  try{const r=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle();isAdmin=r.data?.is_admin===true}catch{}
  if(!isAdmin)redirect('/discover')
 
- let clicks:any[]=[],offers:any[]=[],perfumes:any[]=[]
+ let clicks:any[]=[],offers:any[]=[],perfumes:any[]=[],revenue:any[]=[]
  try{
   const [o,p]=await Promise.all([
    s.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name,is_active,priority').order('priority',{ascending:true}),
@@ -34,6 +37,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
   }
  }catch{}
 
+ try{const service=createServiceClient();const r=await service.from('monetization_transactions').select('status,gross_cents,fee_cents,affiliate_offer_id,affiliate_merchant,affiliate_placement,perfume_id').eq('revenue_type','affiliate');if(!r.error)revenue=r.data||[]}catch{}
  const reportingNow=Date.now()
  const recent=(x:any)=>affiliateClickWithinPeriod(x.clicked_at,'30',reportingNow)
  const recent7=(x:any)=>affiliateClickWithinPeriod(x.clicked_at,'7',reportingNow)
@@ -69,6 +73,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
  const placementTotal=featured+more
  const featuredShare=placementTotal?Math.round(featured/placementTotal*100):0
  const moreShare=placementTotal?Math.round(more/placementTotal*100):0
+ const attributed=affiliateAttribution(clicks,revenue)
 
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
@@ -79,6 +84,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
   <div className="admin-stats"><span><b>{featuredShare}%</b>Featured placement share</span><span><b>{moreShare}%</b>Additional retailer share</span></div>
   <p className="muted">Placement share describes where tracked outbound clicks occurred during the selected reporting period. It does not measure purchases or prove that placement caused the difference.</p>
 
+  <h2>Revenue attribution</h2><p className="muted">Conversions and earnings come from imported commission records. EPC is net commission divided by tracked clicks; refunded and void transactions are excluded.</p><div className="admin-list">{[...attributed.placements.entries()].map(([name,m]:any)=><article key={name}><div><small>PLACEMENT</small><h2>{name.replaceAll('_',' ')}</h2><div className="admin-record-meta"><span>{m.clicks} clicks</span><span>{m.conversions} conversions</span><span>{(m.conversionRate*100).toFixed(2)}% conversion</span><span>{money(m.earningsCents)} earned</span><span>{money(m.epcCents)} EPC</span></div></div></article>)}</div>
   <h2>Last 7 days</h2>
   <div className="admin-stats">{daily.map((d:any)=><span key={d.key}><b>{d.count}</b>{d.label}</span>)}</div>
 
