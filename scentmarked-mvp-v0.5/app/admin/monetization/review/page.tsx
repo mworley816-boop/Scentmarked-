@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { reconcileAffiliateRow } from '@/lib/affiliate-reconciliation'
 import { money } from '@/lib/monetization'
-import { updateAffiliateAttribution } from '../actions'
+import { bulkEnrichAffiliateAttribution, updateAffiliateAttribution } from '../actions'
 
 export const metadata={title:'Affiliate Reconciliation | ScentMarked Studio',robots:{index:false,follow:false}}
 
@@ -30,7 +30,7 @@ export default async function AffiliateReconciliationPage({searchParams}:{search
   {params.error&&<p className="form-error" role="alert">{params.error}</p>}{params.message&&<p className="form-success" role="status">{params.message}</p>}
   <div className="admin-stats"><span><b>{queue.filter(x=>x.result.state==='enrichable').length}</b>Safe to auto-fill</span><span><b>{queue.filter(x=>x.result.state==='conflict').length}</b>Conflicts</span><span><b>{queue.filter(x=>x.result.state==='unresolved').length}</b>Unresolved</span></div>
   <p className="muted">Conflict records are never automatically overwritten. Save only attribution you have verified against the affiliate network or ScentMarked tracking data.</p>
-  <div className="admin-filters"><Link className="button ghost" href="/admin/monetization/review">All ({queue.length})</Link><Link className="button ghost" href="/admin/monetization/review?state=enrichable">Safe ({queue.filter(x=>x.result.state==='enrichable').length})</Link><Link className="button ghost" href="/admin/monetization/review?state=conflict">Conflicts ({queue.filter(x=>x.result.state==='conflict').length})</Link><Link className="button ghost" href="/admin/monetization/review?state=unresolved">Unresolved ({queue.filter(x=>x.result.state==='unresolved').length})</Link></div>
+  <div className="admin-filters">{queue.some(x=>x.result.state==='enrichable')&&<form action={bulkEnrichAffiliateAttribution}><button className="button">Auto-fill all verified matches</button></form>}<Link className="button ghost" href="/admin/monetization/review">All ({queue.length})</Link><Link className="button ghost" href="/admin/monetization/review?state=enrichable">Safe ({queue.filter(x=>x.result.state==='enrichable').length})</Link><Link className="button ghost" href="/admin/monetization/review?state=conflict">Conflicts ({queue.filter(x=>x.result.state==='conflict').length})</Link><Link className="button ghost" href="/admin/monetization/review?state=unresolved">Unresolved ({queue.filter(x=>x.result.state==='unresolved').length})</Link></div>
   <div className="admin-list">{visibleQueue.length?visibleQueue.map(({row,result}:any)=>{
    const click:any=row.affiliate_click_id?clickById.get(Number(row.affiliate_click_id)):null,offer:any=(row.affiliate_offer_id||click?.offer_id)?offerById.get(Number(row.affiliate_offer_id||click?.offer_id)):null
    const suggestedOffer=row.affiliate_offer_id||click?.offer_id||null,suggestedMerchant=row.affiliate_merchant||offer?.merchant_name||null,suggestedPlacement=row.affiliate_placement||click?.placement||null,suggestedPerfume=row.perfume_id||click?.perfume_id||offer?.perfume_id||null
