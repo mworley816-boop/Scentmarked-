@@ -13,7 +13,8 @@ import { revenueGoalMetrics } from '@/lib/revenue-goals'
 import { revenueStreamForecast } from '@/lib/revenue-stream-forecast'
 import { monetizationHealthAlerts } from '@/lib/monetization-health'
 import { monthlyRevenueHistory } from '@/lib/revenue-history'
-import { createSponsorship, recordRevenue, updateSponsorshipStatus, updateMembershipPlan, grantMembership, endManualMembership, importAffiliateCommissions, updateRevenueGoal } from './actions'
+import { profitabilityMetrics } from '@/lib/profitability'
+import { createSponsorship, recordRevenue, updateSponsorshipStatus, updateMembershipPlan, grantMembership, endManualMembership, importAffiliateCommissions, updateRevenueGoal, recordExpense } from './actions'
 
 export const metadata={title:'Monetization | ScentMarked Studio',robots:{index:false,follow:false}}
 
@@ -26,10 +27,10 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  const {data:profile}=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle()
  if(profile?.is_admin!==true)redirect('/discover')
 
- let transactions:any[]=[],campaigns:any[]=[],sponsorEvents:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],perfumes:any[]=[],goalHistory:any[]=[],goalSettings:any=null,clickCount=0,configured=true
+ let transactions:any[]=[],campaigns:any[]=[],sponsorEvents:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],perfumes:any[]=[],goalHistory:any[]=[],expenses:any[]=[],goalSettings:any=null,clickCount=0,configured=true
  try{
   const service=createServiceClient()
-  const [tx,sp,events,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows,settingsRow,goalHistoryRows]=await Promise.all([
+  const [tx,sp,events,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows,settingsRow,goalHistoryRows,expenseRows]=await Promise.all([
    service.from('monetization_transactions').select('revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).limit(5000),
    service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
    service.from('sponsorship_events').select('campaign_id,event_type,placement,occurred_at').order('occurred_at',{ascending:false}).limit(10000),
@@ -40,7 +41,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
    service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').limit(10000),
    service.from('perfumes').select('id,name').limit(10000),
    service.from('monetization_settings').select('monthly_revenue_goal_cents,currency').eq('id','default').maybeSingle(),
-   service.from('monetization_goal_history').select('month_start,goal_cents,currency').order('month_start',{ascending:false}).limit(24)
+   service.from('monetization_goal_history').select('month_start,goal_cents,currency').order('month_start',{ascending:false}).limit(24),
+   service.from('monetization_expenses').select('id,category,vendor,description,amount_cents,currency,incurred_at').order('incurred_at',{ascending:false}).limit(5000)
   ])
   if(!tx.error)transactions=tx.data||[]
   if(!sp.error)campaigns=sp.data||[]
@@ -53,6 +55,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   if(!perfumeRows.error)perfumes=perfumeRows.data||[]
   if(!settingsRow.error)goalSettings=settingsRow.data
   if(!goalHistoryRows.error)goalHistory=goalHistoryRows.data||[]
+  if(!expenseRows.error)expenses=expenseRows.data||[]
  }catch{configured=false}
 
  const summary=monetizationSummary(transactions)
@@ -60,6 +63,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  const goal=revenueGoalMetrics(trends.currentNetCents,Number(goalSettings?.monthly_revenue_goal_cents||100000))
  const streamForecast=revenueStreamForecast(transactions)
  const history=monthlyRevenueHistory(transactions,goalHistory,12)
+ const profitability=profitabilityMetrics(trends.currentNetCents,expenses)
  const periodTransactions=filterRevenuePeriod(transactions,period)
  const topSources=rankAffiliateRevenue(periodTransactions,'source_name'),topMerchants=rankAffiliateRevenue(periodTransactions,'affiliate_merchant'),topPlacements=rankAffiliateRevenue(periodTransactions,'affiliate_placement'),topPerfumes=rankAffiliateRevenue(periodTransactions,'perfume_id')
  const perfumeNames=new Map(perfumes.map((x:any)=>[String(x.id),x.name]))
@@ -83,6 +87,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   {!configured&&<div className="empty-state"><h2>Revenue reporting is not connected in this environment.</h2><p>Configure the server-only Supabase service role to read protected financial records. Public site functionality is unaffected.</p></div>}
   <div className="admin-stats"><span><b>{money(summary.grossCents)}</b>Gross tracked revenue</span><span><b>{money(summary.netCents)}</b>Net tracked revenue</span><span><b>{money(summary.feeCents)}</b>Tracked fees</span><span><b>{clickCount}</b>Affiliate outbound clicks</span><span><b>{activeCampaigns.length}</b>Active / scheduled sponsors</span></div>
   <p className="muted">Affiliate clicks are traffic signals, not sales. Revenue totals include only imported or recorded monetization transactions and exclude refunded or void transactions.</p>
+  <div className="admin-card"><h2>Record operating expense</h2><p className="muted">Track Scentmarked operating costs so Revenue Center can report profit instead of revenue alone.</p><form action={recordExpense} className="admin-filters"><select name="category" required><option value="hosting">Hosting</option><option value="software">Software</option><option value="marketing">Marketing</option><option value="contractor">Contractor</option><option value="legal">Legal</option><option value="accounting">Accounting</option><option value="content">Content</option><option value="other">Other</option></select><input name="vendor" placeholder="Vendor"/><input name="description" placeholder="Description"/><input name="amount" type="number" min="0.01" step="0.01" required placeholder="Amount $"/><input name="currency" defaultValue="USD" maxLength={3}/><input name="incurred_at" type="date"/><button className="button">Record Expense</button></form></div>
+  <div className="admin-card"><h2>Profitability this month</h2><div className="admin-stats"><span><b>{money(trends.currentNetCents,goalSettings?.currency||'USD')}</b>Net revenue</span><span><b>{money(profitability.expenseCents,goalSettings?.currency||'USD')}</b>Operating expenses</span><span><b>{money(profitability.profitCents,goalSettings?.currency||'USD')}</b>Operating profit</span><span><b>{(profitability.profitMargin*100).toFixed(1)}%</b>Profit margin</span><span><b>{profitability.expenses}</b>Expense records</span></div>{profitability.byCategory.length>0&&<div className="admin-record-meta">{profitability.byCategory.map(x=><span key={x.category}>{x.category}: {money(x.amountCents,goalSettings?.currency||'USD')}</span>)}</div>}</div>
   <div className="admin-card"><h2>Monthly revenue goal</h2><div className="admin-stats"><span><b>{money(goal.goalCents,goalSettings?.currency||'USD')}</b>Monthly target</span><span><b>{(goal.progress*100).toFixed(1)}%</b>Goal progress</span><span><b>{money(goal.projectedCents,goalSettings?.currency||'USD')}</b>Projected month-end</span><span><b>{money(goal.dailyNeededCents,goalSettings?.currency||'USD')}</b>Daily pace needed</span><span><b>{goal.onPace?'On pace':'Below pace'}</b>{goal.daysRemaining} days remaining</span></div><form action={updateRevenueGoal} className="admin-filters"><input name="monthly_goal" type="number" min="0" step="0.01" defaultValue={(goal.goalCents/100).toFixed(2)} aria-label="Monthly revenue goal"/><input name="currency" defaultValue={goalSettings?.currency||'USD'} maxLength={3} aria-label="Goal currency"/><button className="button ghost">Save monthly goal</button></form></div>
   <h2>Monthly performance history</h2><div className="admin-list">{[...history].reverse().map(row=><article key={row.month}><div><small>{new Date(row.month+'-01T00:00:00Z').toLocaleDateString('en-US',{month:'long',year:'numeric',timeZone:'UTC'})}</small><h2>{money(row.netCents,goalSettings?.currency||'USD')} net revenue</h2><div className="admin-record-meta"><span>{row.transactions} transaction{row.transactions===1?'':'s'}</span><span>{row.changeRate===null?'First tracked month':`${row.changeRate>=0?'+':''}${(row.changeRate*100).toFixed(1)}% vs prior month`}</span><span>{row.goalCents===null?'No saved goal':`Goal ${money(row.goalCents,goalSettings?.currency||'USD')}`}</span><span>{row.goalHit===null?'Goal status unavailable':row.goalHit?'Goal reached':'Goal not reached'}</span></div></div></article>)}</div>
   <h2>Revenue forecast by stream</h2><div className="admin-list">{streamForecast.map(stream=><article key={stream.type}><div><small>{stream.type.toUpperCase()}</small><h2>{money(stream.monthToDateCents,goalSettings?.currency||'USD')} month to date</h2><div className="admin-record-meta"><span>{(stream.share*100).toFixed(1)}% of current revenue</span><span>{stream.transactions} transaction{stream.transactions===1?'':'s'}</span><span>{money(stream.projectedCents,goalSettings?.currency||'USD')} projected month-end</span><span>{goal.goalCents?((stream.projectedCents/goal.goalCents)*100).toFixed(1):'0.0'}% of monthly target projected</span></div></div></article>)}</div><p className="muted">Forecasts extend each stream's current month-to-date net revenue pace through the end of the month. They are directional projections, not guaranteed future revenue.</p>
