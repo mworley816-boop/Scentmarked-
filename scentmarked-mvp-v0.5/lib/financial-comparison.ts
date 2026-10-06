@@ -1,4 +1,4 @@
-import { pnlSummary,type PnlRevenueRow,type PnlExpenseRow } from './pnl-summary'
+import { pnlSummary,type PnlRevenueRow,type PnlExpenseRow } from './pnl-summary.ts'
 export type ComparisonKind='month'|'quarter'|'ytd'
 function iso(d:Date){return d.toISOString().slice(0,10)}
 export function comparisonRanges(kind:ComparisonKind,now=new Date()){
