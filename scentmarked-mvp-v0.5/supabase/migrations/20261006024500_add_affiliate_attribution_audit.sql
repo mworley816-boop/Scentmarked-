@@ -17,3 +17,5 @@ grant usage, select on sequence public.affiliate_attribution_audit_id_seq to ser
 
 create index if not exists affiliate_attribution_audit_transaction_idx on public.affiliate_attribution_audit(transaction_id,created_at desc);
 create index if not exists affiliate_attribution_audit_created_idx on public.affiliate_attribution_audit(created_at desc);
+
+create index if not exists affiliate_attribution_audit_changed_by_idx on public.affiliate_attribution_audit(changed_by);
