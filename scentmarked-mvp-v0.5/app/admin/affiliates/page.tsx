@@ -64,8 +64,8 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
    ms.total++;if(recent(x))ms.recent++;if(recent7(x))ms.recent7++;if(periodMatch(x))ms.period++
   }
  }
- const merchantStats=[...merchantMap.values()].map(m=>({...m,offers:m.offers.size})).sort((a,b)=>b.period-a.period||b.total-a.total||a.name.localeCompare(b.name))
- const perfumeStats=perfumes.map((p:any)=>({p,...(perfumeMap.get(String(p.id))||{total:0,recent:0,recent7:0,period:0})})).filter((x:any)=>x.total>0).sort((a:any,b:any)=>b.period-a.period||b.total-a.total).slice(0,25)
+ const merchantStats=[...merchantMap.values()].map(m=>({...m,offers:m.offers.size,revenue:attributed.merchants.get(m.name)})).sort((a,b)=>b.period-a.period||b.total-a.total||a.name.localeCompare(b.name))
+ const perfumeStats=perfumes.map((p:any)=>({p,...(perfumeMap.get(String(p.id))||{total:0,recent:0,recent7:0,period:0}),revenue:attributed.perfumes.get(String(p.id))})).filter((x:any)=>x.total>0).sort((a:any,b:any)=>b.period-a.period||b.total-a.total).slice(0,25)
  const periodClicks=period==='7'?clicks.filter(recent7):period==='30'?clicks.filter(recent):clicks
  const periodLabel=period==='7'?'Last 7 days':period==='30'?'Last 30 days':'All time'
  const featured=periodClicks.filter((x:any)=>x.placement==='profile_featured').length
@@ -89,9 +89,9 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
   <div className="admin-stats">{daily.map((d:any)=><span key={d.key}><b>{d.count}</b>{d.label}</span>)}</div>
 
   <h2>Retailer performance</h2>
-  <div className="admin-list">{merchantStats.length?merchantStats.map((m:any)=><article key={m.name}><div><small>RETAILER</small><h2>{m.name}</h2><div className="admin-record-meta"><span>{m.period} {periodLabel.toLowerCase()}</span><span>{m.total} all time</span><span>{m.recent} last 30d</span><span>{m.recent7} last 7d</span><span>{m.offers} active offer{m.offers===1?'':'s'}</span></div></div></article>):<div className="empty-state"><h2>No active retailer performance yet.</h2></div>}</div>
+  <div className="admin-list">{merchantStats.length?merchantStats.map((m:any)=><article key={m.name}><div><small>RETAILER</small><h2>{m.name}</h2><div className="admin-record-meta"><span>{m.period} {periodLabel.toLowerCase()}</span><span>{m.total} all time</span><span>{m.recent} last 30d</span><span>{m.recent7} last 7d</span><span>{m.offers} active offer{m.offers===1?'':'s'}</span>{m.revenue&&<><span>{m.revenue.conversions} conversions</span><span>{money(m.revenue.earningsCents)} commission</span><span>{money(m.revenue.epcCents)} EPC</span></>}</div></div></article>):<div className="empty-state"><h2>No active retailer performance yet.</h2></div>}</div>
 
   <h2>Top fragrances</h2>
-  <div className="admin-list">{perfumeStats.length?perfumeStats.map(({p,total,recent,recent7,period:periodClicksForPerfume}:any)=><article key={p.id}><div><small>{p.brands?.name||'Brand'}</small><h2>{p.name}</h2><div className="admin-record-meta"><span>{periodClicksForPerfume} {periodLabel.toLowerCase()}</span><span>{total} all time</span><span>{recent} last 30d</span><span>{recent7} last 7d</span></div></div><div><Link className="button ghost" href={'/perfume/'+p.slug}>View</Link><Link className="button" href={'/admin/perfumes/'+p.id+'/edit#affiliate-offers'}>Retailers</Link></div></article>):<div className="empty-state"><h2>No retailer clicks have been recorded yet.</h2></div>}</div>
+  <div className="admin-list">{perfumeStats.length?perfumeStats.map(({p,total,recent,recent7,period:periodClicksForPerfume,revenue:perfumeRevenue}:any)=><article key={p.id}><div><small>{p.brands?.name||'Brand'}</small><h2>{p.name}</h2><div className="admin-record-meta"><span>{periodClicksForPerfume} {periodLabel.toLowerCase()}</span><span>{total} all time</span><span>{recent} last 30d</span><span>{recent7} last 7d</span>{perfumeRevenue&&<><span>{perfumeRevenue.conversions} conversions</span><span>{money(perfumeRevenue.earningsCents)} commission</span><span>{money(perfumeRevenue.epcCents)} EPC</span></>}</div></div><div><Link className="button ghost" href={'/perfume/'+p.slug}>View</Link><Link className="button" href={'/admin/perfumes/'+p.id+'/edit#affiliate-offers'}>Retailers</Link></div></article>):<div className="empty-state"><h2>No retailer clicks have been recorded yet.</h2></div>}</div>
  </section></main>
 }
