@@ -23,6 +23,12 @@ import { createSponsorship, recordRevenue, updateSponsorshipStatus, updateMember
 
 export const metadata={title:'Monetization | ScentMarked Studio',robots:{index:false,follow:false}}
 
+async function loadAll<T>(build:(from:number,to:number)=>PromiseLike<{data:T[]|null;error:any}>,pageSize=500){
+ const rows:T[]=[]
+ for(let from=0;;from+=pageSize){const {data,error}=await build(from,from+pageSize-1);if(error)throw error;const batch=data||[];rows.push(...batch);if(batch.length<pageSize)break}
+ return rows
+}
+
 export default async function MonetizationPage({searchParams}:{searchParams:Promise<{error?:string;message?:string;period?:string;report?:string;from?:string;to?:string;compare?:string}>}){
  const params=await searchParams
  const period=normalizeRevenuePeriod(params.period)
@@ -39,8 +45,9 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  let transactions:any[]=[],campaigns:any[]=[],sponsorEvents:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],perfumes:any[]=[],goalHistory:any[]=[],expenses:any[]=[],goalSettings:any=null,clickCount=0,configured=true
  try{
   const service=createServiceClient()
-  const [tx,sp,events,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows,settingsRow,goalHistoryRows,expenseRows]=await Promise.all([
-   service.from('monetization_transactions').select('revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).limit(5000),
+  const [txRows,expenseAll,sp,events,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows,settingsRow,goalHistoryRows]=await Promise.all([
+   loadAll<any>((from,to)=>service.from('monetization_transactions').select('revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).range(from,to)),
+   loadAll<any>((from,to)=>service.from('monetization_expenses').select('id,category,vendor,description,amount_cents,currency,incurred_at').order('incurred_at',{ascending:false}).range(from,to)),
    service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
    service.from('sponsorship_events').select('campaign_id,event_type,placement,occurred_at').order('occurred_at',{ascending:false}).limit(10000),
    service.from('membership_plans').select('id,slug,name,description,price_cents,billing_interval,currency,entitlements,is_active,sort_order').order('sort_order'),
@@ -50,10 +57,10 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
    service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').limit(10000),
    service.from('perfumes').select('id,name').limit(10000),
    service.from('monetization_settings').select('monthly_revenue_goal_cents,currency').eq('id','default').maybeSingle(),
-   service.from('monetization_goal_history').select('month_start,goal_cents,currency').order('month_start',{ascending:false}).limit(24),
-   service.from('monetization_expenses').select('id,category,vendor,description,amount_cents,currency,incurred_at').order('incurred_at',{ascending:false}).limit(5000)
+   service.from('monetization_goal_history').select('month_start,goal_cents,currency').order('month_start',{ascending:false}).limit(24)
   ])
-  if(!tx.error)transactions=tx.data||[]
+  transactions=txRows
+  expenses=expenseAll
   if(!sp.error)campaigns=sp.data||[]
   if(!events.error)sponsorEvents=events.data||[]
   if(!planRows.error)plans=planRows.data||[]
@@ -64,7 +71,6 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   if(!perfumeRows.error)perfumes=perfumeRows.data||[]
   if(!settingsRow.error)goalSettings=settingsRow.data
   if(!goalHistoryRows.error)goalHistory=goalHistoryRows.data||[]
-  if(!expenseRows.error)expenses=expenseRows.data||[]
  }catch{configured=false}
 
  const reportCurrency=String(goalSettings?.currency||'USD').toUpperCase()
