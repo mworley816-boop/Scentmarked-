@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { hasEntitlement, type MembershipState } from '../lib/membership.ts'
+import { hasEntitlement, type MembershipState } from '../lib/membership-entitlements.ts'
 
 const free:MembershipState={planSlug:'free',planName:'Free',status:'active',entitlements:['catalog','compare','community','basic_matches'],currentPeriodEnd:null,cancelAtPeriodEnd:false}
 
