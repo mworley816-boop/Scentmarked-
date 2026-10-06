@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { affiliateMetrics, money, monetizationSummary } from '@/lib/monetization'
+import { affiliateImportQuality } from '@/lib/affiliate-import'
 import { subscriptionMetrics } from '@/lib/subscription-metrics'
 import { createSponsorship, recordRevenue, updateSponsorshipStatus, updateMembershipPlan, grantMembership, endManualMembership, importAffiliateCommissions } from './actions'
 
@@ -20,7 +21,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  try{
   const service=createServiceClient()
   const [tx,sp,events,planRows,subscriptionRows,clicks]=await Promise.all([
-   service.from('monetization_transactions').select('revenue_type,gross_cents,fee_cents,status,occurred_at,currency').order('occurred_at',{ascending:false}).limit(5000),
+   service.from('monetization_transactions').select('revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).limit(5000),
    service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
    service.from('sponsorship_events').select('campaign_id,event_type,placement,occurred_at').order('occurred_at',{ascending:false}).limit(10000),
    service.from('membership_plans').select('id,slug,name,description,price_cents,billing_interval,currency,entitlements,is_active,sort_order').order('sort_order'),
@@ -37,6 +38,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
 
  const summary=monetizationSummary(transactions)
  const affiliate=affiliateMetrics(clickCount,transactions)
+ const affiliateRows=transactions.filter((x:any)=>x.revenue_type==='affiliate'&&!['refunded','void'].includes(x.status)),affiliateQuality=affiliateImportQuality(affiliateRows)
  const types=['affiliate','sponsorship','advertising','subscription'] as const
  const activeCampaigns=campaigns.filter((x:any)=>x.status==='active'||x.status==='scheduled')
  const membershipStats=subscriptionMetrics(subscriptions),premiumMembers=membershipStats.active
@@ -52,6 +54,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   {!configured&&<div className="empty-state"><h2>Revenue reporting is not connected in this environment.</h2><p>Configure the server-only Supabase service role to read protected financial records. Public site functionality is unaffected.</p></div>}
   <div className="admin-stats"><span><b>{money(summary.grossCents)}</b>Gross tracked revenue</span><span><b>{money(summary.netCents)}</b>Net tracked revenue</span><span><b>{money(summary.feeCents)}</b>Tracked fees</span><span><b>{clickCount}</b>Affiliate outbound clicks</span><span><b>{activeCampaigns.length}</b>Active / scheduled sponsors</span></div>
   <p className="muted">Affiliate clicks are traffic signals, not sales. Revenue totals include only imported or recorded monetization transactions and exclude refunded or void transactions.</p>
+  <h2>Affiliate data quality</h2><div className="admin-stats"><span><b>{affiliateQuality.total}</b>Commission records</span><span><b>{affiliateQuality.fullyAttributed}</b>Fully attributed</span><span><b>{affiliateQuality.unattributed}</b>Need attribution</span><span><b>{(affiliateQuality.attributionRate*100).toFixed(1)}%</b>Attribution rate</span></div><p className="muted">A fully attributed commission has a tracked click, offer, merchant, perfume and placement. Incomplete records still count as revenue but cannot support every performance breakdown.</p>
   <h2>Affiliate conversion funnel</h2><div className="admin-stats"><span><b>{affiliate.clicks}</b>Tracked clicks</span><span><b>{affiliate.conversions}</b>Recorded conversions</span><span><b>{(affiliate.conversionRate*100).toFixed(2)}%</b>Conversion rate</span><span><b>{money(affiliate.epcCents)}</b>Earnings per click</span><span><b>{money(affiliate.averageCommissionCents)}</b>Average commission</span></div><p className="muted">Conversion metrics become meaningful as affiliate network sale/commission reports are imported. A click alone is never counted as a conversion.</p>
   <h2>Revenue streams</h2>
   <div className="admin-stats">{types.map(type=><span key={type}><b>{money(summary.byType.get(type)||0)}</b>{type[0].toUpperCase()+type.slice(1)}</span>)}</div>
