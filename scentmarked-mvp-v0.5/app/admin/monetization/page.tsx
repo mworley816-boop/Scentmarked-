@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { affiliateMetrics, money, monetizationSummary } from '@/lib/monetization'
 import { affiliateImportQuality } from '@/lib/affiliate-import'
+import { affiliateReconciliationSummary } from '@/lib/affiliate-reconciliation'
 import { subscriptionMetrics } from '@/lib/subscription-metrics'
 import { createSponsorship, recordRevenue, updateSponsorshipStatus, updateMembershipPlan, grantMembership, endManualMembership, importAffiliateCommissions } from './actions'
 
@@ -17,16 +18,18 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  const {data:profile}=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle()
  if(profile?.is_admin!==true)redirect('/discover')
 
- let transactions:any[]=[],campaigns:any[]=[],sponsorEvents:any[]=[],plans:any[]=[],subscriptions:any[]=[],clickCount=0,configured=true
+ let transactions:any[]=[],campaigns:any[]=[],sponsorEvents:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],clickCount=0,configured=true
  try{
   const service=createServiceClient()
-  const [tx,sp,events,planRows,subscriptionRows,clicks]=await Promise.all([
+  const [tx,sp,events,planRows,subscriptionRows,clicks,clickRows,offerRows]=await Promise.all([
    service.from('monetization_transactions').select('revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).limit(5000),
    service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
    service.from('sponsorship_events').select('campaign_id,event_type,placement,occurred_at').order('occurred_at',{ascending:false}).limit(10000),
    service.from('membership_plans').select('id,slug,name,description,price_cents,billing_interval,currency,entitlements,is_active,sort_order').order('sort_order'),
    service.from('member_subscriptions').select('id,user_id,plan_id,provider,status,current_period_end,cancel_at_period_end').in('status',['trialing','active','past_due']).limit(5000),
-   service.from('affiliate_clicks').select('*',{count:'exact',head:true})
+   service.from('affiliate_clicks').select('*',{count:'exact',head:true}),
+   service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').limit(10000),
+   service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').limit(10000)
   ])
   if(!tx.error)transactions=tx.data||[]
   if(!sp.error)campaigns=sp.data||[]
@@ -34,11 +37,14 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   if(!planRows.error)plans=planRows.data||[]
   if(!subscriptionRows.error)subscriptions=subscriptionRows.data||[]
   clickCount=clicks.count||0
+  if(!clickRows.error)affiliateClicks=clickRows.data||[]
+  if(!offerRows.error)affiliateOffers=offerRows.data||[]
  }catch{configured=false}
 
  const summary=monetizationSummary(transactions)
  const affiliate=affiliateMetrics(clickCount,transactions)
  const affiliateRows=transactions.filter((x:any)=>x.revenue_type==='affiliate'&&!['refunded','void'].includes(x.status)),affiliateQuality=affiliateImportQuality(affiliateRows)
+ const reconciliation=affiliateReconciliationSummary(affiliateRows,affiliateClicks,affiliateOffers)
  const types=['affiliate','sponsorship','advertising','subscription'] as const
  const activeCampaigns=campaigns.filter((x:any)=>x.status==='active'||x.status==='scheduled')
  const membershipStats=subscriptionMetrics(subscriptions),premiumMembers=membershipStats.active
@@ -54,7 +60,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   {!configured&&<div className="empty-state"><h2>Revenue reporting is not connected in this environment.</h2><p>Configure the server-only Supabase service role to read protected financial records. Public site functionality is unaffected.</p></div>}
   <div className="admin-stats"><span><b>{money(summary.grossCents)}</b>Gross tracked revenue</span><span><b>{money(summary.netCents)}</b>Net tracked revenue</span><span><b>{money(summary.feeCents)}</b>Tracked fees</span><span><b>{clickCount}</b>Affiliate outbound clicks</span><span><b>{activeCampaigns.length}</b>Active / scheduled sponsors</span></div>
   <p className="muted">Affiliate clicks are traffic signals, not sales. Revenue totals include only imported or recorded monetization transactions and exclude refunded or void transactions.</p>
-  <h2>Affiliate data quality</h2><div className="admin-stats"><span><b>{affiliateQuality.total}</b>Commission records</span><span><b>{affiliateQuality.fullyAttributed}</b>Fully attributed</span><span><b>{affiliateQuality.unattributed}</b>Need attribution</span><span><b>{(affiliateQuality.attributionRate*100).toFixed(1)}%</b>Attribution rate</span></div><p className="muted">A fully attributed commission has a tracked click, offer, merchant, perfume and placement. Incomplete records still count as revenue but cannot support every performance breakdown.</p>{affiliateQuality.unattributed>0&&<div className="admin-filters"><a className="button ghost" href="/admin/monetization/reconciliation">Export records needing attribution</a><form action="/admin/monetization/reconcile" method="post"><button className="button ghost">Auto-fill exact attribution</button></form></div>}
+  <h2>Affiliate data quality</h2><div className="admin-stats"><span><b>{affiliateQuality.total}</b>Commission records</span><span><b>{affiliateQuality.fullyAttributed}</b>Fully attributed</span><span><b>{affiliateQuality.unattributed}</b>Need attribution</span><span><b>{(affiliateQuality.attributionRate*100).toFixed(1)}%</b>Attribution rate</span></div><p className="muted">A fully attributed commission has a tracked click, offer, merchant, perfume and placement. Incomplete records still count as revenue but cannot support every performance breakdown.</p>
+  <h3>Reconciliation queue</h3><div className="admin-stats"><span><b>{reconciliation.complete}</b>Complete</span><span><b>{reconciliation.enrichable}</b>Safe to auto-fill</span><span><b>{reconciliation.conflict}</b>Conflicts — review</span><span><b>{reconciliation.unresolved}</b>Unresolved</span></div><p className="muted">Only records backed by exact click or offer tracking are eligible for automatic enrichment. Conflicting imported values stay untouched for manual review.</p>{affiliateQuality.unattributed>0&&<div className="admin-filters"><a className="button ghost" href="/admin/monetization/reconciliation">Export review queue</a>{reconciliation.enrichable>0&&<form action="/admin/monetization/reconcile" method="post"><button className="button ghost">Auto-fill {reconciliation.enrichable} exact match{reconciliation.enrichable===1?'':'es'}</button></form>}</div>}
   <h2>Affiliate conversion funnel</h2><div className="admin-stats"><span><b>{affiliate.clicks}</b>Tracked clicks</span><span><b>{affiliate.conversions}</b>Recorded conversions</span><span><b>{(affiliate.conversionRate*100).toFixed(2)}%</b>Conversion rate</span><span><b>{money(affiliate.epcCents)}</b>Earnings per click</span><span><b>{money(affiliate.averageCommissionCents)}</b>Average commission</span></div><p className="muted">Conversion metrics become meaningful as affiliate network sale/commission reports are imported. A click alone is never counted as a conversion.</p>
   <h2>Revenue streams</h2>
   <div className="admin-stats">{types.map(type=><span key={type}><b>{money(summary.byType.get(type)||0)}</b>{type[0].toUpperCase()+type.slice(1)}</span>)}</div>
