@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react'
 
-type Props={id:number;name:string;sponsor:string;placement:string;disclosure:string;destinationUrl:string}
+type Props={id:number;name:string;sponsor:string;placement:string;disclosure:string}
 
-export default function SponsoredPlacement({id,name,sponsor,placement,disclosure,destinationUrl}:Props){
+export default function SponsoredPlacement({id,name,sponsor,placement,disclosure}:Props){
  useEffect(()=>{void fetch('/api/sponsorships/'+id+'/impression',{method:'POST',keepalive:true})},[id])
  return <aside className="sponsored-placement" aria-label={disclosure+' from '+sponsor}>
   <small className="sponsored-disclosure">{disclosure}</small>
