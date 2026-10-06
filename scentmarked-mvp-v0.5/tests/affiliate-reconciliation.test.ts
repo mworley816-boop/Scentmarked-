@@ -11,3 +11,5 @@ test('flags conflicting imported perfume for review',()=>{const r=reconcileAffil
 test('flags missing click references as conflicts',()=>assert.equal(reconcileAffiliateRow({...base,affiliate_click_id:99},clicks,offers).state,'conflict'))
 test('marks rows without usable tracking data unresolved',()=>assert.equal(reconcileAffiliateRow({...base,affiliate_click_id:null},clicks,offers).state,'unresolved'))
 test('summarizes reconciliation states',()=>{const rows:any[]=[base,{...base,external_id:'B',perfume_id:'p2'},{...base,external_id:'C',affiliate_click_id:null}];assert.deepEqual(affiliateReconciliationSummary(rows,clicks,offers),{complete:0,enrichable:1,conflict:1,unresolved:1})})
+
+test('flags contradictions even when every attribution field is populated',()=>{const row:any={...base,affiliate_offer_id:4,affiliate_merchant:'Store',affiliate_placement:'profile_featured',perfume_id:'p2'};const r=reconcileAffiliateRow(row,clicks,offers);assert.equal(r.state,'conflict');assert.ok(r.reasons.includes('perfume_click_conflict'))})
