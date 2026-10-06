@@ -21,9 +21,12 @@ import { createSponsorship, recordRevenue, updateSponsorshipStatus, updateMember
 
 export const metadata={title:'Monetization | ScentMarked Studio',robots:{index:false,follow:false}}
 
-export default async function MonetizationPage({searchParams}:{searchParams:Promise<{error?:string;message?:string;period?:string}>}){
+export default async function MonetizationPage({searchParams}:{searchParams:Promise<{error?:string;message?:string;period?:string;report?:string;from?:string;to?:string}>}){
  const params=await searchParams
  const period=normalizeRevenuePeriod(params.period)
+ const now=new Date(),preset=String(params.report||'month'),today=now.toISOString().slice(0,10)
+ const presetFrom=preset==='year'?new Date(Date.UTC(now.getUTCFullYear(),0,1)).toISOString().slice(0,10):preset==='quarter'?new Date(Date.UTC(now.getUTCFullYear(),Math.floor(now.getUTCMonth()/3)*3,1)).toISOString().slice(0,10):new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),1)).toISOString().slice(0,10)
+ const reportRange=financialDateRange(params.from||presetFrom,params.to||today,now)
  const s=await createClient()
  const {data:{user}}=await s.auth.getUser()
  if(!user)redirect('/login?next=/admin/monetization')
