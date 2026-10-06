@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { parseAffiliateCommissionCsv, affiliateImportQuality } from '@/lib/affiliate-import'
+import { enrichAffiliateRows } from '@/lib/affiliate-enrichment'
 
 const clean=(v:FormDataEntryValue|null,max=200)=>String(v||'').trim().slice(0,max)
 const cents=(v:FormDataEntryValue|null)=>Math.max(0,Math.round(Number(v||0)*100))
@@ -84,8 +85,13 @@ export async function importAffiliateCommissions(formData:FormData){
  const parsed=parseAffiliateCommissionCsv(await file.text(),source)
  if(parsed.errors.length)redirect('/admin/monetization?error='+encodeURIComponent(parsed.errors.slice(0,3).join(' ')))
  if(!parsed.rows.length)redirect('/admin/monetization?error=No+valid+commission+rows+were+found')
- const keys=parsed.rows.map(x=>x.external_id),{data:existing}=await service.from('monetization_transactions').select('external_id').eq('source_name',source).in('external_id',keys)
- const existingIds=new Set((existing||[]).map((x:any)=>String(x.external_id))),fresh=parsed.rows.filter(x=>!existingIds.has(x.external_id)),quality=affiliateImportQuality(fresh)
+ const clickIds=[...new Set(parsed.rows.map(x=>x.affiliate_click_id).filter((x):x is number=>!!x))],offerIds=[...new Set(parsed.rows.map(x=>x.affiliate_offer_id).filter((x):x is number=>!!x))]
+ const {data:clickRows}=clickIds.length?await service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').in('id',clickIds):{data:[]}
+ for(const click of clickRows||[])if(click.offer_id)offerIds.push(Number(click.offer_id))
+ const uniqueOfferIds=[...new Set(offerIds)],{data:offerRows}=uniqueOfferIds.length?await service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').in('id',uniqueOfferIds):{data:[]}
+ const enriched=enrichAffiliateRows(parsed.rows,clickRows||[],offerRows||[])
+ const keys=enriched.map(x=>x.external_id),{data:existing}=await service.from('monetization_transactions').select('external_id').eq('source_name',source).in('external_id',keys)
+ const existingIds=new Set((existing||[]).map((x:any)=>String(x.external_id))),fresh=enriched.filter(x=>!existingIds.has(x.external_id)),quality=affiliateImportQuality(fresh)
  const payload=fresh.map(row=>({...row,revenue_type:'affiliate'}))
  const {error}=payload.length?await service.from('monetization_transactions').insert(payload):{error:null}
  const duplicateCount=parsed.rows.length-fresh.length
