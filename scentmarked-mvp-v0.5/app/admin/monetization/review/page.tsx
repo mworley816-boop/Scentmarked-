@@ -26,7 +26,7 @@ export default async function AffiliateReconciliationPage({searchParams}:{search
  const clickById=new Map((clicks||[]).map((x:any)=>[Number(x.id),x])),offerById=new Map((offers||[]).map((x:any)=>[Number(x.id),x]))
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
-  <div className="admin-heading"><div><h1 className="page-title">Affiliate reconciliation</h1><p>Review incomplete or conflicting commission attribution before it is used for performance reporting.</p></div><Link className="button ghost" href="/admin/monetization">Revenue Center</Link></div>
+  <div className="admin-heading"><div><h1 className="page-title">Affiliate reconciliation</h1><p>Review incomplete or conflicting commission attribution before it is used for performance reporting.</p></div><div className="admin-filters"><Link className="button ghost" href="/admin/monetization/history">Attribution history</Link><Link className="button ghost" href="/admin/monetization">Revenue Center</Link></div></div>
   {params.error&&<p className="form-error" role="alert">{params.error}</p>}{params.message&&<p className="form-success" role="status">{params.message}</p>}
   <div className="admin-stats"><span><b>{queue.filter(x=>x.result.state==='enrichable').length}</b>Safe to auto-fill</span><span><b>{queue.filter(x=>x.result.state==='conflict').length}</b>Conflicts</span><span><b>{queue.filter(x=>x.result.state==='unresolved').length}</b>Unresolved</span></div>
   <p className="muted">Conflict records are never automatically overwritten. Save only attribution you have verified against the affiliate network or ScentMarked tracking data.</p>
