@@ -15,16 +15,18 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  const {data:profile}=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle()
  if(profile?.is_admin!==true)redirect('/discover')
 
- let transactions:any[]=[],campaigns:any[]=[],clickCount=0,configured=true
+ let transactions:any[]=[],campaigns:any[]=[],sponsorEvents:any[]=[],clickCount=0,configured=true
  try{
   const service=createServiceClient()
-  const [tx,sp,clicks]=await Promise.all([
+  const [tx,sp,events,clicks]=await Promise.all([
    service.from('monetization_transactions').select('revenue_type,gross_cents,fee_cents,status,occurred_at,currency').order('occurred_at',{ascending:false}).limit(5000),
    service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
+   service.from('sponsorship_events').select('campaign_id,event_type,placement,occurred_at').order('occurred_at',{ascending:false}).limit(10000),
    service.from('affiliate_clicks').select('*',{count:'exact',head:true})
   ])
   if(!tx.error)transactions=tx.data||[]
   if(!sp.error)campaigns=sp.data||[]
+  if(!events.error)sponsorEvents=events.data||[]
   clickCount=clicks.count||0
  }catch{configured=false}
 
@@ -32,6 +34,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  const affiliate=affiliateMetrics(clickCount,transactions)
  const types=['affiliate','sponsorship','advertising','subscription'] as const
  const activeCampaigns=campaigns.filter((x:any)=>x.status==='active'||x.status==='scheduled')
+ const sponsorImpressions=sponsorEvents.filter((x:any)=>x.event_type==='impression').length,sponsorClicks=sponsorEvents.filter((x:any)=>x.event_type==='click').length,sponsorCtr=sponsorImpressions?sponsorClicks/sponsorImpressions:0
 
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
@@ -45,6 +48,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   <h2>Affiliate conversion funnel</h2><div className="admin-stats"><span><b>{affiliate.clicks}</b>Tracked clicks</span><span><b>{affiliate.conversions}</b>Recorded conversions</span><span><b>{(affiliate.conversionRate*100).toFixed(2)}%</b>Conversion rate</span><span><b>{money(affiliate.epcCents)}</b>Earnings per click</span><span><b>{money(affiliate.averageCommissionCents)}</b>Average commission</span></div><p className="muted">Conversion metrics become meaningful as affiliate network sale/commission reports are imported. A click alone is never counted as a conversion.</p>
   <h2>Revenue streams</h2>
   <div className="admin-stats">{types.map(type=><span key={type}><b>{money(summary.byType.get(type)||0)}</b>{type[0].toUpperCase()+type.slice(1)}</span>)}</div>
+  <h2>Sponsorship performance</h2><div className="admin-stats"><span><b>{sponsorImpressions}</b>Impressions</span><span><b>{sponsorClicks}</b>Clicks</span><span><b>{(sponsorCtr*100).toFixed(2)}%</b>CTR</span></div>
   <h2>Sponsorship inventory</h2>
   <div className="admin-list">{campaigns.length?campaigns.map((x:any)=><article key={x.id}><div><small>{x.status.toUpperCase()} · {x.placement}</small><h2>{x.name}</h2><div className="admin-record-meta"><span>{x.sponsor_name}</span>{x.budget_cents!=null&&<span>{money(x.budget_cents,x.currency)} budget</span>}</div></div><form action={updateSponsorshipStatus} className="admin-filters"><input type="hidden" name="id" value={x.id}/><select name="status" defaultValue={x.status}><option value="draft">Draft</option><option value="scheduled">Scheduled</option><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select><button className="button ghost">Update</button></form></article>):<div className="empty-state"><h2>No sponsorship campaigns yet.</h2><p>The infrastructure is ready for direct sponsored placements without changing fragrance recommendation scores.</p></div>}</div>
  </section></main>
