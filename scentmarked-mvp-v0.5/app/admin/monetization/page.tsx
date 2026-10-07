@@ -46,8 +46,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  try{
   const service=createServiceClient()
   const [txRows,expenseAll,sp,activeSponsorCount,impressionCount,clickEventCount,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows,settingsRow,goalHistoryRows]=await Promise.all([
-   loadAll<any>((from,to)=>service.from('monetization_transactions').select('revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).range(from,to)),
-   loadAll<any>((from,to)=>service.from('monetization_expenses').select('id,category,vendor,description,amount_cents,currency,incurred_at').order('incurred_at',{ascending:false}).range(from,to)),
+   loadAll<any>((from,to)=>service.from('monetization_transactions').select('id,revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to)),
+   loadAll<any>((from,to)=>service.from('monetization_expenses').select('id,category,vendor,description,amount_cents,currency,incurred_at').order('incurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to)),
    service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
    service.from('sponsorship_campaigns').select('*',{count:'exact',head:true}).in('status',['active','scheduled']),
    service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','impression'),
