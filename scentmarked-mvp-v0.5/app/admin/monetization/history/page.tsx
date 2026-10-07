@@ -13,9 +13,12 @@ export default async function AttributionHistoryPage({searchParams}:{searchParam
  if(!user)redirect('/login?next=/admin/monetization/history')
  const {data:profile}=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle()
  if(profile?.is_admin!==true)redirect('/discover')
- const service=createServiceClient(),params=await searchParams,page=Math.max(1,Number.parseInt(params.page||'1',10)||1),pageSize=100,from=(page-1)*pageSize,to=from+pageSize-1
- const {data:audit,count}=await service.from('affiliate_attribution_audit').select('id,transaction_id,changed_by,change_source,before_values,after_values,created_at',{count:'exact'}).order('created_at',{ascending:false}).order('id',{ascending:false}).range(from,to)
- const total=count||0,totalPages=Math.max(1,Math.ceil(total/pageSize))
+ const service=createServiceClient(),params=await searchParams,requestedPage=Math.max(1,Number.parseInt(params.page||'1',10)||1),pageSize=100
+ const {count,error:countError}=await service.from('affiliate_attribution_audit').select('*',{count:'exact',head:true})
+ if(countError)throw countError
+ const total=count??0,totalPages=Math.max(1,Math.ceil(total/pageSize)),page=Math.min(requestedPage,totalPages),from=(page-1)*pageSize,to=from+pageSize-1
+ const {data:audit,error:auditError}=await service.from('affiliate_attribution_audit').select('id,transaction_id,changed_by,change_source,before_values,after_values,created_at').order('created_at',{ascending:false}).order('id',{ascending:false}).range(from,to)
+ if(auditError)throw auditError
  const userIds=[...new Set((audit||[]).map((x:any)=>x.changed_by).filter(Boolean))]
  const {data:admins}=userIds.length?await service.from('profiles').select('id,display_name').in('id',userIds):{data:[]}
  const adminById=new Map((admins||[]).map((x:any)=>[x.id,x.display_name||'Admin']))
