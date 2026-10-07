@@ -8,19 +8,21 @@ export const metadata={title:'Attribution History | ScentMarked Studio',robots:{
 const fields=['affiliate_click_id','affiliate_offer_id','affiliate_merchant','affiliate_placement','perfume_id']
 const display=(v:any)=>v===null||v===undefined||v===''?'—':String(v)
 
-export default async function AttributionHistoryPage(){
+export default async function AttributionHistoryPage({searchParams}:{searchParams:Promise<{page?:string}>}){
  const s=await createClient(),{data:{user}}=await s.auth.getUser()
  if(!user)redirect('/login?next=/admin/monetization/history')
  const {data:profile}=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle()
  if(profile?.is_admin!==true)redirect('/discover')
- const service=createServiceClient()
- const {data:audit}=await service.from('affiliate_attribution_audit').select('id,transaction_id,changed_by,change_source,before_values,after_values,created_at').order('created_at',{ascending:false}).limit(250)
+ const service=createServiceClient(),params=await searchParams,page=Math.max(1,Number.parseInt(params.page||'1',10)||1),pageSize=100,from=(page-1)*pageSize,to=from+pageSize-1
+ const {data:audit,count}=await service.from('affiliate_attribution_audit').select('id,transaction_id,changed_by,change_source,before_values,after_values,created_at',{count:'exact'}).order('created_at',{ascending:false}).order('id',{ascending:false}).range(from,to)
+ const total=count||0,totalPages=Math.max(1,Math.ceil(total/pageSize))
  const userIds=[...new Set((audit||[]).map((x:any)=>x.changed_by).filter(Boolean))]
  const {data:admins}=userIds.length?await service.from('profiles').select('id,display_name').in('id',userIds):{data:[]}
  const adminById=new Map((admins||[]).map((x:any)=>[x.id,x.display_name||'Admin']))
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
   <div className="admin-heading"><div><h1 className="page-title">Attribution history</h1><p>Immutable history of manual and automatic affiliate commission attribution changes.</p></div><div className="admin-filters"><Link className="button ghost" href="/admin/monetization/review">Review queue</Link><Link className="button ghost" href="/admin/monetization">Revenue Center</Link></div></div>
+  <p className="muted">Showing {total?from+1:0}–{Math.min(to+1,total)} of {total} attribution changes.</p>
   <div className="admin-list">{(audit||[]).length?(audit||[]).map((entry:any)=>{
    const before=entry.before_values||{},after=entry.after_values||{},changed=fields.filter(k=>display(before[k])!==display(after[k]))
    return <article key={entry.id}>
@@ -28,5 +30,6 @@ export default async function AttributionHistoryPage(){
     {changed.length?<div className="admin-list">{changed.map(k=><div key={k}><b>{k.replaceAll('_',' ')}</b><p className="muted">{display(before[k])} → {display(after[k])}</p></div>)}</div>:<p className="muted">No attribution field value changed.</p>}
    </article>
   }):<div className="empty-state"><h2>No attribution edits yet.</h2><p>Manual corrections and verified automatic enrichment will appear here.</p></div>}</div>
+  {totalPages>1&&<div className="admin-filters">{page>1&&<Link className="button ghost" href={`/admin/monetization/history?page=${page-1}`}>Previous</Link>}<span>Page {page} of {totalPages}</span>{page<totalPages&&<Link className="button ghost" href={`/admin/monetization/history?page=${page+1}`}>Next</Link>}</div>}
  </section></main>
 }
