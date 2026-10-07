@@ -49,6 +49,8 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
    loadAll<any>((from,to)=>service.from('monetization_transactions').select('id,revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to)),
    loadAll<any>((from,to)=>service.from('monetization_expenses').select('id,category,vendor,description,amount_cents,currency,incurred_at').order('incurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to))
   ])
+  transactions=txRows
+  expenses=expenseAll
  }catch{configured=false;financialDataAvailable=false}
  try{
   const [sp,totalSponsorCount,activeSponsorCount,impressionCount,clickEventCount,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows,settingsRow,goalHistoryRows]=await Promise.all([
@@ -66,8 +68,6 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
    service.from('monetization_settings').select('monthly_revenue_goal_cents,currency').eq('id','default').maybeSingle(),
    service.from('monetization_goal_history').select('month_start,goal_cents,currency').order('month_start',{ascending:false}).limit(24)
   ])
-  transactions=txRows
-  expenses=expenseAll
   if(!sp.error)campaigns=sp.data||[];else campaignsAvailable=false
   totalCampaignCount=totalSponsorCount.error?null:(totalSponsorCount.count??0)
   activeCampaignCount=activeSponsorCount.error?null:(activeSponsorCount.count??0)
