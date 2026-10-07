@@ -4,5 +4,5 @@ export function profitabilityMetrics(revenueNetCents:number,expenses:ExpenseRow[
  const current=expenses.filter(x=>{const d=new Date(x.incurred_at+'T00:00:00Z');return d>=start&&d<end})
  const expenseCents=current.reduce((s,x)=>s+Number(x.amount_cents||0),0),profitCents=Number(revenueNetCents||0)-expenseCents
  const byCategory=new Map<string,number>();for(const x of current)byCategory.set(x.category,(byCategory.get(x.category)||0)+Number(x.amount_cents||0))
- return {expenseCents,profitCents,profitMargin:revenueNetCents?profitCents/revenueNetCents:0,expenses:current.length,byCategory:[...byCategory].map(([category,amountCents])=>({category,amountCents})).sort((a,b)=>b.amountCents-a.amountCents)}
+ return {expenseCents,profitCents,profitMargin:revenueNetCents?profitCents/revenueNetCents:null,expenses:current.length,byCategory:[...byCategory].map(([category,amountCents])=>({category,amountCents})).sort((a,b)=>b.amountCents-a.amountCents)}
 }
