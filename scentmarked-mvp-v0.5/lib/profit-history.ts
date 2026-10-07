@@ -1,7 +1,7 @@
 export type ProfitRevenueRow={gross_cents:number;fee_cents:number;status:string;occurred_at:string}
 export type ProfitExpenseRow={category:string;amount_cents:number;incurred_at:string}
 export function monthlyProfitHistory(revenue:ProfitRevenueRow[],expenses:ProfitExpenseRow[],months=12,now=new Date()){
- const out=[] as {month:string;revenueCents:number;expenseCents:number;profitCents:number;margin:number;topExpenseCategory:string|null;topExpenseCents:number}[]
+ const out=[] as {month:string;revenueCents:number;expenseCents:number;profitCents:number;margin:number|null;topExpenseCategory:string|null;topExpenseCents:number}[]
  for(let offset=months-1;offset>=0;offset--){
   const start=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-offset,1)),end=new Date(Date.UTC(start.getUTCFullYear(),start.getUTCMonth()+1,1))
   const rr=revenue.filter(x=>!['refunded','void'].includes(x.status)&&new Date(x.occurred_at)>=start&&new Date(x.occurred_at)<end)
