@@ -11,5 +11,5 @@ export function comparisonRanges(kind:ComparisonKind,now=new Date()){
 function change(current:number,previous:number):number|null{return previous?(current-previous)/Math.abs(previous):current?null:0}
 export function financialComparison(revenue:PnlRevenueRow[],expenses:PnlExpenseRow[],kind:ComparisonKind,now=new Date(),currency='USD'){
  const ranges=comparisonRanges(kind,now),current=pnlSummary(revenue,expenses,ranges.current.from,ranges.current.to,currency),previous=pnlSummary(revenue,expenses,ranges.previous.from,ranges.previous.to,currency)
- return {kind,ranges,current,previous,changes:{netRevenue:change(current.netRevenueCents,previous.netRevenueCents),expenses:change(current.expenseCents,previous.expenseCents),profit:change(current.profitCents,previous.profitCents),margin:current.profitMargin-previous.profitMargin}}
+ return {kind,ranges,current,previous,changes:{netRevenue:change(current.netRevenueCents,previous.netRevenueCents),expenses:change(current.expenseCents,previous.expenseCents),profit:change(current.profitCents,previous.profitCents),margin:current.profitMargin===null||previous.profitMargin===null?null:current.profitMargin-previous.profitMargin}}
 }
