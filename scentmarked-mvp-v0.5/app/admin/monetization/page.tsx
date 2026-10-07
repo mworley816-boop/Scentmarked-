@@ -43,11 +43,15 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  if(profile?.is_admin!==true)redirect('/discover')
 
  let transactions:any[]=[],campaigns:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],perfumes:any[]=[],goalHistory:any[]=[],expenses:any[]=[],goalSettings:any=null,clickCount:number|null=null,sponsorImpressions:number|null=null,sponsorClicks:number|null=null,activeCampaignCount:number|null=null,totalCampaignCount:number|null=null,campaignsAvailable=true,plansAvailable=true,goalSettingsAvailable=true,goalHistoryAvailable=true,configured=true,financialDataAvailable=true
+ const service=createServiceClient()
  try{
-  const service=createServiceClient()
-  const [txRows,expenseAll,sp,totalSponsorCount,activeSponsorCount,impressionCount,clickEventCount,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows,settingsRow,goalHistoryRows]=await Promise.all([
+  const [txRows,expenseAll]=await Promise.all([
    loadAll<any>((from,to)=>service.from('monetization_transactions').select('id,revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to)),
-   loadAll<any>((from,to)=>service.from('monetization_expenses').select('id,category,vendor,description,amount_cents,currency,incurred_at').order('incurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to)),
+   loadAll<any>((from,to)=>service.from('monetization_expenses').select('id,category,vendor,description,amount_cents,currency,incurred_at').order('incurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to))
+  ])
+ }catch{configured=false;financialDataAvailable=false}
+ try{
+  const [sp,totalSponsorCount,activeSponsorCount,impressionCount,clickEventCount,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows,settingsRow,goalHistoryRows]=await Promise.all([
    service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
    service.from('sponsorship_campaigns').select('*',{count:'exact',head:true}),
    service.from('sponsorship_campaigns').select('*',{count:'exact',head:true}).in('status',['active','scheduled']),
@@ -77,7 +81,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   perfumes=perfumeRows
   if(!settingsRow.error)goalSettings=settingsRow.data;else goalSettingsAvailable=false
   if(!goalHistoryRows.error)goalHistory=goalHistoryRows.data||[];else goalHistoryAvailable=false
- }catch{configured=false;financialDataAvailable=false}
+ }catch{configured=false}
 
  const reportCurrency=String(goalSettings?.currency||'USD').toUpperCase()
  const reportTransactions=transactions.filter((x:any)=>String(x.currency||reportCurrency).toUpperCase()===reportCurrency)
