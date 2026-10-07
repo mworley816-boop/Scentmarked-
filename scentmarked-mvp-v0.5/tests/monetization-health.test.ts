@@ -9,3 +9,5 @@ test('flags goal pace, pending revenue, conflicts, unresolved attribution and lo
 })
 test('flags inactive streams as informational',()=>{const alerts=monetizationHealthAlerts({...base,streams:[...base.streams.slice(0,3),{type:'subscription',monthToDateCents:0,projectedCents:0}]});assert.equal(alerts.find(x=>x.code==='inactive_subscription')?.severity,'info')})
 test('stays quiet when core metrics are healthy',()=>assert.equal(monetizationHealthAlerts(base).length,0))
+
+test('skips conversion alert when affiliate click count is unavailable',()=>{const alerts=monetizationHealthAlerts({...base,affiliateClicks:null,affiliateConversions:0});assert.ok(!alerts.some(x=>x.code==='low_affiliate_conversion'))})
