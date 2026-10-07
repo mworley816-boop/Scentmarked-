@@ -13,24 +13,39 @@ export default async function AffiliateReconciliationPage({searchParams}:{search
  if(!user)redirect('/login?next=/admin/monetization/review')
  const {data:profile}=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle()
  if(profile?.is_admin!==true)redirect('/discover')
- const service=createServiceClient(),page=Math.max(1,Number.parseInt(params.page||'1',10)||1),pageSize=250,from=(page-1)*pageSize,to=from+pageSize-1
- const {data:transactions,count}=await service.from('monetization_transactions').select('id,source_name,external_id,gross_cents,fee_cents,currency,status,occurred_at,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id',{count:'exact'}).eq('revenue_type','affiliate').order('occurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to)
- const rows=transactions||[],total=count||0,totalPages=Math.max(1,Math.ceil(total/pageSize))
- const clickIds=[...new Set(rows.map((x:any)=>x.affiliate_click_id).filter(Boolean))],offerIds=[...new Set(rows.map((x:any)=>x.affiliate_offer_id).filter(Boolean))]
- const {data:clicks}=clickIds.length?await service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').in('id',clickIds):{data:[]}
- for(const click of clicks||[])if(click.offer_id)offerIds.push(click.offer_id)
- const {data:offers}=offerIds.length?await service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').in('id',[...new Set(offerIds)]):{data:[]}
- const queue=rows.map((row:any)=>({row,result:reconcileAffiliateRow(row,clicks||[],offers||[])})).filter(x=>x.result.state!=='complete')
+ const service=createServiceClient(),page=Math.max(1,Number.parseInt(params.page||'1',10)||1),pageSize=250,scanSize=500
  const selectedState=['enrichable','conflict','unresolved'].includes(params.state||'')?params.state:''
- const visibleQueue=selectedState?queue.filter(x=>x.result.state===selectedState):queue
- const clickById=new Map((clicks||[]).map((x:any)=>[Number(x.id),x])),offerById=new Map((offers||[]).map((x:any)=>[Number(x.id),x]))
+ const queue:any[]=[]
+ let scanned=0
+ for(let from=0;;from+=scanSize){
+  const {data:transactions,error}=await service.from('monetization_transactions').select('id,source_name,external_id,gross_cents,fee_cents,currency,status,occurred_at,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').eq('revenue_type','affiliate').order('occurred_at',{ascending:false}).order('id',{ascending:false}).range(from,from+scanSize-1)
+  if(error)throw error
+  const rows=transactions||[]
+  scanned+=rows.length
+  const clickIds=[...new Set(rows.map((x:any)=>x.affiliate_click_id).filter(Boolean))],offerIds=[...new Set(rows.map((x:any)=>x.affiliate_offer_id).filter(Boolean))]
+  const {data:clicks,error:clickError}=clickIds.length?await service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').in('id',clickIds):{data:[],error:null}
+  if(clickError)throw clickError
+  for(const click of clicks||[])if(click.offer_id)offerIds.push(click.offer_id)
+  const {data:offers,error:offerError}=offerIds.length?await service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').in('id',[...new Set(offerIds)]):{data:[],error:null}
+  if(offerError)throw offerError
+  for(const row of rows){
+   const result=reconcileAffiliateRow(row,clicks||[],offers||[])
+   if(result.state!=='complete')queue.push({row,result,clicks:clicks||[],offers:offers||[]})
+  }
+  if(rows.length<scanSize)break
+ }
+ const stateQueue=selectedState?queue.filter(x=>x.result.state===selectedState):queue
+ const total=stateQueue.length,totalPages=Math.max(1,Math.ceil(total/pageSize)),safePage=Math.min(page,totalPages),from=(safePage-1)*pageSize,to=Math.min(from+pageSize,total)
+ const visibleQueue=stateQueue.slice(from,to)
+ const visibleClicks=visibleQueue.flatMap(x=>x.clicks),visibleOffers=visibleQueue.flatMap(x=>x.offers)
+ const clickById=new Map(visibleClicks.map((x:any)=>[Number(x.id),x])),offerById=new Map(visibleOffers.map((x:any)=>[Number(x.id),x]))
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
   <div className="admin-heading"><div><h1 className="page-title">Affiliate reconciliation</h1><p>Review incomplete or conflicting commission attribution before it is used for performance reporting.</p></div><div className="admin-filters"><Link className="button ghost" href="/admin/monetization/history">Attribution history</Link><Link className="button ghost" href="/admin/monetization">Revenue Center</Link></div></div>
   {params.error&&<p className="form-error" role="alert">{params.error}</p>}{params.message&&<p className="form-success" role="status">{params.message}</p>}
   <div className="admin-stats"><span><b>{queue.filter(x=>x.result.state==='enrichable').length}</b>Safe to auto-fill</span><span><b>{queue.filter(x=>x.result.state==='conflict').length}</b>Conflicts</span><span><b>{queue.filter(x=>x.result.state==='unresolved').length}</b>Unresolved</span></div>
   <p className="muted">Conflict records are never automatically overwritten. Save only attribution you have verified against the affiliate network or ScentMarked tracking data.</p>
-  <p className="muted">Showing affiliate commissions {total?from+1:0}–{Math.min(to+1,total)} of {total}. Queue counts below apply to this page.</p>
+  <p className="muted">Showing reconciliation records {total?from+1:0}–{to} of {total}{selectedState?' '+selectedState:''}. Scanned {scanned} affiliate commissions.</p>
   <div className="admin-filters">{queue.some(x=>x.result.state==='enrichable')&&<form action={bulkEnrichAffiliateAttribution}><button className="button">Auto-fill all verified matches</button></form>}<Link className="button ghost" href="/admin/monetization/review">All ({queue.length})</Link><Link className="button ghost" href="/admin/monetization/review?state=enrichable">Safe ({queue.filter(x=>x.result.state==='enrichable').length})</Link><Link className="button ghost" href="/admin/monetization/review?state=conflict">Conflicts ({queue.filter(x=>x.result.state==='conflict').length})</Link><Link className="button ghost" href="/admin/monetization/review?state=unresolved">Unresolved ({queue.filter(x=>x.result.state==='unresolved').length})</Link></div>
   <div className="admin-list">{visibleQueue.length?visibleQueue.map(({row,result}:any)=>{
    const click:any=row.affiliate_click_id?clickById.get(Number(row.affiliate_click_id)):null,offer:any=(row.affiliate_offer_id||click?.offer_id)?offerById.get(Number(row.affiliate_offer_id||click?.offer_id)):null
@@ -49,6 +64,6 @@ export default async function AffiliateReconciliationPage({searchParams}:{search
     </form>
    </article>
   }):<div className="empty-state"><h2>{selectedState?'No '+selectedState+' commissions.':'Reconciliation queue is clear.'}</h2><p>{selectedState?'Choose another filter to review the remaining queue.':'There are no incomplete or conflicting affiliate commissions to review.'}</p></div>}</div>
-  {totalPages>1&&<div className="admin-filters">{page>1&&<Link className="button ghost" href={`/admin/monetization/review?page=${page-1}${selectedState?'&state='+selectedState:''}`}>Previous</Link>}<span>Page {page} of {totalPages}</span>{page<totalPages&&<Link className="button ghost" href={`/admin/monetization/review?page=${page+1}${selectedState?'&state='+selectedState:''}`}>Next</Link>}</div>}
+  {totalPages>1&&<div className="admin-filters">{safePage>1&&<Link className="button ghost" href={`/admin/monetization/review?page=${safePage-1}${selectedState?'&state='+selectedState:''}`}>Previous</Link>}<span>Page {safePage} of {totalPages}</span>{safePage<totalPages&&<Link className="button ghost" href={`/admin/monetization/review?page=${safePage+1}${selectedState?'&state='+selectedState:''}`}>Next</Link>}</div>}
  </section></main>
 }
