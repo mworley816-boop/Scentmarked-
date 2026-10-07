@@ -30,3 +30,5 @@ test('affiliate metrics distinguish clicks from conversions',()=>{
  assert.equal(m.epcCents,8)
  assert.equal(m.averageCommissionCents,400)
 })
+
+test('affiliate metrics preserve unavailable click-derived rates',()=>{const m=affiliateMetrics(null,[{revenue_type:'affiliate',gross_cents:500,fee_cents:0,status:'paid',occurred_at:'2026-10-01',currency:'USD'}]);assert.equal(m.clicks,null);assert.equal(m.conversions,1);assert.equal(m.conversionRate,null);assert.equal(m.epcCents,null)})
