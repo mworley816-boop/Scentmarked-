@@ -51,27 +51,37 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   expenses=await loadAll<any>((from,to)=>service.from('monetization_expenses').select('id,category,vendor,description,amount_cents,currency,incurred_at').order('incurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to))
  }catch{configured=false;expenseDataAvailable=false}
  try{
-  const [sp,totalSponsorCount,activeSponsorCount,impressionCount,clickEventCount,planRows,clicks,settingsRow,goalHistoryRows]=await Promise.all([
-   service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
+  const sp=await service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100)
+  if(!sp.error)campaigns=sp.data||[];else campaignsAvailable=false
+ }catch{campaignsAvailable=false}
+ try{
+  const [totalSponsorCount,activeSponsorCount,impressionCount,clickEventCount]=await Promise.all([
    service.from('sponsorship_campaigns').select('*',{count:'exact',head:true}),
    service.from('sponsorship_campaigns').select('*',{count:'exact',head:true}).in('status',['active','scheduled']),
    service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','impression'),
-   service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','click'),
-   service.from('membership_plans').select('id,slug,name,description,price_cents,billing_interval,currency,entitlements,is_active,sort_order').order('sort_order'),
-   service.from('affiliate_clicks').select('*',{count:'exact',head:true}),
-   service.from('monetization_settings').select('monthly_revenue_goal_cents,currency').eq('id','default').maybeSingle(),
-   service.from('monetization_goal_history').select('month_start,goal_cents,currency').order('month_start',{ascending:false}).limit(24)
+   service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','click')
   ])
-  if(!sp.error)campaigns=sp.data||[];else campaignsAvailable=false
   totalCampaignCount=totalSponsorCount.error?null:(totalSponsorCount.count??0)
   activeCampaignCount=activeSponsorCount.error?null:(activeSponsorCount.count??0)
   sponsorImpressions=impressionCount.error?null:(impressionCount.count??0)
   sponsorClicks=clickEventCount.error?null:(clickEventCount.count??0)
+ }catch{totalCampaignCount=null;activeCampaignCount=null;sponsorImpressions=null;sponsorClicks=null}
+ try{
+  const planRows=await service.from('membership_plans').select('id,slug,name,description,price_cents,billing_interval,currency,entitlements,is_active,sort_order').order('sort_order')
   if(!planRows.error)plans=planRows.data||[];else plansAvailable=false
+ }catch{plansAvailable=false}
+ try{
+  const clicks=await service.from('affiliate_clicks').select('*',{count:'exact',head:true})
   clickCount=clicks.error?null:(clicks.count??0)
+ }catch{clickCount=null}
+ try{
+  const settingsRow=await service.from('monetization_settings').select('monthly_revenue_goal_cents,currency').eq('id','default').maybeSingle()
   if(!settingsRow.error)goalSettings=settingsRow.data;else goalSettingsAvailable=false
+ }catch{goalSettingsAvailable=false}
+ try{
+  const goalHistoryRows=await service.from('monetization_goal_history').select('month_start,goal_cents,currency').order('month_start',{ascending:false}).limit(24)
   if(!goalHistoryRows.error)goalHistory=goalHistoryRows.data||[];else goalHistoryAvailable=false
- }catch{configured=false}
+ }catch{goalHistoryAvailable=false}
  try{
   subscriptions=await loadAll<any>((from,to)=>service.from('member_subscriptions').select('id,user_id,plan_id,provider,status,current_period_end,cancel_at_period_end').in('status',['trialing','active','past_due']).order('id',{ascending:true}).range(from,to))
  }catch{subscriptionsAvailable=false}
