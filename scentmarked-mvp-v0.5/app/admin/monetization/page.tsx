@@ -42,7 +42,7 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  const {data:profile}=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle()
  if(profile?.is_admin!==true)redirect('/discover')
 
- let transactions:any[]=[],campaigns:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],perfumes:any[]=[],goalHistory:any[]=[],expenses:any[]=[],goalSettings:any=null,clickCount:number|null=null,sponsorImpressions:number|null=null,sponsorClicks:number|null=null,activeCampaignCount:number|null=null,totalCampaignCount:number|null=null,campaignsAvailable=true,plansAvailable=true,goalSettingsAvailable=true,goalHistoryAvailable=true,configured=true,revenueDataAvailable=true,expenseDataAvailable=true
+ let transactions:any[]=[],campaigns:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],perfumes:any[]=[],goalHistory:any[]=[],expenses:any[]=[],goalSettings:any=null,clickCount:number|null=null,sponsorImpressions:number|null=null,sponsorClicks:number|null=null,activeCampaignCount:number|null=null,totalCampaignCount:number|null=null,campaignsAvailable=true,plansAvailable=true,subscriptionsAvailable=true,affiliateContextAvailable=true,perfumeLookupAvailable=true,goalSettingsAvailable=true,goalHistoryAvailable=true,configured=true,revenueDataAvailable=true,expenseDataAvailable=true
  const service=createServiceClient()
  try{
   transactions=await loadAll<any>((from,to)=>service.from('monetization_transactions').select('id,revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to))
@@ -51,18 +51,14 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   expenses=await loadAll<any>((from,to)=>service.from('monetization_expenses').select('id,category,vendor,description,amount_cents,currency,incurred_at').order('incurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to))
  }catch{configured=false;expenseDataAvailable=false}
  try{
-  const [sp,totalSponsorCount,activeSponsorCount,impressionCount,clickEventCount,planRows,subscriptionRows,clicks,clickRows,offerRows,perfumeRows,settingsRow,goalHistoryRows]=await Promise.all([
+  const [sp,totalSponsorCount,activeSponsorCount,impressionCount,clickEventCount,planRows,clicks,settingsRow,goalHistoryRows]=await Promise.all([
    service.from('sponsorship_campaigns').select('id,name,sponsor_name,placement,status,starts_at,ends_at,budget_cents,currency').order('created_at',{ascending:false}).limit(100),
    service.from('sponsorship_campaigns').select('*',{count:'exact',head:true}),
    service.from('sponsorship_campaigns').select('*',{count:'exact',head:true}).in('status',['active','scheduled']),
    service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','impression'),
    service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','click'),
    service.from('membership_plans').select('id,slug,name,description,price_cents,billing_interval,currency,entitlements,is_active,sort_order').order('sort_order'),
-   loadAll<any>((from,to)=>service.from('member_subscriptions').select('id,user_id,plan_id,provider,status,current_period_end,cancel_at_period_end').in('status',['trialing','active','past_due']).order('id',{ascending:true}).range(from,to)),
    service.from('affiliate_clicks').select('*',{count:'exact',head:true}),
-   loadAll<any>((from,to)=>service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').order('id',{ascending:true}).range(from,to)),
-   loadAll<any>((from,to)=>service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').order('id',{ascending:true}).range(from,to)),
-   loadAll<any>((from,to)=>service.from('perfumes').select('id,name').order('id',{ascending:true}).range(from,to)),
    service.from('monetization_settings').select('monthly_revenue_goal_cents,currency').eq('id','default').maybeSingle(),
    service.from('monetization_goal_history').select('month_start,goal_cents,currency').order('month_start',{ascending:false}).limit(24)
   ])
@@ -72,14 +68,24 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   sponsorImpressions=impressionCount.error?null:(impressionCount.count??0)
   sponsorClicks=clickEventCount.error?null:(clickEventCount.count??0)
   if(!planRows.error)plans=planRows.data||[];else plansAvailable=false
-  subscriptions=subscriptionRows
   clickCount=clicks.error?null:(clicks.count??0)
-  affiliateClicks=clickRows
-  affiliateOffers=offerRows
-  perfumes=perfumeRows
   if(!settingsRow.error)goalSettings=settingsRow.data;else goalSettingsAvailable=false
   if(!goalHistoryRows.error)goalHistory=goalHistoryRows.data||[];else goalHistoryAvailable=false
  }catch{configured=false}
+ try{
+  subscriptions=await loadAll<any>((from,to)=>service.from('member_subscriptions').select('id,user_id,plan_id,provider,status,current_period_end,cancel_at_period_end').in('status',['trialing','active','past_due']).order('id',{ascending:true}).range(from,to))
+ }catch{subscriptionsAvailable=false}
+ try{
+  const [clickRows,offerRows]=await Promise.all([
+   loadAll<any>((from,to)=>service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').order('id',{ascending:true}).range(from,to)),
+   loadAll<any>((from,to)=>service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').order('id',{ascending:true}).range(from,to))
+  ])
+  affiliateClicks=clickRows
+  affiliateOffers=offerRows
+ }catch{affiliateContextAvailable=false}
+ try{
+  perfumes=await loadAll<any>((from,to)=>service.from('perfumes').select('id,name').order('id',{ascending:true}).range(from,to))
+ }catch{perfumeLookupAvailable=false}
 
  const reportCurrency=String(goalSettings?.currency||'USD').toUpperCase()
  const reportTransactions=transactions.filter((x:any)=>String(x.currency||reportCurrency).toUpperCase()===reportCurrency)
