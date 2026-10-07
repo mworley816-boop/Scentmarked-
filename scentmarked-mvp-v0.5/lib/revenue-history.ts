@@ -7,7 +7,7 @@ export function monthlyRevenueHistory(rows:MonthlyRevenueRow[],goals:GoalHistory
   const active=rows.filter(x=>!['refunded','void'].includes(x.status)&&new Date(x.occurred_at)>=start&&new Date(x.occurred_at)<end)
   const netCents=active.reduce((s,x)=>s+Number(x.gross_cents||0)-Number(x.fee_cents||0),0),month=start.toISOString().slice(0,7)
   const goal=goals.find(x=>x.month_start.slice(0,7)===month),prev=out.at(-1)
-  out.push({month,netCents,transactions:active.length,goalCents:goal?Number(goal.goal_cents):null,goalHit:goal?netCents>=Number(goal.goal_cents):null,changeRate:prev?(prev.netCents?((netCents-prev.netCents)/prev.netCents):netCents?1:0):null})
+  out.push({month,netCents,transactions:active.length,goalCents:goal?Number(goal.goal_cents):null,goalHit:goal?netCents>=Number(goal.goal_cents):null,changeRate:prev?(prev.netCents?((netCents-prev.netCents)/prev.netCents):netCents===0?0:null):null})
  }
  return out
 }
