@@ -8,7 +8,7 @@ export function monthlyProfitHistory(revenue:ProfitRevenueRow[],expenses:ProfitE
   const ee=expenses.filter(x=>{const d=new Date(x.incurred_at+'T00:00:00Z');return d>=start&&d<end})
   const revenueCents=rr.reduce((s,x)=>s+Number(x.gross_cents||0)-Number(x.fee_cents||0),0),expenseCents=ee.reduce((s,x)=>s+Number(x.amount_cents||0),0),profitCents=revenueCents-expenseCents
   const cats=new Map<string,number>();for(const x of ee)cats.set(x.category,(cats.get(x.category)||0)+Number(x.amount_cents||0));const top=[...cats].sort((a,b)=>b[1]-a[1])[0]
-  out.push({month:start.toISOString().slice(0,7),revenueCents,expenseCents,profitCents,margin:revenueCents?profitCents/revenueCents:null,topExpenseCategory:top?.[0]||null,topExpenseCents:top?.[1]||0})
+  out.push({month:start.toISOString().slice(0,7),revenueCents,expenseCents,profitCents,margin:revenueCents>0?profitCents/revenueCents:null,topExpenseCategory:top?.[0]||null,topExpenseCents:top?.[1]||0})
  }
  return out
 }
