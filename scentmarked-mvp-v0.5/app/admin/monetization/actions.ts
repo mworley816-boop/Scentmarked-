@@ -56,7 +56,7 @@ export async function updateMembershipPlan(formData:FormData){
  const service=await requireAdmin()
  const id=Number(formData.get('id')),name=clean(formData.get('name'),120),description=clean(formData.get('description'),500),interval=clean(formData.get('billing_interval'),20),currency=(clean(formData.get('currency'),3)||'USD').toUpperCase()
  const price=cents(formData.get('price')),entitlements=clean(formData.get('entitlements'),1000).split(',').map(x=>x.trim()).filter(Boolean)
- if(!Number.isInteger(id)||!name||!['month','year','one_time'].includes(interval)||currency.length!==3)redirect('/admin/monetization?error=Invalid+membership+plan')
+ if(!Number.isInteger(id)||!name||!['month','year','one_time'].includes(interval)||!/^[A-Z]{3}$/.test(currency)||!Number.isSafeInteger(price)||price<=0)redirect('/admin/monetization?error=Invalid+membership+plan')
  const {error}=await service.from('membership_plans').update({name,description:description||null,price_cents:price,billing_interval:interval,currency,entitlements,is_active:formData.get('is_active')==='on',updated_at:new Date().toISOString()}).eq('id',id)
  redirect('/admin/monetization?'+(error?'error=Membership+plan+could+not+be+updated':'message=Membership+plan+updated'))
 }
