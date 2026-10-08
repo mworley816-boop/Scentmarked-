@@ -26,7 +26,8 @@ export async function recordRevenue(formData:FormData){
  const source_name=clean(formData.get('source_name'),120)
  const status=clean(formData.get('status'),30)||'pending'
  if(!['affiliate','sponsorship','advertising','subscription','other'].includes(revenue_type)||!source_name||!['pending','confirmed','paid','refunded','void'].includes(status))redirect('/admin/monetization?error=Invalid+revenue+entry')
- const payload={revenue_type,source_name,external_id:clean(formData.get('external_id'),160)||null,gross_cents:cents(formData.get('gross')),fee_cents:cents(formData.get('fees')),currency:(clean(formData.get('currency'),3)||'USD').toUpperCase(),status,occurred_at:clean(formData.get('occurred_at'),40)||new Date().toISOString(),notes:clean(formData.get('notes'),1000)||null}
+ const payload={revenue_type,source_name,external_id:clean(formData.get('external_id'),160)||null,gross_cents:cents(formData.get('gross')),fee_cents:String(formData.get('fees')||'').trim()===''?0:cents(formData.get('fees')),currency:(clean(formData.get('currency'),3)||'USD').toUpperCase(),status,occurred_at:clean(formData.get('occurred_at'),40)||new Date().toISOString(),notes:clean(formData.get('notes'),1000)||null}
+ if(!Number.isSafeInteger(payload.gross_cents)||payload.gross_cents<=0||!Number.isSafeInteger(payload.fee_cents)||payload.fee_cents<0||!/^[A-Z]{3}$/.test(payload.currency))redirect('/admin/monetization?error=Invalid+revenue+amount+or+currency')
  const {error}=await service.from('monetization_transactions').insert(payload)
  redirect('/admin/monetization?'+(error?'error='+encodeURIComponent(error.code==='23505'?'That external transaction has already been recorded.':'Revenue entry could not be saved.'):'message=Revenue+recorded'))
 }
