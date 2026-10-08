@@ -55,17 +55,21 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
   if(!sp.error)campaigns=sp.data||[];else campaignsAvailable=false
  }catch{campaignsAvailable=false}
  try{
-  const [totalSponsorCount,activeSponsorCount,impressionCount,clickEventCount]=await Promise.all([
-   service.from('sponsorship_campaigns').select('*',{count:'exact',head:true}),
-   service.from('sponsorship_campaigns').select('*',{count:'exact',head:true}).in('status',['active','scheduled']),
-   service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','impression'),
-   service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','click')
-  ])
-  totalCampaignCount=totalSponsorCount.error?null:(totalSponsorCount.count??0)
-  activeCampaignCount=activeSponsorCount.error?null:(activeSponsorCount.count??0)
-  sponsorImpressions=impressionCount.error?null:(impressionCount.count??0)
-  sponsorClicks=clickEventCount.error?null:(clickEventCount.count??0)
- }catch{totalCampaignCount=null;activeCampaignCount=null;sponsorImpressions=null;sponsorClicks=null}
+  const result=await service.from('sponsorship_campaigns').select('*',{count:'exact',head:true})
+  totalCampaignCount=result.error?null:(result.count??0)
+ }catch{totalCampaignCount=null}
+ try{
+  const result=await service.from('sponsorship_campaigns').select('*',{count:'exact',head:true}).in('status',['active','scheduled'])
+  activeCampaignCount=result.error?null:(result.count??0)
+ }catch{activeCampaignCount=null}
+ try{
+  const result=await service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','impression')
+  sponsorImpressions=result.error?null:(result.count??0)
+ }catch{sponsorImpressions=null}
+ try{
+  const result=await service.from('sponsorship_events').select('*',{count:'exact',head:true}).eq('event_type','click')
+  sponsorClicks=result.error?null:(result.count??0)
+ }catch{sponsorClicks=null}
  try{
   const planRows=await service.from('membership_plans').select('id,slug,name,description,price_cents,billing_interval,currency,entitlements,is_active,sort_order').order('sort_order')
   if(!planRows.error)plans=planRows.data||[];else plansAvailable=false
