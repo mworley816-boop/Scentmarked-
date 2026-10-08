@@ -170,7 +170,7 @@ export async function recordExpense(formData:FormData){
 
 export async function updateExpense(formData:FormData){
  const service=await requireAdmin(),id=Number(formData.get('id')),category=clean(formData.get('category'),30),vendor=clean(formData.get('vendor'),120),description=clean(formData.get('description'),300),amountCents=cents(formData.get('amount')),currency=clean(formData.get('currency'),3).toUpperCase()||'USD',incurredAt=clean(formData.get('incurred_at'),10)
- if(!Number.isInteger(id)||id<=0||!['hosting','software','marketing','contractor','legal','accounting','content','other'].includes(category)||!Number.isSafeInteger(amountCents)||!Number.isSafeInteger(amountCents)||amountCents<=0||!/^[A-Z]{3}$/.test(currency)||!validExpenseDate(incurredAt))redirect('/admin/monetization?error=Invalid+expense')
+ if(!Number.isInteger(id)||id<=0||!['hosting','software','marketing','contractor','legal','accounting','content','other'].includes(category)||!Number.isSafeInteger(amountCents)||amountCents<=0||!/^[A-Z]{3}$/.test(currency)||!validExpenseDate(incurredAt))redirect('/admin/monetization?error=Invalid+expense')
  const {error}=await service.from('monetization_expenses').update({category,vendor:vendor||null,description:description||null,amount_cents:amountCents,currency,incurred_at:incurredAt}).eq('id',id)
  redirect('/admin/monetization?'+(error?'error=Expense+could+not+be+updated':'message=Expense+updated'))
 }
