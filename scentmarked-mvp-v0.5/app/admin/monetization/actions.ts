@@ -63,8 +63,8 @@ export async function updateMembershipPlan(formData:FormData){
 
 export async function grantMembership(formData:FormData){
  const service=await requireAdmin()
- const email=clean(formData.get('email'),320).toLowerCase(),planId=Number(formData.get('plan_id')),days=Math.min(3660,Math.max(1,Number(formData.get('days')||30)))
- if(!email||!Number.isInteger(planId))redirect('/admin/monetization?error=Member+email+and+plan+are+required')
+ const email=clean(formData.get('email'),320).toLowerCase(),planId=Number(formData.get('plan_id')),days=Number(formData.get('days')||30)
+ if(!email||!Number.isSafeInteger(planId)||planId<=0||!Number.isSafeInteger(days)||days<1||days>3660)redirect('/admin/monetization?error=Valid+member%2C+plan+and+duration+are+required')
  const {data:users,error:userError}=await service.auth.admin.listUsers({page:1,perPage:1000})
  const user=users?.users?.find(x=>String(x.email||'').toLowerCase()===email)
  if(userError||!user)redirect('/admin/monetization?error=No+account+was+found+for+that+email')
