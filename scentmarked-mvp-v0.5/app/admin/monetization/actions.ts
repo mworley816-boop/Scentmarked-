@@ -30,6 +30,7 @@ export async function recordRevenue(formData:FormData){
  const payload={revenue_type,source_name,external_id:clean(formData.get('external_id'),160)||null,gross_cents:cents(formData.get('gross')),fee_cents:String(formData.get('fees')||'').trim()===''?0:nonnegativeCents(formData.get('fees')),currency:(clean(formData.get('currency'),3)||'USD').toUpperCase(),status,occurred_at:clean(formData.get('occurred_at'),40)||new Date().toISOString(),notes:clean(formData.get('notes'),1000)||null}
  if(!Number.isSafeInteger(payload.gross_cents)||payload.gross_cents<=0||!Number.isSafeInteger(payload.fee_cents)||payload.fee_cents<0||!/^[A-Z]{3}$/.test(payload.currency))redirect('/admin/monetization?error=Invalid+revenue+amount+or+currency')
  if(!Number.isFinite(Date.parse(payload.occurred_at)))redirect('/admin/monetization?error=Invalid+revenue+date')
+ if(payload.fee_cents>payload.gross_cents)redirect('/admin/monetization?error=Transaction+fees+cannot+exceed+gross+revenue')
  const {error}=await service.from('monetization_transactions').insert(payload)
  redirect('/admin/monetization?'+(error?'error='+encodeURIComponent(error.code==='23505'?'That external transaction has already been recorded.':'Revenue entry could not be saved.'):'message=Revenue+recorded'))
 }
