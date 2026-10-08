@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import AffiliateLink from '@/components/affiliate-link'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import MarkScent from '@/components/mark-scent'
 import RateScent from '@/components/rate-scent'
@@ -23,7 +23,19 @@ export default async function PerfumePage({params}:{params:Promise<{slug:string}
  const {slug}=await params;let s:any;let result:any
  try{s=await createClient();result=await s.from('perfumes').select('id,name,slug,description,image_url,concentration,release_year,country,gender_marketing,price_low,price_high,brands(name,slug),perfume_notes(position,notes(name,slug)),perfume_accords(strength,accords(name,slug))').eq('slug',slug).eq('status','published').maybeSingle()}catch{return <main className="profile-page"><section className="empty-state"><h1>Fragrance profile temporarily unavailable</h1><p>Please try again in a moment.</p><Link className="button" href="/discover">Discover Fragrances</Link></section></main>}
  if(result.error)return <main className="profile-page"><section className="empty-state"><h1>Fragrance profile temporarily unavailable</h1><p>The fragrance data could not be loaded. Please try again in a moment.</p><Link className="button" href="/discover">Discover Fragrances</Link></section></main>
- if(!result.data)notFound()
+ if(!result.data){
+  // Resolve historical perfume slugs without exposing duplicate profile pages.
+  try{
+   const alias=await s.from('perfume_aliases').select('perfume_id').eq('alias_slug',slug).maybeSingle()
+   if(!alias.error&&alias.data?.perfume_id){
+    const canonical=await s.from('perfumes').select('slug').eq('id',alias.data.perfume_id).eq('status','published').maybeSingle()
+    if(!canonical.error&&canonical.data?.slug&&canonical.data.slug!==slug){
+     permanentRedirect('/perfume/'+encodeURIComponent(canonical.data.slug))
+    }
+   }
+  }catch(error){if(error&&typeof error==='object'&&'digest' in error)throw error}
+  notFound()
+ }
  const p:any=result.data;let fallbackImage:any=null;try{const now=new Date().toISOString(),r=await s.from('site_content').select('image_url,alt_text').eq('content_key','perfume_fallback').eq('is_active',true).or('starts_at.is.null,starts_at.lte.'+now).or('ends_at.is.null,ends_at.gte.'+now).maybeSingle();fallbackImage=r.data}catch{}const primaryImage=safeImageUrl(p.image_url),fallbackImageUrl=safeImageUrl(fallbackImage?.image_url),displayImage=primaryImage||fallbackImageUrl||null,notes:any[]=p.perfume_notes||[],accords:any[]=Array.from((p.perfume_accords||[]).reduce((map:Map<string,any>,a:any)=>{const accordName=publicText(a?.accords?.name,80),rawStrength=Number(a?.strength);if(!accordName||!Number.isFinite(rawStrength)||rawStrength<=0)return map;const strength=Math.max(0,Math.min(100,rawStrength)),key=accordName.toLocaleLowerCase(),existing=map.get(key);if(!existing||strength>existing.strength)map.set(key,{...a,strength,accords:{...a.accords,name:accordName}});return map},new Map<string,any>()).values()),name=publicText(p.name,120)||'Fragrance',description=publicText(p.description,1200),brand=publicText(p.brands?.name,100)||'Scentmarked',brandSlug=publicText(p.brands?.slug,200),profileSlug=publicText(p.slug,200)||slug
  const accordStrength=(value:any)=>Math.max(0,Math.min(100,Number(value)))
  const heroNotes=notes.map((n:any)=>n.notes).filter((n:any)=>typeof n?.name==='string'&&n.name.trim()).map((n:any)=>({...n,name:n.name.trim()})).filter((n:any,i:number,list:any[])=>list.findIndex((x:any)=>x.name.toLowerCase()===n.name.toLowerCase())===i).slice(0,5)
