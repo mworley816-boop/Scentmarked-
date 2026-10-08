@@ -107,8 +107,8 @@ export async function importAffiliateCommissions(formData:FormData){
 export async function updateAffiliateAttribution(formData:FormData){
  const service=await requireAdmin()
  const id=Number(formData.get('id'))
- if(!Number.isInteger(id)||id<=0)redirect('/admin/monetization/review?error=Invalid+commission')
- const numberOrNull=(name:string)=>{const raw=clean(formData.get(name),40);if(!raw)return null;const n=Number(raw);return Number.isInteger(n)&&n>0?n:null}
+ if(!Number.isSafeInteger(id)||id<=0)redirect('/admin/monetization/review?error=Invalid+commission')
+ const numberOrNull=(name:string)=>{const raw=clean(formData.get(name),40);if(!raw)return null;const n=Number(raw);return Number.isSafeInteger(n)&&n>0?n:null}
  const offerId=numberOrNull('affiliate_offer_id'),clickId=numberOrNull('affiliate_click_id')
  const merchant=clean(formData.get('affiliate_merchant'),160)||null,placement=clean(formData.get('affiliate_placement'),160)||null,perfumeId=clean(formData.get('perfume_id'),160)||null
  if(formData.get('affiliate_offer_id')&&offerId===null)redirect('/admin/monetization/review?error=Offer+ID+must+be+a+positive+number')
@@ -172,13 +172,13 @@ export async function recordExpense(formData:FormData){
 
 export async function updateExpense(formData:FormData){
  const service=await requireAdmin(),id=Number(formData.get('id')),category=clean(formData.get('category'),30),vendor=clean(formData.get('vendor'),120),description=clean(formData.get('description'),300),amountCents=cents(formData.get('amount')),currency=clean(formData.get('currency'),3).toUpperCase()||'USD',incurredAt=clean(formData.get('incurred_at'),10)
- if(!Number.isInteger(id)||id<=0||!['hosting','software','marketing','contractor','legal','accounting','content','other'].includes(category)||!Number.isSafeInteger(amountCents)||amountCents<=0||!/^[A-Z]{3}$/.test(currency)||!validExpenseDate(incurredAt))redirect('/admin/monetization?error=Invalid+expense')
+ if(!Number.isSafeInteger(id)||id<=0||!['hosting','software','marketing','contractor','legal','accounting','content','other'].includes(category)||!Number.isSafeInteger(amountCents)||amountCents<=0||!/^[A-Z]{3}$/.test(currency)||!validExpenseDate(incurredAt))redirect('/admin/monetization?error=Invalid+expense')
  const {error}=await service.from('monetization_expenses').update({category,vendor:vendor||null,description:description||null,amount_cents:amountCents,currency,incurred_at:incurredAt}).eq('id',id)
  redirect('/admin/monetization?'+(error?'error=Expense+could+not+be+updated':'message=Expense+updated'))
 }
 export async function deleteExpense(formData:FormData){
  const service=await requireAdmin(),id=Number(formData.get('id'))
- if(!Number.isInteger(id)||id<=0)redirect('/admin/monetization?error=Invalid+expense')
+ if(!Number.isSafeInteger(id)||id<=0)redirect('/admin/monetization?error=Invalid+expense')
  const {error}=await service.from('monetization_expenses').delete().eq('id',id)
  redirect('/admin/monetization?'+(error?'error=Expense+could+not+be+deleted':'message=Expense+deleted'))
 }
