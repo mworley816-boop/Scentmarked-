@@ -78,7 +78,7 @@ export async function grantMembership(formData:FormData){
 
 export async function endManualMembership(formData:FormData){
  const service=await requireAdmin(),id=Number(formData.get('id'))
- if(!Number.isInteger(id))redirect('/admin/monetization?error=Invalid+membership')
+ if(!Number.isSafeInteger(id)||id<=0)redirect('/admin/monetization?error=Invalid+membership')
  const {error}=await service.from('member_subscriptions').update({status:'cancelled',current_period_end:new Date().toISOString(),cancel_at_period_end:true,updated_at:new Date().toISOString()}).eq('id',id).eq('provider','manual')
  redirect('/admin/monetization?'+(error?'error=Membership+could+not+be+ended':'message=Manual+membership+ended'))
 }
