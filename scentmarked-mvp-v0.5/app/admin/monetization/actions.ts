@@ -8,7 +8,7 @@ import { enrichAffiliateRows } from '@/lib/affiliate-enrichment'
 import { reconcileAffiliateRow } from '@/lib/affiliate-reconciliation'
 
 const clean=(v:FormDataEntryValue|null,max=200)=>String(v||'').trim().slice(0,max)
-const cents=(v:FormDataEntryValue|null)=>Math.max(0,Math.round(Number(v||0)*100))
+const cents=(v:FormDataEntryValue|null)=>{const n=Number(v);return v===null||String(v).trim()===''||!Number.isFinite(n)||n<=0||n>Number.MAX_SAFE_INTEGER/100?NaN:Math.round(n*100)}
 
 async function requireAdmin(){
  const s=await createClient()
