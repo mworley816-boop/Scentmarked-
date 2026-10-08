@@ -39,6 +39,7 @@ export async function createSponsorship(formData:FormData){
  const status=clean(formData.get('status'),30)||'draft'
  const budgetRaw=clean(formData.get('budget'),30)
  const payload={name,sponsor_name,placement,status:['draft','scheduled','active','paused','completed','cancelled'].includes(status)?status:'draft',destination_url:clean(formData.get('destination_url'),1000)||null,starts_at:clean(formData.get('starts_at'),40)||null,ends_at:clean(formData.get('ends_at'),40)||null,budget_cents:budgetRaw?cents(formData.get('budget')):null,currency:(clean(formData.get('currency'),3)||'USD').toUpperCase(),disclosure_label:clean(formData.get('disclosure_label'),80)||'Sponsored',notes:clean(formData.get('notes'),1000)||null}
+ if(!/^[A-Z]{3}$/.test(payload.currency)||payload.budget_cents!==null&&(!Number.isSafeInteger(payload.budget_cents)||payload.budget_cents<=0))redirect('/admin/monetization?error=Invalid+campaign+budget+or+currency')
  const {error}=await service.from('sponsorship_campaigns').insert(payload)
  redirect('/admin/monetization?'+(error?'error=Campaign+could+not+be+saved':'message=Sponsorship+campaign+created'))
 }
