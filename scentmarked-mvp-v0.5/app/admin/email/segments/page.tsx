@@ -82,8 +82,10 @@ async function toggleSegment(formData:FormData){
   const s=await requireAdmin()
   const id=Number(formData.get('id'))
   const active=String(formData.get('active'))==='true'
-  if(!Number.isSafeInteger(id))redirect('/admin/email/segments')
-  await s.from('crm_segments').update({is_active:active,updated_at:new Date().toISOString()}).eq('id',id)
+  if(!Number.isSafeInteger(id)||id<=0)redirect('/admin/email/segments?error='+encodeURIComponent('Invalid segment.'))
+  const {data,error}=await s.from('crm_segments').update({is_active:active,updated_at:new Date().toISOString()}).eq('id',id).select('id')
+  if(error)redirect('/admin/email/segments?error='+encodeURIComponent('Segment status could not be updated.'))
+  if(!data?.length)redirect('/admin/email/segments?error='+encodeURIComponent('No matching segment was found.'))
   redirect('/admin/email/segments')
 }
 
