@@ -28,10 +28,10 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
    if(brand===q)return 85
    if(brand.startsWith(q))return 80
    if(words.every(word=>name.includes(word)))return 72
-   if(words.every(word=>combined.includes(word)))return 65
+   if(words.every(word=>fields.some(field=>field.includes(word))))return 65
    if(name.includes(q))return 60
    if(brand.includes(q))return 50
-   if(combined.includes(q))return 40
+   if(fields.some(field=>field.includes(q)))return 40
    return 0
   }
   return options.map(x=>({x,score:score(x)})).filter(row=>row.score>0).sort((a,b)=>b.score-a.score||a.x.name.localeCompare(b.x.name)||a.x.brand.localeCompare(b.x.brand)).slice(0,8).map(row=>row.x)
