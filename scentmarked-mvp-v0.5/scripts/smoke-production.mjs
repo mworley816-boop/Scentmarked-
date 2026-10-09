@@ -2,6 +2,7 @@ const CHECKS = [
   { path: '/' },
   { path: '/discover' },
   { path: '/compare' },
+  { path: '/matches' },
   { path: '/login' },
   { path: '/api/health', contentType: 'application/json', json: { status: 'ok', service: 'scentmarked' } },
   { path: '/robots.txt', contentType: 'text/plain' },
