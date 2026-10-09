@@ -31,11 +31,12 @@ async function saveCampaign(formData:FormData){
   if(!id||!name||!subject||!htmlBody)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Name, subject, and email content are required.'))
   if(htmlBody.includes('{{unsubscribe_url}}')||textBody.includes('{{unsubscribe_url}}'))redirect('/admin/email/'+id+'?error='+encodeURIComponent('Remove the legacy unsubscribe placeholder. ScentMarked adds the secure unsubscribe footer automatically at send time.'))
   if((segmentRaw&&!Number.isSafeInteger(segmentId))||(templateRaw&&!Number.isSafeInteger(templateId)))redirect('/admin/email/'+id+'?error='+encodeURIComponent('Invalid campaign selection.'))
-  const {error}=await s.from('email_campaigns').update({
+  const {data,error}=await s.from('email_campaigns').update({
     name,subject,preview_text:previewText||null,html_body:htmlBody,text_body:textBody||null,
     segment_id:segmentId,template_id:templateId,updated_at:new Date().toISOString()
-  }).eq('id',id).eq('status','draft')
+  }).eq('id',id).eq('status','draft').select('id')
   if(error)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Campaign could not be saved.'))
+  if(!data?.length)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Campaign not found or no longer a draft.'))
   redirect('/admin/email/'+id+'?saved=1')
 }
 
@@ -47,8 +48,9 @@ async function applyTemplate(formData:FormData){
   if(!id||!Number.isSafeInteger(templateId))redirect('/admin/email/'+id+'?error='+encodeURIComponent('Choose a valid template.'))
   const {data:template,error:templateError}=await s.from('email_templates').select('id,subject,preview_text,html_body,text_body').eq('id',templateId).maybeSingle()
   if(templateError||!template)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Template could not be loaded.'))
-  const {error}=await s.from('email_campaigns').update({template_id:templateId,subject:template.subject,preview_text:template.preview_text,html_body:template.html_body,text_body:template.text_body,updated_at:new Date().toISOString()}).eq('id',id).eq('status','draft')
+  const {data,error}=await s.from('email_campaigns').update({template_id:templateId,subject:template.subject,preview_text:template.preview_text,html_body:template.html_body,text_body:template.text_body,updated_at:new Date().toISOString()}).eq('id',id).eq('status','draft').select('id')
   if(error)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Template could not be applied to this draft.'))
+  if(!data?.length)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Campaign not found or no longer a draft.'))
   redirect('/admin/email/'+id+'?templated=1')
 }
 
