@@ -77,7 +77,7 @@ export async function grantMembership(formData:FormData){
   const {data,error:userError}=await service.auth.admin.listUsers({page,perPage:1000})
   if(userError)redirect('/admin/monetization?error=Member+account+lookup+failed')
   const user=data.users.find(x=>String(x.email||'').toLowerCase()===email)
-  if(user){userId=userId;break}
+  if(user){userId=user.id;break}
   if(data.users.length<1000)break
  }
  if(!userId)redirect('/admin/monetization?error=No+account+was+found+for+that+email')
