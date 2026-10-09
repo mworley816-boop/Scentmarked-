@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { appendUniqueCatalogIds } from '@/lib/catalog-pagination';
 import { createClient } from '@/lib/supabase/server';
 import ComparisonVote from '@/components/comparison-vote';
 import PerfumeSearchPicker from '@/components/perfume-search-picker';
@@ -31,11 +32,13 @@ async function loadCompareAliases(s:any){
 
 async function loadComparePerfumes(s:any){
  const rows:any[]=[]
+ const seen=new Set<string>()
  const batchSize=200
  for(let start=0;start<20000;start+=batchSize){
   const result=await s.from('perfumes').select('id,name,slug,image_url,concentration,release_year,brands(name),perfume_notes(position,notes(name)),perfume_accords(strength,source_type,accords(name))').eq('status','published').order('name').order('id').range(start,start+batchSize-1)
   if(result.error)return {data:null,error:result.error}
   const batch=result.data||[]
+  if(!appendUniqueCatalogIds(seen,batch))return {data:null,error:new Error('Comparison catalog pagination returned duplicate or invalid perfume IDs')}
   rows.push(...batch)
   if(batch.length<batchSize)return {data:rows,error:null}
  }
