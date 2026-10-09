@@ -1,6 +1,7 @@
 'use client'
 
 import {useEffect,useId,useMemo,useRef,useState} from 'react'
+import {isExactPerfumeSearchMatch} from '@/lib/perfume-alias-search'
 
 type PerfumeOption={id:string;name:string;slug:string;brand:string;aliases?:string[]}
 
@@ -59,7 +60,7 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
       setOpen(true)
       setActiveIndex(i=>!expanded||i<0?(e.key==='ArrowDown'?0:matches.length-1):Math.max(0,Math.min(matches.length-1,i+(e.key==='ArrowDown'?1:-1))))
      }else if(e.key==='Enter'&&expanded){
-      const exact=matches.find(x=>(x.brand+' — '+x.name).toLowerCase()===query.trim().toLowerCase()||x.name.toLowerCase()===query.trim().toLowerCase()||(x.aliases||[]).some(alias=>alias.toLowerCase()===query.trim().toLowerCase()))
+      const exact=matches.find(x=>isExactPerfumeSearchMatch(x,query))
       const choice=matches[activeIndex]||exact
       if(choice){
        e.preventDefault()
