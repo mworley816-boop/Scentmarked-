@@ -115,9 +115,16 @@ async function scheduleCampaign(formData:FormData){
   const offset=Number(formData.get('timezone_offset'))
   const s=await requireAdmin('/admin/email/'+id)
   const match=when.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/)
-  const localMs=match?Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3]),Number(match[4]),Number(match[5])):NaN
+  const year=match?Number(match[1]):NaN
+  const month=match?Number(match[2]):NaN
+  const day=match?Number(match[3]):NaN
+  const hour=match?Number(match[4]):NaN
+  const minute=match?Number(match[5]):NaN
+  const localMs=match?Date.UTC(year,month-1,day,hour,minute):NaN
+  const localDate=new Date(localMs)
+  const validLocal=!!match&&year>=100&&year<=9999&&localDate.getUTCFullYear()===year&&localDate.getUTCMonth()===month-1&&localDate.getUTCDate()===day&&localDate.getUTCHours()===hour&&localDate.getUTCMinutes()===minute
   const date=new Date(localMs+offset*60_000)
-  if(!id||!when||!Number.isFinite(offset)||Math.abs(offset)>14*60||Number.isNaN(date.getTime())||date.getTime()<=Date.now())redirect('/admin/email/'+id+'?error='+encodeURIComponent('Choose a future send date and time.'))
+  if(!id||!validLocal||!Number.isInteger(offset)||Math.abs(offset)>14*60||Number.isNaN(date.getTime())||date.getTime()<=Date.now())redirect('/admin/email/'+id+'?error='+encodeURIComponent('Choose a valid future send date and time.'))
   const {error}=await s.rpc('schedule_email_campaign',{p_campaign_id:id,p_scheduled_at:date.toISOString()})
   if(error)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Campaign could not be scheduled. Prepare its audience first.'))
   redirect('/admin/email/'+id+'?scheduled=1')
