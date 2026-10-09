@@ -79,6 +79,7 @@ export async function grantMembership(formData:FormData){
   const user=data.users.find(x=>String(x.email||'').toLowerCase()===email)
   if(user){userId=user.id;break}
   if(data.users.length<1000)break
+  if(page===100)redirect('/admin/monetization?error=Member+lookup+limit+reached%3B+account+not+verified')
  }
  if(!userId)redirect('/admin/monetization?error=No+account+was+found+for+that+email')
  const {data:plan}=await service.from('membership_plans').select('id,slug').eq('id',planId).eq('is_active',true).maybeSingle()
