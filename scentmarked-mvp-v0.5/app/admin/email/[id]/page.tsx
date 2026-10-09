@@ -98,13 +98,14 @@ async function sendCampaign(formData:FormData){
   if(countError||!count)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Prepare at least one eligible recipient before sending.'))
 
   const { sendQueuedCampaign }=await import('@/lib/email-queue')
+  let result:Awaited<ReturnType<typeof sendQueuedCampaign>>
   try{
-    const result=await sendQueuedCampaign(s,id)
-    redirect('/admin/email/'+id+'?sent='+result.sent+'&failed='+result.failed+'&skipped='+result.skipped+'&remaining='+result.remaining)
+    result=await sendQueuedCampaign(s,id)
   }catch(error){
     const message=error instanceof Error?error.message:'Campaign send failed.'
     redirect('/admin/email/'+id+'?error='+encodeURIComponent(message))
   }
+  redirect('/admin/email/'+id+'?sent='+result.sent+'&failed='+result.failed+'&skipped='+result.skipped+'&remaining='+result.remaining)
 }
 
 async function scheduleCampaign(formData:FormData){
