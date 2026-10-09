@@ -8,8 +8,9 @@ import { enrichAffiliateRows } from '@/lib/affiliate-enrichment'
 import { reconcileAffiliateRow } from '@/lib/affiliate-reconciliation'
 
 const clean=(v:FormDataEntryValue|null,max=200)=>String(v||'').trim().slice(0,max)
-const cents=(v:FormDataEntryValue|null)=>{const n=Number(v);return v===null||String(v).trim()===''||!Number.isFinite(n)||n<=0||n>Number.MAX_SAFE_INTEGER/100?NaN:Math.round(n*100)}
-const nonnegativeCents=(v:FormDataEntryValue|null)=>{const n=Number(v);return v===null||String(v).trim()===''||!Number.isFinite(n)||n<0||n>Number.MAX_SAFE_INTEGER/100?NaN:Math.round(n*100)}
+const parseCents=(v:FormDataEntryValue|null,allowZero=false)=>{const raw=typeof v==='string'?v.trim():'';if(!/^\d+(?:\.\d{1,2})?$/.test(raw))return NaN;const [whole,fraction='']=raw.split('.');const amount=Number(whole)*100+Number(fraction.padEnd(2,'0'));return Number.isSafeInteger(amount)&&(allowZero||amount>0)?amount:NaN}
+const cents=(v:FormDataEntryValue|null)=>parseCents(v)
+const nonnegativeCents=(v:FormDataEntryValue|null)=>parseCents(v,true)
 const validExpenseDate=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value
 
 async function requireAdmin(){
