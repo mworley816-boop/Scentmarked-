@@ -9,6 +9,30 @@ const CHECKS = [
   { path: '/sitemap.xml', contentType: 'xml' },
 ]
 
+async function checkCatalogMinimum(baseUrl) {
+  const raw = process.env.SCENTMARKED_MIN_PUBLISHED_PERFUMES
+  if (!raw) {
+    console.log('SKIP catalog minimum (SCENTMARKED_MIN_PUBLISHED_PERFUMES not set)')
+    return true
+  }
+  const minimum = Number(raw)
+  if (!Number.isSafeInteger(minimum) || minimum < 1) {
+    console.log('FAIL catalog minimum must be a positive integer')
+    return false
+  }
+  const response = await fetch(new URL('/discover', baseUrl), { redirect: 'follow' })
+  if (!response.ok) {
+    console.log('FAIL catalog minimum: Discover returned ' + response.status)
+    return false
+  }
+  const html = await response.text()
+  const match = html.match(/Showing\\s+[\\d,]+[–-][\\d,]+\\s+of\\s+([\\d,]+)\\s+scents/i)
+  const count = match ? Number(match[1].replaceAll(',', '')) : null
+  const ok = count !== null && count >= minimum
+  console.log((ok ? 'PASS' : 'FAIL') + ' catalog minimum: ' + (count ?? 'not found') + ' / ' + minimum)
+  return ok
+}
+
 function resolveBaseUrl() {
   const input = process.argv[2] || process.env.NEXT_PUBLIC_SITE_URL
   if (!input) {
@@ -55,7 +79,7 @@ async function main() {
   const baseUrl = resolveBaseUrl()
   console.log(`Smoke testing ${baseUrl.origin}`)
 
-  const results = await Promise.all(CHECKS.map((check) => checkPath(baseUrl, check)))
+  const results = await Promise.all([...CHECKS.map((check) => checkPath(baseUrl, check)), checkCatalogMinimum(baseUrl)])
   if (results.some((ok) => !ok)) {
     process.exitCode = 1
     return
