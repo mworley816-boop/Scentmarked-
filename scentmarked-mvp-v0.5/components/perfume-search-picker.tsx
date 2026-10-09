@@ -24,6 +24,7 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
    if(name===q)return 100
    if(aliases.some(alias=>alias===q))return 99
    if((brand+' — '+name)===q||(brand+' - '+name)===q)return 98
+   if((brand+' '+name)===q)return 97
    if(name.startsWith(q))return 90
    if(aliases.some(alias=>alias.startsWith(q)))return 89
    if(brand===q)return 85
