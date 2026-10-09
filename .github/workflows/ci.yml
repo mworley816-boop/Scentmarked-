@@ -31,6 +31,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Save generated npm lockfile for reproducible Cloudflare installs
+        uses: actions/upload-artifact@v4
+        with:
+          name: scentmarked-npm-lockfile
+          path: scentmarked-mvp-v0.5/package-lock.json
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Report dependency advisories
         run: npm audit --omit=dev || true
 
