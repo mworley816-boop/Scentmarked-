@@ -16,12 +16,25 @@ function dnaSummary(a:any,b:any){const A=new Map<string,number>(dna(a).map((x:an
 
 export const metadata={title:'Compare Fragrances',description:'Compare verified fragrance notes and community similarity votes side by side.',alternates:{canonical:'/compare'},openGraph:{title:'Compare Fragrances | Scentmarked',description:'Compare fragrance notes and community similarity data side by side.',url:'/compare',type:'website'}}
 
+async function loadComparePerfumes(s:any){
+ const rows:any[]=[]
+ const batchSize=200
+ for(let start=0;start<20000;start+=batchSize){
+  const result=await s.from('perfumes').select('id,name,slug,image_url,concentration,release_year,brands(name),perfume_notes(position,notes(name)),perfume_accords(strength,source_type,accords(name))').eq('status','published').order('name').order('id').range(start,start+batchSize-1)
+  if(result.error)return {data:null,error:result.error}
+  const batch=result.data||[]
+  rows.push(...batch)
+  if(batch.length<batchSize)return {data:rows,error:null}
+ }
+ return {data:null,error:new Error('Comparison catalog exceeds pagination safety limit')}
+}
+
 export default async function Compare({searchParams}:{searchParams:Promise<{a?:string,b?:string}>}){
  const q=await searchParams;
  let perfumes:any[]=[];let aliases:any[]=[];let pageBanner:any=null;let loadError=false;
  try{
   const s=await createClient();
-  const [result,content,aliasResult]=await Promise.all([s.from('perfumes').select('id,name,slug,image_url,concentration,release_year,brands(name),perfume_notes(position,notes(name)),perfume_accords(strength,source_type,accords(name))').eq('status','published').order('name'),s.from('site_content').select('*').eq('content_key','compare_banner').eq('is_active',true).maybeSingle(),s.from('perfume_aliases').select('perfume_id,alias,alias_slug')]);
+  const [result,content,aliasResult]=await Promise.all([loadComparePerfumes(s),s.from('site_content').select('*').eq('content_key','compare_banner').eq('is_active',true).maybeSingle(),s.from('perfume_aliases').select('perfume_id,alias,alias_slug')]);
   if(!aliasResult.error)aliases=aliasResult.data||[];
   if(result.error)loadError=true;else perfumes=result.data||[];
   if(!content.error&&content.data){const now=Date.now(),x=content.data;if((!x.starts_at||new Date(x.starts_at).getTime()<=now)&&(!x.ends_at||new Date(x.ends_at).getTime()>=now))pageBanner=x}
