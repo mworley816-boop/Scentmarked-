@@ -11,5 +11,6 @@ export function isExactPerfumeSearchMatch(option: AliasSearchOption, query: stri
   return normalizeSearchText(option.name) === normalized ||
     normalizeSearchText(option.brand + ' — ' + option.name) === normalized ||
     normalizeSearchText(option.brand + ' - ' + option.name) === normalized ||
+    normalizeSearchText(option.brand + ' ' + option.name) === normalized ||
     (option.aliases || []).some(alias => normalizeSearchText(alias) === normalized)
 }
