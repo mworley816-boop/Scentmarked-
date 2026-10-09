@@ -32,7 +32,7 @@ async function loadPublishedAliases(s:any){
  const rows:any[]=[]
  const batchSize=500
  for(let start=0;start<20000;start+=batchSize){
-  const result=await s.from('perfume_aliases').select('perfume_id,alias').order('perfume_id').order('alias').range(start,start+batchSize-1)
+  const result=await s.from('perfume_aliases').select('perfume_id,alias,alias_slug').order('perfume_id').order('alias').order('alias_slug').range(start,start+batchSize-1)
   if(result.error)return {data:null,error:result.error}
   const batch=result.data||[]
   rows.push(...batch)
