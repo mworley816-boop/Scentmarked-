@@ -26,7 +26,7 @@ async function checkCatalogMinimum(baseUrl) {
     return false
   }
   const html = await response.text()
-  const match = html.match(/Showing\\s+[\\d,]+[–-][\\d,]+\\s+of\\s+([\\d,]+)\\s+scents/i)
+  const match = html.match(/Showing\s+[\d,]+[–-][\d,]+\s+of\s+([\d,]+)\s+scents/i)
   const count = match ? Number(match[1].replaceAll(',', '')) : null
   const ok = count !== null && count >= minimum
   console.log((ok ? 'PASS' : 'FAIL') + ' catalog minimum: ' + (count ?? 'not found') + ' / ' + minimum)
