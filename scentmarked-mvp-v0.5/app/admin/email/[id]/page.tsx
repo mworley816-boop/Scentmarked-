@@ -70,11 +70,11 @@ async function sendTestEmail(formData:FormData){
     const personalize=(value:string)=>value.replaceAll('{{first_name}}','ScentMarked Friend')
     const body=withMarketingFooter(personalize(campaign.html_body),personalize(campaign.text_body||''),siteUrl+'/privacy-choices')
     await provider.send({to:email,subject:'[TEST] '+personalize(campaign.subject),html:body.html,text:body.text,deliveryId:'test-'+id+'-'+Date.now()})
-    redirect('/admin/email/'+id+'?tested=1')
   }catch(error){
     const message=error instanceof Error?error.message:'Test email could not be sent.'
     redirect('/admin/email/'+id+'?error='+encodeURIComponent(message))
   }
+  redirect('/admin/email/'+id+'?tested=1')
 }
 
 async function retryFailed(formData:FormData){
