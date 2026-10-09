@@ -23,7 +23,7 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
    const name=normalize(x.name),brand=normalize(x.brand),aliases=(x.aliases||[]).map(normalize),fields=[name,brand,...aliases]
    if(name===q)return 100
    if(aliases.some(alias=>alias===q))return 99
-   if((brand+' — '+name)===q)return 98
+   if((brand+' — '+name)===q||(brand+' - '+name)===q)return 98
    if(name.startsWith(q))return 90
    if(aliases.some(alias=>alias.startsWith(q)))return 89
    if(brand===q)return 85
