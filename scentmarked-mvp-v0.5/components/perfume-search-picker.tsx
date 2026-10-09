@@ -19,7 +19,7 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
   const q=query.trim().toLowerCase();if(!q)return[]
   const words=q.split(/\s+/).filter(Boolean)
   const score=(x:PerfumeOption)=>{
-   const name=x.name.toLowerCase(),brand=x.brand.toLowerCase(),aliases=(x.aliases||[]).join(' ').toLowerCase(),combined=name+' '+brand+' '+aliases
+   const name=x.name.toLowerCase(),brand=x.brand.toLowerCase(),fields=[name,brand,...(x.aliases||[]).map(alias=>alias.toLowerCase())]
    if(name===q)return 100
    if((x.aliases||[]).some(alias=>alias.toLowerCase()===q))return 99
    if((brand+' — '+name)===q)return 98
