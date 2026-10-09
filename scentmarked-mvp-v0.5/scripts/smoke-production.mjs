@@ -42,7 +42,7 @@ async function checkCatalogMinimum(baseUrl) {
     return false
   }
   const lastHtml = await lastResponse.text()
-  const lastMatch = lastHtml.match(/Showing\\s+([\\d,]+)[–-]([\\d,]+)\\s+of\\s+([\\d,]+)\\s+scents/i)
+  const lastMatch = lastHtml.match(/Showing\s+([\d,]+)[–-]([\d,]+)\s+of\s+([\d,]+)\s+scents/i)
   const lastStart = lastMatch ? Number(lastMatch[1].replaceAll(',', '')) : null
   const lastEnd = lastMatch ? Number(lastMatch[2].replaceAll(',', '')) : null
   const lastTotal = lastMatch ? Number(lastMatch[3].replaceAll(',', '')) : null
