@@ -28,8 +28,9 @@ async function checkCatalogMinimum(baseUrl) {
   const html = await response.text()
   const match = html.match(/Showing\s+[\d,]+[–-][\d,]+\s+of\s+([\d,]+)\s+scents/i)
   const count = match ? Number(match[1].replaceAll(',', '')) : null
-  const ok = count !== null && count >= minimum
-  console.log((ok ? 'PASS' : 'FAIL') + ' catalog minimum: ' + (count ?? 'not found') + ' / ' + minimum)
+  const unavailable = /The scent library is temporarily unavailable/i.test(html)
+  const ok = !unavailable && count !== null && count >= minimum
+  console.log((ok ? 'PASS' : 'FAIL') + ' catalog minimum: ' + (count ?? 'not found') + ' / ' + minimum + (unavailable ? ' (catalog error shown)' : ''))
   return ok
 }
 
