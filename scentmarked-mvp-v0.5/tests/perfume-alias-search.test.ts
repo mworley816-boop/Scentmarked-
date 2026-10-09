@@ -31,3 +31,8 @@ test('normalizes repeated spaces within perfume names and aliases', () => {
   assert.equal(isExactPerfumeSearchMatch(option, 'Lattafa  —  Fakhar   Men'), true)
   assert.equal(isExactPerfumeSearchMatch(option, 'Fakhar   Lattafa Men'), true)
 })
+
+test('matches branded names using an ordinary hyphen', () => {
+  assert.equal(isExactPerfumeSearchMatch(option, 'Lattafa - Fakhar Men'), true)
+  assert.equal(isExactPerfumeSearchMatch(option, '  LATTAFA  -  FAKHAR   MEN  '), true)
+})
