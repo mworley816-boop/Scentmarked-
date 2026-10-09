@@ -74,6 +74,7 @@ export default async function Discover({searchParams}:{searchParams:Promise<Sear
  const evidenceUrl=(value:any)=>{try{const u=new URL(String(value||''));return ['http:','https:'].includes(u.protocol)?u.toString():null}catch{return null}}
  const ratingCache=new Map<string,number>()
  const rating=(x:any)=>{const id=String(x.id);const cached=ratingCache.get(id);if(cached!==undefined)return cached;const r=(x.ratings||[]).map((v:any)=>Number(v.overall)).filter((n:number)=>Number.isFinite(n)&&n>0);const average=r.length?r.reduce((a:number,b:number)=>a+b,0)/r.length:0;ratingCache.set(id,average);return average}
+ if(q&&!p.sort){const rank=(x:any)=>{const name=String(x.name||'').toLowerCase(),brand=String(x.brands?.name||'').toLowerCase(),aliases=aliasesByPerfume.get(x.id)||[];if(name===q)return 0;if(aliases.some(a=>a.toLowerCase()===q))return 1;if(name.startsWith(q))return 2;if(aliases.some(a=>a.toLowerCase().startsWith(q)))return 3;if(brand===q)return 4;if(name.includes(q))return 5;if(aliases.some(a=>a.toLowerCase().includes(q)))return 6;if(brand.includes(q))return 7;return 8};data.sort((a,b)=>rank(a)-rank(b)||a.name.localeCompare(b.name))}
  if(p.sort==='rating')data.sort((a,b)=>rating(b)-rating(a)||(b.ratings?.length||0)-(a.ratings?.length||0))
  else if(p.sort==='recent')data.sort((a,b)=>new Date(b.created_at||0).getTime()-new Date(a.created_at||0).getTime()||a.name.localeCompare(b.name))
  else if(p.sort==='newest')data.sort((a,b)=>(b.release_year||0)-(a.release_year||0)||a.name.localeCompare(b.name))
