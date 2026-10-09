@@ -31,6 +31,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Verify pinned Express dependency
+        run: |
+          npm ls express
+          node -e "const lock=require('./package-lock.json'); if(lock.packages['node_modules/express']?.version!=='5.2.1') process.exit(1)"
+
       - name: Save generated npm lockfile for reproducible Cloudflare installs
         uses: actions/upload-artifact@v4
         with:
