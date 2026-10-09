@@ -70,7 +70,7 @@ export async function updateMembershipPlan(formData:FormData){
 
 export async function grantMembership(formData:FormData){
  const service=await requireAdmin()
- const email=clean(formData.get('email'),320).toLowerCase(),planId=Number(formData.get('plan_id')),days=Number(formData.get('days')||30)
+ const email=clean(formData.get('email'),320).toLowerCase(),planId=Number(formData.get('plan_id')),days=formData.get('days')===null?30:Number(formData.get('days'))
  if(!email||!Number.isSafeInteger(planId)||planId<=0||!Number.isSafeInteger(days)||days<1||days>3660)redirect('/admin/monetization?error=Valid+member%2C+plan+and+duration+are+required')
  const {data:users,error:userError}=await service.auth.admin.listUsers({page:1,perPage:1000})
  const user=users?.users?.find(x=>String(x.email||'').toLowerCase()===email)
