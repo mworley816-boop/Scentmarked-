@@ -1,0 +1,37 @@
+name: Scentmarked Production Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: HTTPS origin of the deployed Scentmarked site
+        required: true
+        default: https://scentmarked.m-worley816.workers.dev
+        type: string
+      minimum_published:
+        description: Minimum published perfumes expected on Discover
+        required: true
+        default: '674'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scentmarked-mvp-v0.5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Check live site and published catalog count
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ inputs.site_url }}
+          SCENTMARKED_MIN_PUBLISHED_PERFUMES: ${{ inputs.minimum_published }}
+        run: node scripts/smoke-production.mjs
