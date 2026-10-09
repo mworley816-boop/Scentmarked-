@@ -12,7 +12,7 @@ const parseCents=(v:FormDataEntryValue|null,allowZero=false)=>{const raw=typeof 
 const cents=(v:FormDataEntryValue|null)=>parseCents(v)
 const nonnegativeCents=(v:FormDataEntryValue|null)=>parseCents(v,true)
 const validCalendarDate=(value:string)=>{const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(value);if(!match)return false;const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);return year>=1&&month>=1&&month<=12&&day>=1&&day<=new Date(Date.UTC(year,month,0)).getUTCDate()}
-const validExpenseDate=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value
+const validExpenseDate=(value:string)=>validCalendarDate(value)
 
 async function requireAdmin(){
  const s=await createClient()
