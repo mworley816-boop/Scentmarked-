@@ -30,7 +30,11 @@ export default async function Admin({searchParams}:{searchParams:Promise<{q?:str
  try{const [sc,br,rel,media]=await Promise.all([s.from('site_content').select('id,content_key,image_url'),s.from('brands').select('id,logo_url,banner_url'),s.from('scent_relationships').select('id,relationship_type,evidence_source'),s.storage.from('site-media').list('content',{limit:100})]);const siteContent=sc.data||[],brands=br.data||[],relationships=rel.data||[],coreVisualKeys=['homepage_hero','homepage_banner','global_background','social_image','perfume_fallback','brand_logo_fallback','brand_banner_fallback','favicon'];operations={siteContent:siteContent.length,coreVisualsReady:coreVisualKeys.filter(key=>siteContent.some((x:any)=>x.content_key===key&&x.image_url)).length,brands:brands.length,brandsMissingLogo:brands.filter((x:any)=>!x.logo_url).length,brandsMissingBanner:brands.filter((x:any)=>!x.banner_url).length,relationships:relationships.length,relationshipEvidence:relationships.filter((x:any)=>!x.evidence_source).length,media:(media.data||[]).filter((x:any)=>x.name&&x.name!=='.emptyFolderPlaceholder').length}}catch{}
  const requestedPage=typeof q.page==='string'&&/^\d+$/.test(q.page)?Number(q.page):1
  const pageSize=50
- const search=(q.q||'').trim().toLowerCase(),status=q.status||'',needs=q.needs||'',sort=q.sort||'updated'
+ const search=(typeof q.q==='string'?q.q:'').trim().toLowerCase()
+ const status=['published','draft'].includes(q.status||'')?q.status||'':''
+ const allowedNeeds=['priority','enrichment','notes','accords','sources','image','image-rights','stale-prices','retailers','clicks','no-clicks']
+ const needs=allowedNeeds.includes(q.needs||'')?q.needs||'':''
+ const sort=['updated','oldest','name','brand','clicks','clicks30'].includes(q.sort||'')?q.sort||'updated':'updated'
  const hasImageRights=(p:any)=>Array.isArray(p.perfume_image_provenance)?p.perfume_image_provenance.length>0:!!p.perfume_image_provenance
  const activeOffers=(p:any)=>(p.perfume_affiliate_offers||[]).filter((x:any)=>x.is_active)
  const staleOffers=(p:any)=>activeOffers(p).filter((x:any)=>{if(x.price==null||!x.updated_at)return false;const updatedAt=new Date(x.updated_at).getTime();return Number.isFinite(updatedAt)&&updatedAt<=now&&now-updatedAt>30*24*60*60*1000})
