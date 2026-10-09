@@ -1,18 +1,19 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { hasDuplicateCatalogIds } from '@/lib/catalog-pagination'
+import { appendUniqueCatalogIds } from '@/lib/catalog-pagination'
 
 export const metadata={title:'Admin Studio',robots:{index:false,follow:false}}
 async function loadAdminPerfumes(s:any){
  const rows:any[]=[]
+ const seenIds=new Set<string>()
  const batchSize=200
  for(let start=0;start<20000;start+=batchSize){
   const result=await s.from('perfumes').select('id,name,slug,status,updated_at,brands(name),perfume_notes(note_id),perfume_sources(id),perfume_accords(accord_id),image_url,perfume_image_provenance(perfume_id),perfume_affiliate_offers(id,merchant_name,price,is_active,updated_at)').order('updated_at',{ascending:false}).order('id').range(start,start+batchSize-1)
   if(result.error)return {data:null,error:result.error}
   const batch=result.data||[]
+  if(!appendUniqueCatalogIds(seenIds,batch))return {data:null,error:new Error('Admin catalog pagination returned duplicate or invalid perfume IDs')}
   rows.push(...batch)
-  if(hasDuplicateCatalogIds(rows))return {data:null,error:new Error('Admin catalog pagination returned duplicate or invalid perfume IDs')}
   if(batch.length<batchSize)return {data:rows,error:null}
  }
  return {data:null,error:new Error('Admin perfume catalog exceeds pagination safety limit')}
