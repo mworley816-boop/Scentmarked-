@@ -31,7 +31,27 @@ async function checkCatalogMinimum(baseUrl) {
   const unavailable = /The scent library is temporarily unavailable/i.test(html)
   const ok = !unavailable && count !== null && count >= minimum
   console.log((ok ? 'PASS' : 'FAIL') + ' catalog minimum: ' + (count ?? 'not found') + ' / ' + minimum + (unavailable ? ' (catalog error shown)' : ''))
-  return ok
+  if (!ok) return false
+
+  // Verify that the last page is actually reachable and agrees with the first-page total.
+  const pageSize = 24
+  const lastPage = Math.ceil(count / pageSize)
+  const lastResponse = await fetch(new URL('/discover?page=' + lastPage, baseUrl), { redirect: 'follow' })
+  if (!lastResponse.ok) {
+    console.log('FAIL last catalog page: HTTP ' + lastResponse.status)
+    return false
+  }
+  const lastHtml = await lastResponse.text()
+  const lastMatch = lastHtml.match(/Showing\\s+([\\d,]+)[–-]([\\d,]+)\\s+of\\s+([\\d,]+)\\s+scents/i)
+  const lastStart = lastMatch ? Number(lastMatch[1].replaceAll(',', '')) : null
+  const lastEnd = lastMatch ? Number(lastMatch[2].replaceAll(',', '')) : null
+  const lastTotal = lastMatch ? Number(lastMatch[3].replaceAll(',', '')) : null
+  const lastOk = !/The scent library is temporarily unavailable/i.test(lastHtml) &&
+    lastStart === (lastPage - 1) * pageSize + 1 &&
+    lastEnd === count && lastTotal === count
+  console.log((lastOk ? 'PASS' : 'FAIL') + ' last catalog page: page ' + lastPage +
+    ', showing ' + (lastStart ?? '?') + '-' + (lastEnd ?? '?') + ' of ' + (lastTotal ?? '?'))
+  return lastOk
 }
 
 function resolveBaseUrl() {
