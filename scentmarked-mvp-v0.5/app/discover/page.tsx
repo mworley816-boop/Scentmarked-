@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getDefaultPerfumeImage } from '@/lib/site-content'
 import { indexVisibleRelationships } from '@/lib/discover-relationships'
+import { hasDuplicateCatalogIds } from '@/lib/catalog-pagination'
 
 type Search={q?:string;brand?:string;type?:string;note?:string;accord?:string;concentration?:string;year?:string;sort?:string;page?:string}
 const middleEastern=['Lattafa','Maison Alhambra','Paris Corner','French Avenue','Khadlaj','Swiss Arabian','Armaf','Afnan','Rasasi','Al Haramain']
@@ -20,7 +21,10 @@ async function loadPublishedPerfumes(s:any){
   if(result.error)return {data:null,error:result.error}
   const batch=result.data||[]
   rows.push(...batch)
-  if(batch.length<batchSize)return {data:rows,error:null}
+  if(batch.length<batchSize){
+   if(hasDuplicateCatalogIds(rows))return {data:null,error:new Error('Discover catalog pagination returned duplicate or invalid perfume IDs')}
+   return {data:rows,error:null}
+  }
  }
  return {data:null,error:new Error('Published catalog exceeds pagination safety limit')}
 }
