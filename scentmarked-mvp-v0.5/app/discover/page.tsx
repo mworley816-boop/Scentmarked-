@@ -73,7 +73,8 @@ export default async function Discover({searchParams}:{searchParams:Promise<Sear
  }
  const relationshipFor=(id:string)=>relationshipsByPerfume.get(id)
  const relationshipLabel=(r:any)=>r?.relationship_type==='manufacturer_inspired_by'?'Documented inspiration':r?.relationship_type==='possible_clone'?'Possible clone':r?.relationship_type==='similar_dna'?'Similar DNA':r?.relationship_type==='flanker'?'Fragrance family':'Known comparison'
- const relatedPerfume=(id:string,r:any)=>{if(!r)return null;const otherId=r.source_perfume_id===id?r.target_perfume_id:r.source_perfume_id;return all.find((x:any)=>x.id===otherId)||null}
+ const perfumesById=new Map<string,any>(all.map((perfume:any)=>[String(perfume.id),perfume]))
+ const relatedPerfume=(id:string,r:any)=>{if(!r)return null;const otherId=r.source_perfume_id===id?r.target_perfume_id:r.source_perfume_id;return perfumesById.get(String(otherId))||null}
  const evidenceUrl=(value:any)=>{try{const u=new URL(String(value||''));return ['http:','https:'].includes(u.protocol)?u.toString():null}catch{return null}}
  const rating=(x:any)=>{const r=(x.ratings||[]).map((v:any)=>Number(v.overall)).filter(Boolean);return r.length?r.reduce((a:number,b:number)=>a+b,0)/r.length:0}
  if(p.sort==='rating')data.sort((a,b)=>rating(b)-rating(a)||(b.ratings?.length||0)-(a.ratings?.length||0))
