@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { hasDuplicateCatalogIds } from '@/lib/catalog-pagination'
 
 export const metadata={title:'Admin Studio',robots:{index:false,follow:false}}
 async function loadAdminPerfumes(s:any){
@@ -12,8 +13,7 @@ async function loadAdminPerfumes(s:any){
   const batch=result.data||[]
   rows.push(...batch)
   if(batch.length<batchSize){
-   const ids=new Set(rows.map((row:any)=>String(row.id)))
-   if(ids.size!==rows.length)return {data:null,error:new Error('Admin catalog pagination returned duplicate perfume IDs')}
+   if(hasDuplicateCatalogIds(rows))return {data:null,error:new Error('Admin catalog pagination returned duplicate or invalid perfume IDs')}
    return {data:rows,error:null}
   }
  }
