@@ -65,10 +65,13 @@ export default async function Discover({searchParams}:{searchParams:Promise<Sear
  const relationshipPriority=(r:any)=>r?.relationship_type==='manufacturer_inspired_by'?5:r?.relationship_type==='possible_clone'?4:r?.relationship_type==='similar_dna'?3:r?.relationship_type==='community_comparison'?2:r?.relationship_type==='flanker'?1:0
  const relationshipsByPerfume=new Map<string,any>()
  for(const relationship of relationships){
+  const priority=relationshipPriority(relationship),confidence=Number(relationship.confidence)||0
   for(const id of new Set([relationship.source_perfume_id,relationship.target_perfume_id])){
    if(typeof id!=='string')continue
    const current=relationshipsByPerfume.get(id)
-   if(!current||relationshipPriority(relationship)>relationshipPriority(current)||(relationshipPriority(relationship)===relationshipPriority(current)&&(Number(relationship.confidence)||0)>(Number(current.confidence)||0)))relationshipsByPerfume.set(id,relationship)
+   if(!current){relationshipsByPerfume.set(id,relationship);continue}
+   const currentPriority=relationshipPriority(current)
+   if(priority>currentPriority||(priority===currentPriority&&confidence>(Number(current.confidence)||0)))relationshipsByPerfume.set(id,relationship)
   }
  }
  const relationshipFor=(id:string)=>relationshipsByPerfume.get(id)
