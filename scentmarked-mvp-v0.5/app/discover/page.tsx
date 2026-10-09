@@ -76,7 +76,8 @@ export default async function Discover({searchParams}:{searchParams:Promise<Sear
  const perfumesById=new Map<string,any>(all.map((perfume:any)=>[String(perfume.id),perfume]))
  const relatedPerfume=(id:string,r:any)=>{if(!r)return null;const otherId=r.source_perfume_id===id?r.target_perfume_id:r.source_perfume_id;return perfumesById.get(String(otherId))||null}
  const evidenceUrl=(value:any)=>{try{const u=new URL(String(value||''));return ['http:','https:'].includes(u.protocol)?u.toString():null}catch{return null}}
- const rating=(x:any)=>{const r=(x.ratings||[]).map((v:any)=>Number(v.overall)).filter(Boolean);return r.length?r.reduce((a:number,b:number)=>a+b,0)/r.length:0}
+ const ratingCache=new Map<string,number>()
+ const rating=(x:any)=>{const id=String(x.id);const cached=ratingCache.get(id);if(cached!==undefined)return cached;const r=(x.ratings||[]).map((v:any)=>Number(v.overall)).filter((n:number)=>Number.isFinite(n)&&n>0);const average=r.length?r.reduce((a:number,b:number)=>a+b,0)/r.length:0;ratingCache.set(id,average);return average}
  if(p.sort==='rating')data.sort((a,b)=>rating(b)-rating(a)||(b.ratings?.length||0)-(a.ratings?.length||0))
  else if(p.sort==='recent')data.sort((a,b)=>new Date(b.created_at||0).getTime()-new Date(a.created_at||0).getTime()||a.name.localeCompare(b.name))
  else if(p.sort==='newest')data.sort((a,b)=>(b.release_year||0)-(a.release_year||0)||a.name.localeCompare(b.name))
