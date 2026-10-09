@@ -49,7 +49,7 @@ export default async function Admin({searchParams}:{searchParams:Promise<{q?:str
  const pageCount=Math.max(1,Math.ceil(data.length/pageSize))
  const currentPage=Number.isSafeInteger(requestedPage)?Math.min(Math.max(1,requestedPage),pageCount):1
  const visibleData=data.slice((currentPage-1)*pageSize,currentPage*pageSize)
- const pageHref=(page:number)=>'/admin?'+new URLSearchParams(Object.entries({q:q.q||'',status,needs,sort,page:String(page)}).filter(([,value])=>value!==''&&value!=='updated'&&value!=='1')).toString()
+ const pageHref=(page:number)=>'/admin?'+new URLSearchParams(Object.entries({q:q.q||'',status,needs,sort,page:String(page)}).filter(([key,value])=>value!==''&&(key!=='sort'||value!=='updated')&&(key!=='page'||value!=='1'))).toString()
  let catalogCountAudit:{total:number|null;published:number|null;error:boolean}={total:null,published:null,error:false}
  try{
   const [allCount,publishedCount]=await Promise.all([
