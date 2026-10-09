@@ -84,7 +84,10 @@ async function retryFailed(formData:FormData){
   if(!id)redirect('/admin/email')
   const {data,error}=await s.rpc('retry_failed_email_deliveries',{p_campaign_id:id})
   if(error)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Failed recipients could not be prepared for retry.'))
-  redirect('/admin/email/'+id+'?retried='+String(data||0))
+  const retried=Number(data)
+  if(!Number.isSafeInteger(retried)||retried<0)redirect('/admin/email/'+id+'?error='+encodeURIComponent('Retry result could not be verified.'))
+  if(retried===0)redirect('/admin/email/'+id+'?error='+encodeURIComponent('No failed recipients were eligible for retry.'))
+  redirect('/admin/email/'+id+'?retried='+String(retried))
 }
 
 async function sendCampaign(formData:FormData){
