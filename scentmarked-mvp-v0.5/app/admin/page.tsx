@@ -11,7 +11,11 @@ async function loadAdminPerfumes(s:any){
   if(result.error)return {data:null,error:result.error}
   const batch=result.data||[]
   rows.push(...batch)
-  if(batch.length<batchSize)return {data:rows,error:null}
+  if(batch.length<batchSize){
+   const ids=new Set(rows.map((row:any)=>String(row.id)))
+   if(ids.size!==rows.length)return {data:null,error:new Error('Admin catalog pagination returned duplicate perfume IDs')}
+   return {data:rows,error:null}
+  }
  }
  return {data:null,error:new Error('Admin perfume catalog exceeds pagination safety limit')}
 }
