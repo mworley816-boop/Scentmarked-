@@ -20,7 +20,7 @@ async function loadCompareAliases(s:any){
  const rows:any[]=[]
  const batchSize=500
  for(let start=0;start<20000;start+=batchSize){
-  const result=await s.from('perfume_aliases').select('perfume_id,alias,alias_slug').order('perfume_id').order('alias').range(start,start+batchSize-1).order('perfume_id').order('alias').range(start,start+batchSize-1)
+  const result=await s.from('perfume_aliases').select('perfume_id,alias,alias_slug').order('perfume_id').order('alias').order('alias_slug').range(start,start+batchSize-1)
   if(result.error)return {data:null,error:result.error}
   const batch=result.data||[]
   rows.push(...batch)
@@ -47,7 +47,7 @@ export default async function Compare({searchParams}:{searchParams:Promise<{a?:s
  let perfumes:any[]=[];let aliases:any[]=[];let pageBanner:any=null;let loadError=false;
  try{
   const s=await createClient();
-  const [result,content,aliasResult]=await Promise.all([loadComparePerfumes(s),s.from('site_content').select('*').eq('content_key','compare_banner').eq('is_active',true).maybeSingle(),s.from('perfume_aliases').select('perfume_id,alias,alias_slug')]);
+  const [result,content,aliasResult]=await Promise.all([loadComparePerfumes(s),s.from('site_content').select('*').eq('content_key','compare_banner').eq('is_active',true).maybeSingle(),loadCompareAliases(s)]);
   if(aliasResult.error)loadError=true;else aliases=aliasResult.data||[];
   if(result.error)loadError=true;else perfumes=result.data||[];
   if(!content.error&&content.data){const now=Date.now(),x=content.data;if((!x.starts_at||new Date(x.starts_at).getTime()<=now)&&(!x.ends_at||new Date(x.ends_at).getTime()>=now))pageBanner=x}
