@@ -3,6 +3,18 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata={title:'Admin Studio',robots:{index:false,follow:false}}
+async function loadAdminPerfumes(s:any){
+ const rows:any[]=[]
+ const batchSize=200
+ for(let start=0;start<20000;start+=batchSize){
+  const result=await s.from('perfumes').select('id,name,slug,status,updated_at,brands(name),perfume_notes(note_id),perfume_sources(id),perfume_accords(accord_id),image_url,perfume_image_provenance(perfume_id),perfume_affiliate_offers(id,merchant_name,price,is_active,updated_at)').order('updated_at',{ascending:false}).order('id').range(start,start+batchSize-1)
+  if(result.error)return {data:null,error:result.error}
+  const batch=result.data||[]
+  rows.push(...batch)
+  if(batch.length<batchSize)return {data:rows,error:null}
+ }
+ return {data:null,error:new Error('Admin perfume catalog exceeds pagination safety limit')}
+}
 export default async function Admin({searchParams}:{searchParams:Promise<{q?:string;status?:string;needs?:string;sort?:string}>}){
  const q=await searchParams,s=await createClient();let user:any=null
  try{const auth=await s.auth.getUser();user=auth.data.user}catch{}
@@ -10,7 +22,7 @@ export default async function Admin({searchParams}:{searchParams:Promise<{q?:str
  let isAdmin=false;try{const result=await s.from('profiles').select('is_admin').eq('id',user.id).maybeSingle();isAdmin=result.data?.is_admin===true}catch{}
  if(!isAdmin)redirect('/discover')
  let perfumes:any[]=[],affiliateClicks:any[]=[],loadError=false
- try{const r=await s.from('perfumes').select('id,name,slug,status,updated_at,brands(name),perfume_notes(note_id),perfume_sources(id),perfume_accords(accord_id),image_url,perfume_image_provenance(perfume_id),perfume_affiliate_offers(id,merchant_name,price,is_active,updated_at)').order('updated_at',{ascending:false}).limit(500);if(r.error)loadError=true;else perfumes=r.data||[];const pageSize=1000;for(let from=0;;from+=pageSize){const clicks=await s.from('affiliate_clicks').select('perfume_id,offer_id,placement,clicked_at').order('clicked_at',{ascending:false}).range(from,from+pageSize-1);if(clicks.error)break;const rows=clicks.data||[];affiliateClicks.push(...rows);if(rows.length<pageSize)break}}catch{loadError=true}
+ try{const r=await loadAdminPerfumes(s);if(r.error)loadError=true;else perfumes=r.data||[];const pageSize=1000;for(let from=0;;from+=pageSize){const clicks=await s.from('affiliate_clicks').select('perfume_id,offer_id,placement,clicked_at').order('clicked_at',{ascending:false}).range(from,from+pageSize-1);if(clicks.error)break;const rows=clicks.data||[];affiliateClicks.push(...rows);if(rows.length<pageSize)break}}catch{loadError=true}
  let operations={siteContent:0,coreVisualsReady:0,brands:0,brandsMissingLogo:0,brandsMissingBanner:0,relationships:0,relationshipEvidence:0,media:0}
  try{const [sc,br,rel,media]=await Promise.all([s.from('site_content').select('id,content_key,image_url'),s.from('brands').select('id,logo_url,banner_url'),s.from('scent_relationships').select('id,relationship_type,evidence_source'),s.storage.from('site-media').list('content',{limit:100})]);const siteContent=sc.data||[],brands=br.data||[],relationships=rel.data||[],coreVisualKeys=['homepage_hero','homepage_banner','global_background','social_image','perfume_fallback','brand_logo_fallback','brand_banner_fallback','favicon'];operations={siteContent:siteContent.length,coreVisualsReady:coreVisualKeys.filter(key=>siteContent.some((x:any)=>x.content_key===key&&x.image_url)).length,brands:brands.length,brandsMissingLogo:brands.filter((x:any)=>!x.logo_url).length,brandsMissingBanner:brands.filter((x:any)=>!x.banner_url).length,relationships:relationships.length,relationshipEvidence:relationships.filter((x:any)=>!x.evidence_source).length,media:(media.data||[]).filter((x:any)=>x.name&&x.name!=='.emptyFolderPlaceholder').length}}catch{}
  const search=(q.q||'').trim().toLowerCase(),status=q.status||'',needs=q.needs||'',sort=q.sort||'updated'
