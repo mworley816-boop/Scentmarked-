@@ -11,7 +11,7 @@ const clean=(v:FormDataEntryValue|null,max=200)=>String(v||'').trim().slice(0,ma
 const parseCents=(v:FormDataEntryValue|null,allowZero=false)=>{const raw=typeof v==='string'?v.trim():'';if(!/^\d+(?:\.\d{1,2})?$/.test(raw))return NaN;const [whole,fraction='']=raw.split('.');const amount=Number(whole)*100+Number(fraction.padEnd(2,'0'));return Number.isSafeInteger(amount)&&(allowZero||amount>0)?amount:NaN}
 const cents=(v:FormDataEntryValue|null)=>parseCents(v)
 const nonnegativeCents=(v:FormDataEntryValue|null)=>parseCents(v,true)
-const validCalendarDate=(value:string)=>{const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(value);if(!match)return false;const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);return year>=1&&month>=1&&month<=12&&day>=1&&day<=new Date(Date.UTC(year,month,0)).getUTCDate()}
+const validCalendarDate=(value:string)=>{const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(value);if(!match)return false;const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);if(year<1||month<1||month>12||day<1)return false;const leap=year%4===0&&(year%100!==0||year%400===0);const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31];return day<=days[month-1]}
 const validExpenseDate=(value:string)=>validCalendarDate(value)
 
 async function requireAdmin(){
