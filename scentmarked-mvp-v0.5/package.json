@@ -36,5 +36,8 @@
   "packageManager": "npm@10.9.2",
   "engines": {
     "node": ">=22 <23"
+  },
+  "overrides": {
+    "express": "5.2.1"
   }
 }
