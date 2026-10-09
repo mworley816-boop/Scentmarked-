@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getDefaultPerfumeImage } from '@/lib/site-content'
 import { indexVisibleRelationships } from '@/lib/discover-relationships'
-import { hasDuplicateCatalogIds } from '@/lib/catalog-pagination'
+import { appendUniqueCatalogIds } from '@/lib/catalog-pagination'
 
 type Search={q?:string;brand?:string;type?:string;note?:string;accord?:string;concentration?:string;year?:string;sort?:string;page?:string}
 const middleEastern=['Lattafa','Maison Alhambra','Paris Corner','French Avenue','Khadlaj','Swiss Arabian','Armaf','Afnan','Rasasi','Al Haramain']
@@ -15,13 +15,14 @@ export const metadata={title:'Discover Fragrances',description:'Search and filte
 
 async function loadPublishedPerfumes(s:any){
  const rows:any[]=[]
+ const seenIds=new Set<string>()
  const batchSize=200
  for(let start=0;start<20000;start+=batchSize){
   const result=await s.from('perfumes').select('id,name,slug,image_url,concentration,release_year,created_at,brands(name),perfume_notes(notes(name)),perfume_accords(strength,accords(name)),ratings(overall)').eq('status','published').order('name').order('id').range(start,start+batchSize-1)
   if(result.error)return {data:null,error:result.error}
   const batch=result.data||[]
+  if(!appendUniqueCatalogIds(seenIds,batch))return {data:null,error:new Error('Discover catalog pagination returned duplicate or invalid perfume IDs')}
   rows.push(...batch)
-  if(hasDuplicateCatalogIds(rows))return {data:null,error:new Error('Discover catalog pagination returned duplicate or invalid perfume IDs')}
   if(batch.length<batchSize)return {data:rows,error:null}
  }
  return {data:null,error:new Error('Published catalog exceeds pagination safety limit')}
