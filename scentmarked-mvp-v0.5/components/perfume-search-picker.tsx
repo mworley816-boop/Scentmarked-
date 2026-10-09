@@ -16,15 +16,16 @@ export default function PerfumeSearchPicker({name,label,options,selectedSlug,req
  const hintId=useId()
  const activeOption=useRef<HTMLButtonElement>(null)
  const matches=useMemo(()=>{
-  const q=query.trim().toLowerCase();if(!q)return[]
+  const q=query.trim().replace(/\s+/g,' ').toLowerCase();if(!q)return[]
   const words=q.split(/\s+/).filter(Boolean)
   const score=(x:PerfumeOption)=>{
-   const name=x.name.toLowerCase(),brand=x.brand.toLowerCase(),fields=[name,brand,...(x.aliases||[]).map(alias=>alias.toLowerCase())]
+   const normalize=(text:string)=>text.trim().replace(/\s+/g,' ').toLowerCase()
+   const name=normalize(x.name),brand=normalize(x.brand),aliases=(x.aliases||[]).map(normalize),fields=[name,brand,...aliases]
    if(name===q)return 100
-   if((x.aliases||[]).some(alias=>alias.toLowerCase()===q))return 99
+   if(aliases.some(alias=>alias===q))return 99
    if((brand+' — '+name)===q)return 98
    if(name.startsWith(q))return 90
-   if((x.aliases||[]).some(alias=>alias.toLowerCase().startsWith(q)))return 89
+   if(aliases.some(alias=>alias.startsWith(q)))return 89
    if(brand===q)return 85
    if(brand.startsWith(q))return 80
    if(words.every(word=>name.includes(word)))return 72
