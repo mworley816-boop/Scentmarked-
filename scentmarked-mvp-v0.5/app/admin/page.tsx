@@ -34,7 +34,8 @@ export default async function Admin({searchParams}:{searchParams:Promise<{q?:str
  const hasImageRights=(p:any)=>Array.isArray(p.perfume_image_provenance)?p.perfume_image_provenance.length>0:!!p.perfume_image_provenance
  const activeOffers=(p:any)=>(p.perfume_affiliate_offers||[]).filter((x:any)=>x.is_active)
  const staleOffers=(p:any)=>activeOffers(p).filter((x:any)=>x.price!=null&&x.updated_at&&Date.now()-new Date(x.updated_at).getTime()>30*24*60*60*1000)
- const recent30=(x:any)=>Date.now()-new Date(x.clicked_at).getTime()<=30*24*60*60*1000
+ const now=Date.now()
+ const recent30=(x:any)=>{const clickedAt=new Date(x.clicked_at).getTime();return Number.isFinite(clickedAt)&&clickedAt<=now&&now-clickedAt<=30*24*60*60*1000}
  const perfumeClickMap=new Map<string,{total:number;recent:number}>(),offerClickMap=new Map<string,{total:number;recent:number}>()
  for(const x of affiliateClicks){
   const perfumeKey=String(x.perfume_id),offerKey=String(x.offer_id),isRecent=recent30(x)
