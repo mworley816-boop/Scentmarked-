@@ -24,9 +24,22 @@ async function loadPublishedPerfumes(s:any){
  return {data:null,error:new Error('Published catalog exceeds pagination safety limit')}
 }
 
+async function loadPublishedAliases(s:any){
+ const rows:any[]=[]
+ const batchSize=500
+ for(let start=0;start<20000;start+=batchSize){
+  const result=await s.from('perfume_aliases').select('perfume_id,alias').order('perfume_id').order('alias').range(start,start+batchSize-1)
+  if(result.error)return {data:null,error:result.error}
+  const batch=result.data||[]
+  rows.push(...batch)
+  if(batch.length<batchSize)return {data:rows,error:null}
+ }
+ return {data:null,error:new Error('Perfume aliases exceed pagination safety limit')}
+}
+
 export default async function Discover({searchParams}:{searchParams:Promise<Search>}){
  const p=await searchParams;let all:any[]=[],aliases:any[]=[],relationships:any[]=[],offerPerfumes=new Set<string>(),pageBanner:any=null,defaultPerfumeImage:any=null,loadError=false
- try{const s=await createClient();const [result,rels,offers,content,fallback,aliasResult]=await Promise.all([loadPublishedPerfumes(s),s.from('scent_relationships').select('source_perfume_id,target_perfume_id,relationship_type,confidence,evidence_source'),s.from('perfume_affiliate_offers').select('perfume_id').eq('is_active',true),s.from('site_content').select('*').eq('content_key','discover_banner').eq('is_active',true).maybeSingle(),getDefaultPerfumeImage(),s.from('perfume_aliases').select('perfume_id,alias')]);if(!aliasResult.error)aliases=aliasResult.data||[];if(result.error)loadError=true;else all=(result.data||[]) as any[];if(!rels.error)relationships=rels.data||[];if(!offers.error)offerPerfumes=new Set((offers.data||[]).map((x:any)=>String(x.perfume_id)));defaultPerfumeImage=fallback;if(!content.error&&content.data){const now=Date.now(),x=content.data;if((!x.starts_at||new Date(x.starts_at).getTime()<=now)&&(!x.ends_at||new Date(x.ends_at).getTime()>=now))pageBanner=x}}catch{loadError=true}
+ try{const s=await createClient();const [result,rels,offers,content,fallback,aliasResult]=await Promise.all([loadPublishedPerfumes(s),s.from('scent_relationships').select('source_perfume_id,target_perfume_id,relationship_type,confidence,evidence_source'),s.from('perfume_affiliate_offers').select('perfume_id').eq('is_active',true),s.from('site_content').select('*').eq('content_key','discover_banner').eq('is_active',true).maybeSingle(),getDefaultPerfumeImage(),loadPublishedAliases(s)]);if(!aliasResult.error)aliases=aliasResult.data||[];if(result.error)loadError=true;else all=(result.data||[]) as any[];if(!rels.error)relationships=rels.data||[];if(!offers.error)offerPerfumes=new Set((offers.data||[]).map((x:any)=>String(x.perfume_id)));defaultPerfumeImage=fallback;if(!content.error&&content.data){const now=Date.now(),x=content.data;if((!x.starts_at||new Date(x.starts_at).getTime()<=now)&&(!x.ends_at||new Date(x.ends_at).getTime()>=now))pageBanner=x}}catch{loadError=true}
  const aliasesByPerfume=new Map<string,string[]>();for(const alias of aliases){if(typeof alias.perfume_id==='string'&&typeof alias.alias==='string'){const list=aliasesByPerfume.get(alias.perfume_id)||[];list.push(publicText(alias.alias,120));aliasesByPerfume.set(alias.perfume_id,list)}}
  all=all.map((x:any)=>({...x,name:publicText(x.name,120),slug:publicText(x.slug,200),image_url:safeUrl(x.image_url),concentration:publicText(x.concentration,80),brands:x.brands?{...x.brands,name:publicText(x.brands.name,120)}:x.brands,perfume_notes:(x.perfume_notes||[]).map((row:any)=>({...row,notes:row.notes?{...row.notes,name:publicText(row.notes.name,80)}:row.notes})).filter((row:any)=>row.notes?.name),perfume_accords:(x.perfume_accords||[]).map((row:any)=>({...row,accords:row.accords?{...row.accords,name:publicText(row.accords.name,80)}:row.accords})).filter((row:any)=>row.accords?.name)})).filter((x:any)=>x.name&&x.slug)
  if(defaultPerfumeImage)defaultPerfumeImage={...defaultPerfumeImage,image_url:safeUrl(defaultPerfumeImage.image_url),alt_text:publicText(defaultPerfumeImage.alt_text,160)}
