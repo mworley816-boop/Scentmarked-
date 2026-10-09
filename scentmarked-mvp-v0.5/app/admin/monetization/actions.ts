@@ -78,7 +78,8 @@ export async function grantMembership(formData:FormData){
  const {data:plan}=await service.from('membership_plans').select('id,slug').eq('id',planId).eq('is_active',true).maybeSingle()
  if(!plan||plan.slug==='free')redirect('/admin/monetization?error=Choose+an+active+premium+plan')
  const now=new Date(),end=new Date(now.getTime()+days*86400000)
- await service.from('member_subscriptions').update({status:'expired',updated_at:now.toISOString()}).eq('user_id',user.id).eq('provider','manual').in('status',['trialing','active','past_due','cancelled'])
+ const {error:expireError}=await service.from('member_subscriptions').update({status:'expired',updated_at:now.toISOString()}).eq('user_id',user.id).eq('provider','manual').in('status',['trialing','active','past_due','cancelled'])
+ if(expireError)redirect('/admin/monetization?error=Existing+manual+membership+could+not+be+expired')
  const {error}=await service.from('member_subscriptions').insert({user_id:user.id,plan_id:plan.id,provider:'manual',status:'active',current_period_start:now.toISOString(),current_period_end:end.toISOString(),cancel_at_period_end:false})
  redirect('/admin/monetization?'+(error?'error=Membership+could+not+be+granted':'message=Membership+granted'))
 }
