@@ -36,3 +36,8 @@ test('matches branded names using an ordinary hyphen', () => {
   assert.equal(isExactPerfumeSearchMatch(option, 'Lattafa - Fakhar Men'), true)
   assert.equal(isExactPerfumeSearchMatch(option, '  LATTAFA  -  FAKHAR   MEN  '), true)
 })
+
+test('matches brand and perfume name without punctuation', () => {
+  assert.equal(isExactPerfumeSearchMatch(option, 'Lattafa Fakhar Men'), true)
+  assert.equal(isExactPerfumeSearchMatch(option, ' LATTAFA   FAKHAR  MEN '), true)
+})
