@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getDefaultPerfumeImage } from '@/lib/site-content'
+import { indexVisibleRelationships } from '@/lib/discover-relationships'
 
 type Search={q?:string;brand?:string;type?:string;note?:string;accord?:string;concentration?:string;year?:string;sort?:string;page?:string}
 const middleEastern=['Lattafa','Maison Alhambra','Paris Corner','French Avenue','Khadlaj','Swiss Arabian','Armaf','Afnan','Rasasi','Al Haramain']
@@ -62,8 +63,7 @@ export default async function Discover({searchParams}:{searchParams:Promise<Sear
  const newReleases=[...all].filter(x=>Number(x.release_year)>0).sort((a,b)=>Number(b.release_year)-Number(a.release_year)||new Date(b.created_at||0).getTime()-new Date(a.created_at||0).getTime()||a.name.localeCompare(b.name)).slice(0,6)
  const brands=[...new Set(all.map(x=>x.brands?.name).filter(Boolean))].sort(),brandCounts=new Map<string,number>();for(const x of all){const brand=x.brands?.name;if(brand)brandCounts.set(brand,(brandCounts.get(brand)||0)+1)}const browseBrands=[...brandCounts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,12),concentrations=[...new Set(all.map(x=>x.concentration).filter(Boolean))].sort(),releaseYears=[...new Set(all.map(x=>Number(x.release_year)).filter(x=>x>0))].sort((a,b)=>b-a),yearCounts=new Map<number,number>(),concentrationCounts=new Map<string,number>(),accordCounts=new Map<string,number>(),noteCounts=new Map<string,number>();for(const x of all){const year=Number(x.release_year);if(year>0)yearCounts.set(year,(yearCounts.get(year)||0)+1);if(x.concentration)concentrationCounts.set(x.concentration,(concentrationCounts.get(x.concentration)||0)+1);for(const row of x.perfume_accords||[]){const name=row.accords?.name;if(name)accordCounts.set(name,(accordCounts.get(name)||0)+1)}for(const row of x.perfume_notes||[]){const name=row.notes?.name;if(name)noteCounts.set(name,(noteCounts.get(name)||0)+1)}}const browseAccords=[...accordCounts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,12),browseNotes=[...noteCounts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,12),noteSuggestions=[...noteCounts.keys()].sort(),accordSuggestions=[...accordCounts.keys()].sort(),q=(p.q||'').trim().toLowerCase(),note=(p.note||'').trim().toLowerCase(),accord=(p.accord||'').trim().toLowerCase()
  let data=all.filter(x=>{const brand=x.brands?.name||'';if(p.brand&&brand!==p.brand)return false;if(p.type&&segment(brand)!==p.type)return false;if(p.concentration&&x.concentration!==p.concentration)return false;if(p.year&&Number(x.release_year)!==Number(p.year))return false;if(!q&&!note&&!accord)return true;const notes=(x.perfume_notes||[]).map((y:any)=>String(y.notes?.name||'').toLowerCase()).filter(Boolean),accords=(x.perfume_accords||[]).map((y:any)=>String(y.accords?.name||'').toLowerCase()).filter(Boolean);return(!note||notes.some((z:string)=>z.includes(note)))&&(!accord||accords.some((z:string)=>z.includes(accord)))&&(!q||(`${x.name} ${brand} ${notes.join(' ')} ${accords.join(' ')} ${(aliasesByPerfume.get(x.id)||[]).join(' ')}`).toLowerCase().includes(q))})
- const relationshipPriority=(r:any)=>r?.relationship_type==='manufacturer_inspired_by'?5:r?.relationship_type==='possible_clone'?4:r?.relationship_type==='similar_dna'?3:r?.relationship_type==='community_comparison'?2:r?.relationship_type==='flanker'?1:0
- const relationshipsByPerfume=new Map<string,any>()
+ let relationshipsByPerfume=new Map<string,any>()
  const relationshipFor=(id:string)=>relationshipsByPerfume.get(id)
  const relationshipLabel=(r:any)=>r?.relationship_type==='manufacturer_inspired_by'?'Documented inspiration':r?.relationship_type==='possible_clone'?'Possible clone':r?.relationship_type==='similar_dna'?'Similar DNA':r?.relationship_type==='flanker'?'Fragrance family':'Known comparison'
  const perfumesById=new Map<string,any>(all.map((perfume:any)=>[String(perfume.id),perfume]))
@@ -79,19 +79,7 @@ export default async function Discover({searchParams}:{searchParams:Promise<Sear
  data=data.slice(start,start+pageSize)
  const visiblePerfumeIds=new Set<string>(data.map((x:any)=>String(x.id)))
  if(!loadError&&data.length){try{const s=await createClient(),ids=data.map((x:any)=>String(x.id)),pageRelationships:any[]=[];for(const field of ['source_perfume_id','target_perfume_id'] as const){for(let offset=0;offset<20000;offset+=500){const result=await s.from('scent_relationships').select('source_perfume_id,target_perfume_id,relationship_type,confidence,evidence_source').in(field,ids).order('id').range(offset,offset+499);if(result.error){loadError=true;break}const batch=result.data||[];pageRelationships.push(...batch);if(batch.length<500)break;if(offset+500>=20000)loadError=true}if(loadError)break}if(!loadError)relationships=pageRelationships}catch{loadError=true}}
- if(!loadError){
- for(const relationship of relationships){
-  const priority=relationshipPriority(relationship),confidence=Number(relationship.confidence)||0
-  for(const id of new Set([relationship.source_perfume_id,relationship.target_perfume_id])){
-   if(typeof id!=='string'||!visiblePerfumeIds.has(id))continue
-   const current=relationshipsByPerfume.get(id)
-   if(!current){relationshipsByPerfume.set(id,relationship);continue}
-   const currentPriority=relationshipPriority(current)
-   if(priority>currentPriority||(priority===currentPriority&&confidence>(Number(current.confidence)||0)))relationshipsByPerfume.set(id,relationship)
-  }
- }
-
- }
+ if(!loadError)relationshipsByPerfume=indexVisibleRelationships(relationships,visiblePerfumeIds)
  if(!loadError&&data.length){try{const s=await createClient();const offers=await s.from('perfume_affiliate_offers').select('perfume_id').eq('is_active',true).in('perfume_id',data.map((x:any)=>x.id)).limit(10000);if(offers.error)loadError=true;else offerPerfumes=new Set((offers.data||[]).map((x:any)=>String(x.perfume_id)))}catch{loadError=true}}
  const pageHref=(n:number)=>{const params=new URLSearchParams();for(const [k,v] of Object.entries(p)){if(k!=='page'&&v)params.set(k,v)}if(n>1)params.set('page',String(n));const qs=params.toString();return '/discover'+(qs?'?'+qs:'')}
  const clearFilterHref=(key:keyof Search)=>{const params=new URLSearchParams();for(const [k,v] of Object.entries(p)){if(k!==key&&k!=='page'&&v)params.set(k,v)}const qs=params.toString();return '/discover'+(qs?'?'+qs:'')}
