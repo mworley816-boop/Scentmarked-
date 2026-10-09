@@ -33,7 +33,7 @@ export default async function Admin({searchParams}:{searchParams:Promise<{q?:str
  const search=(q.q||'').trim().toLowerCase(),status=q.status||'',needs=q.needs||'',sort=q.sort||'updated'
  const hasImageRights=(p:any)=>Array.isArray(p.perfume_image_provenance)?p.perfume_image_provenance.length>0:!!p.perfume_image_provenance
  const activeOffers=(p:any)=>(p.perfume_affiliate_offers||[]).filter((x:any)=>x.is_active)
- const staleOffers=(p:any)=>activeOffers(p).filter((x:any)=>x.price!=null&&x.updated_at&&Date.now()-new Date(x.updated_at).getTime()>30*24*60*60*1000)
+ const staleOffers=(p:any)=>activeOffers(p).filter((x:any)=>{if(x.price==null||!x.updated_at)return false;const updatedAt=new Date(x.updated_at).getTime();return Number.isFinite(updatedAt)&&updatedAt<=now&&now-updatedAt>30*24*60*60*1000})
  const now=Date.now()
  const recent30=(x:any)=>{const clickedAt=new Date(x.clicked_at).getTime();return Number.isFinite(clickedAt)&&clickedAt<=now&&now-clickedAt<=30*24*60*60*1000}
  const perfumeClickMap=new Map<string,{total:number;recent:number}>(),offerClickMap=new Map<string,{total:number;recent:number}>()
