@@ -25,3 +25,9 @@ test('does not mistake partial or unrelated names for exact matches', () => {
 test('handles options without aliases', () => {
   assert.equal(isExactPerfumeSearchMatch({name:'Nebras',brand:'Lattafa'}, 'Fakhar Black'), false)
 })
+
+test('normalizes repeated spaces within perfume names and aliases', () => {
+  assert.equal(isExactPerfumeSearchMatch(option, 'Fakhar   Black'), true)
+  assert.equal(isExactPerfumeSearchMatch(option, 'Lattafa  —  Fakhar   Men'), true)
+  assert.equal(isExactPerfumeSearchMatch(option, 'Fakhar   Lattafa Men'), true)
+})
