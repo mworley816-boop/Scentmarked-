@@ -4,10 +4,14 @@
  */
 export function hasDuplicateCatalogIds(rows: ReadonlyArray<{id: unknown}>): boolean {
  const ids=new Set<string>()
+ return !appendUniqueCatalogIds(ids,rows)
+}
+
+/** Validates one newly fetched page without rescanning earlier pages. */
+export function appendUniqueCatalogIds(seen: Set<string>, rows: ReadonlyArray<{id: unknown}>): boolean {
  for(const row of rows){
-  if(typeof row.id!=='string'||!row.id)return true
-  if(ids.has(row.id))return true
-  ids.add(row.id)
+  if(typeof row.id!=='string'||!row.id||seen.has(row.id))return false
+  seen.add(row.id)
  }
- return false
+ return true
 }
