@@ -45,7 +45,7 @@ export async function createSponsorship(formData:FormData){
  const budgetRaw=clean(formData.get('budget'),30)
  const payload={name,sponsor_name,placement,status:['draft','scheduled','active','paused','completed','cancelled'].includes(status)?status:'draft',destination_url:clean(formData.get('destination_url'),1000)||null,starts_at:clean(formData.get('starts_at'),40)||null,ends_at:clean(formData.get('ends_at'),40)||null,budget_cents:budgetRaw?cents(formData.get('budget')):null,currency:(clean(formData.get('currency'),3)||'USD').toUpperCase(),disclosure_label:clean(formData.get('disclosure_label'),80)||'Sponsored',notes:clean(formData.get('notes'),1000)||null}
  if(!/^[A-Z]{3}$/.test(payload.currency)||payload.budget_cents!==null&&(!Number.isSafeInteger(payload.budget_cents)||payload.budget_cents<=0))redirect('/admin/monetization?error=Invalid+campaign+budget+or+currency')
- const validCampaignTimestamp=(value:string|null)=>value===null||(!Number.isNaN(Date.parse(value))&&Number.isFinite(Date.parse(value)))
+ const validCampaignTimestamp=(value:string|null)=>value===null||(/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2})?)?$/.test(value)&&validCalendarDate(value.slice(0,10))&&Number.isFinite(Date.parse(value)))
  if(!validCampaignTimestamp(payload.starts_at)||!validCampaignTimestamp(payload.ends_at)||(payload.starts_at!==null&&payload.ends_at!==null&&Date.parse(payload.ends_at)<Date.parse(payload.starts_at)))redirect('/admin/monetization?error=Invalid+campaign+date+range')
  const {error}=await service.from('sponsorship_campaigns').insert(payload)
  redirect('/admin/monetization?'+(error?'error=Campaign+could+not+be+saved':'message=Sponsorship+campaign+created'))
