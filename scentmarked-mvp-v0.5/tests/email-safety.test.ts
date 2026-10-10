@@ -3,6 +3,17 @@ import assert from 'node:assert/strict'
 import { marketingFooter, withMarketingFooter } from '../lib/email-footer.ts'
 import { getEmailProvider } from '../lib/email-provider.ts'
 import { emailFirstName, emailHtmlEscape } from '../lib/email-personalization.ts'
+import { normalizeEmailBatchSize } from '../lib/email-queue.ts'
+
+test('email batches clamp invalid, fractional and oversized limits',()=>{
+  assert.equal(normalizeEmailBatchSize(Number.NaN),25)
+  assert.equal(normalizeEmailBatchSize(Infinity),25)
+  assert.equal(normalizeEmailBatchSize(-Infinity),25)
+  assert.equal(normalizeEmailBatchSize(0),25)
+  assert.equal(normalizeEmailBatchSize(-5),1)
+  assert.equal(normalizeEmailBatchSize(2.9),2)
+  assert.equal(normalizeEmailBatchSize(200),100)
+})
 
 test('marketing footer includes the supplied unsubscribe URL in html and text',()=>{
   const url='https://scentmarked.example/unsubscribe?token=abc%20123'
