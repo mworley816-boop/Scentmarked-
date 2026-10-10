@@ -57,7 +57,7 @@ export default async function Admin({searchParams}:{searchParams:Promise<{q?:str
  const currentPage=Math.min(Math.max(1,requestedPage),pageCount)
  const visibleData=data.slice((currentPage-1)*pageSize,currentPage*pageSize)
  const pageHref=(page:number)=>'/admin?'+new URLSearchParams(Object.entries({q:search,status,needs,sort:requestedSort,page:String(page)}).filter(([key,value])=>value!==''&&(key!=='sort'||value!=='updated')&&(key!=='page'||value!=='1'))).toString()
- const pageNumbers=Array.from({length:Math.min(5,pageCount)},(_,index)=>Math.max(1,Math.min(currentPage-2,pageCount-4))+index)
+ const pageNumbers=Array.from({length:Math.min(5,pageCount)},(_,index)=>Math.max(1,Math.min(currentPage-2,Math.max(1,pageCount-4)))+index)
  const paginationSummary=`Page ${currentPage} of ${pageCount}`
  const filterDescription=[search?`Search: ${search}`:'',status?`Status: ${status}`:'',needs?`Data state: ${needs}`:'',requestedSort!=='updated'?`Sort: ${requestedSort}${sort!==requestedSort?' (temporarily unavailable)':''}`:''].filter(Boolean).join(' · ')
  let catalogCountAudit:{total:number|null;published:number|null;error:boolean}={total:null,published:null,error:false}
