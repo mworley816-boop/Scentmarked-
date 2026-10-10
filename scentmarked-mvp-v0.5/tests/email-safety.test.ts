@@ -69,6 +69,13 @@ test('Resend request uses a stable delivery idempotency key',async()=>{
   }
 })
 
+test('campaign personalization normalizes whitespace and bounds greeting length',()=>{
+  assert.equal(emailFirstName('  Ada\n\tLovelace  '),'Ada Lovelace')
+  assert.equal(emailFirstName(123),'ScentMarked Friend')
+  assert.equal(emailFirstName({firstName:'Ada'}),'ScentMarked Friend')
+  assert.equal(emailFirstName('A'.repeat(100)).length,80)
+})
+
 test('campaign personalization uses a safe first-name fallback',()=>{
   assert.equal(emailFirstName(null),'ScentMarked Friend')
   assert.equal(emailFirstName('   '),'ScentMarked Friend')
