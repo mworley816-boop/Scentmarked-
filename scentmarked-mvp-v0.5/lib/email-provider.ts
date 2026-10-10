@@ -8,6 +8,13 @@ export type OutboundEmail={
 
 export type ProviderSendResult={providerMessageId:string}
 
+export class EmailProviderConfirmationError extends Error{
+  constructor(){
+    super('Email provider returned a successful response without a valid message ID; manual reconciliation is required before retrying.')
+    this.name='EmailProviderConfirmationError'
+  }
+}
+
 export interface EmailProvider{
   send(message:OutboundEmail):Promise<ProviderSendResult>
 }
@@ -29,7 +36,7 @@ class ResendProvider implements EmailProvider{
     })
     const body=await response.json().catch(()=>({}))
     if(!response.ok)throw new Error('Email provider rejected the send request.')
-    if(typeof body?.id!=='string'||!body.id.trim())throw new Error('Email provider accepted the request but returned no valid message ID; delivery status requires reconciliation.')
+    if(typeof body?.id!=='string'||!body.id.trim())throw new EmailProviderConfirmationError()
     return {providerMessageId:body.id.trim()}
   }
 }
