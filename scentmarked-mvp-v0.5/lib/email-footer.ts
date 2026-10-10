@@ -1,6 +1,7 @@
 export function marketingFooter(unsubscribeUrl:string){
+  const safeUrl=unsubscribeUrl.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;')
   return {
-    html: '<p style="font-size:12px;line-height:1.5;color:#666">You are receiving this email because you opted in to ScentMarked updates. <a href="'+unsubscribeUrl+'">Unsubscribe</a>.</p>',
+    html: '<p style="font-size:12px;line-height:1.5;color:#666">You are receiving this email because you opted in to ScentMarked updates. <a href="'+safeUrl+'">Unsubscribe</a>.</p>',
     text: 'You are receiving this email because you opted in to ScentMarked updates.\nUnsubscribe: '+unsubscribeUrl
   }
 }
