@@ -8,6 +8,9 @@ import { hasValidRecipientEmail } from '../lib/email-recipient.ts'
 
 test('marketing recipients must have plausible email addresses',()=>{
   assert.equal(hasValidRecipientEmail('person@example.com'),true)
+  assert.equal(hasValidRecipientEmail(' person@example.com '),true)
+  assert.equal(hasValidRecipientEmail('person @example.com'),false)
+  assert.equal(hasValidRecipientEmail('person@exa mple.com'),false)
   assert.equal(hasValidRecipientEmail(''),false)
   assert.equal(hasValidRecipientEmail(null),false)
   assert.equal(hasValidRecipientEmail('not-an-email'),false)
