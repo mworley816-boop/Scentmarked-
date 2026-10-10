@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { marketingFooter, withMarketingFooter } from '../lib/email-footer.ts'
 import { getEmailProvider } from '../lib/email-provider.ts'
 import { emailFirstName, emailHtmlEscape } from '../lib/email-personalization.ts'
-import { normalizeEmailBatchSize } from '../lib/email-queue.ts'
+import { normalizeEmailBatchSize } from '../lib/email-batch-size.ts'
 
 test('email batches clamp invalid, fractional and oversized limits',()=>{
   assert.equal(normalizeEmailBatchSize(Number.NaN),25)
