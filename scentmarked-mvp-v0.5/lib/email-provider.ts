@@ -28,8 +28,8 @@ class ResendProvider implements EmailProvider{
       body:JSON.stringify({from:this.from,to:[message.to],subject:message.subject,html:message.html,text:message.text})
     })
     const body=await response.json().catch(()=>({}))
-    if(!response.ok||!body?.id)throw new Error('Email provider rejected the send request.')
-    return {providerMessageId:String(body.id)}
+    if(!response.ok||typeof body?.id!=='string'||!body.id.trim())throw new Error('Email provider rejected the send request or returned an invalid message ID.')
+    return {providerMessageId:body.id.trim()}
   }
 }
 
