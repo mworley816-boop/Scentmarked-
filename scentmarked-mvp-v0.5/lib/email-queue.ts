@@ -62,7 +62,7 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
 
   for(const row of rows||[]){
     const contact=Array.isArray(row.crm_contacts)?row.crm_contacts[0]:row.crm_contacts
-    const eligible=contact?.status==='active'&&contact?.marketing_consent===true&&!!contact?.marketing_consented_at&&!contact?.unsubscribed_at&&typeof contact?.unsubscribe_token==='string'&&!!contact.unsubscribe_token.trim()
+    const eligible=contact?.status==='active'&&contact?.marketing_consent===true&&!!contact?.marketing_consented_at&&!contact?.unsubscribed_at&&typeof contact?.unsubscribe_token==='string'&&!!contact.unsubscribe_token.trim()&&typeof contact?.email==='string'&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email.trim())
     if(!eligible){
       const {error:skipError}=await s.from('email_deliveries').update({
         status:'skipped',
