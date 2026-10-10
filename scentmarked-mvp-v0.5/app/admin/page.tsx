@@ -69,7 +69,6 @@ export default async function Admin({searchParams}:{searchParams:Promise<{q?:str
   catalogCountAudit={total:allCount.count,published:publishedCount.count,error:!!allCount.error||!!publishedCount.error}
  }catch{catalogCountAudit.error=true}
  const loadedPublished=perfumes.filter((p:any)=>p.status==='published').length
- const loadedUnpublished=perfumes.length-loadedPublished
  const databaseUnpublished=!catalogCountAudit.error&&catalogCountAudit.total!=null&&catalogCountAudit.published!=null?catalogCountAudit.total-catalogCountAudit.published:null
  const catalogCountMismatch=!loadError&&!catalogCountAudit.error&&catalogCountAudit.total!=null&&catalogCountAudit.published!=null&&(catalogCountAudit.total!==perfumes.length||catalogCountAudit.published!==loadedPublished)
  const publishedPerfumes=perfumes.filter((p:any)=>p.status==='published')
