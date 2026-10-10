@@ -102,13 +102,13 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
   const {count:remaining,error:remainingError}=await s.from('email_deliveries')
     .select('id',{count:'exact',head:true})
     .eq('campaign_id',campaignId).in('status',['queued','processing'])
-  if(remainingError)throw new Error('Campaign batch sent but remaining deliveries could not be counted.')
+  if(remainingError||typeof remaining!=='number'||!Number.isSafeInteger(remaining)||remaining<0)throw new Error('Campaign batch sent but remaining deliveries could not be counted reliably.')
 
   if((remaining||0)===0){
     const {count:failedTotal,error:failedCountError}=await s.from('email_deliveries')
       .select('id',{count:'exact',head:true})
       .eq('campaign_id',campaignId).eq('status','failed')
-    if(failedCountError)throw new Error('Campaign batch sent but failed deliveries could not be counted.')
+    if(failedCountError||typeof failedTotal!=='number'||!Number.isSafeInteger(failedTotal)||failedTotal<0)throw new Error('Campaign batch sent but failed deliveries could not be counted reliably.')
     const {error:finishError}=await s.rpc('finish_email_campaign',{
       p_campaign_id:campaignId,
       p_has_failures:(failedTotal||0)>0
