@@ -9,9 +9,11 @@ export function hasDuplicateCatalogIds(rows: ReadonlyArray<{id: unknown}>): bool
 
 /** Validates one newly fetched page without rescanning earlier pages. */
 export function appendUniqueCatalogIds(seen: Set<string>, rows: ReadonlyArray<{id: unknown}>): boolean {
+ const pageIds=new Set<string>()
  for(const row of rows){
-  if(typeof row.id!=='string'||!row.id||seen.has(row.id))return false
-  seen.add(row.id)
+  if(typeof row.id!=='string'||!row.id||seen.has(row.id)||pageIds.has(row.id))return false
+  pageIds.add(row.id)
  }
+ for(const id of pageIds)seen.add(id)
  return true
 }
