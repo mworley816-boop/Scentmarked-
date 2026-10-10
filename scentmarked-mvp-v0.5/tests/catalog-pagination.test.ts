@@ -40,3 +40,12 @@ test('incremental checks handle empty batches and invalid identifiers',()=>{
  assert.equal(appendUniqueCatalogIds(seen,[]),true)
  assert.equal(appendUniqueCatalogIds(seen,[{id:''}]),false)
 })
+
+test('invalid batches leave the previously accepted IDs unchanged',()=>{
+ const seen=new Set(['existing'])
+ assert.equal(appendUniqueCatalogIds(seen,[{id:'new'},{id:'existing'}]),false)
+ assert.deepEqual([...seen],['existing'])
+ assert.equal(appendUniqueCatalogIds(seen,[{id:'x'},{id:'x'}]),false)
+ assert.deepEqual([...seen],['existing'])
+ assert.equal(appendUniqueCatalogIds(seen,[{id:'new'}]),true)
+})
