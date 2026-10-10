@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { marketingFooter, withMarketingFooter } from '../lib/email-footer.ts'
 import { getEmailProvider } from '../lib/email-provider.ts'
-import { emailFirstName } from '../lib/email-personalization.ts'
+import { emailFirstName, emailHtmlEscape } from '../lib/email-personalization.ts'
 
 test('marketing footer includes the supplied unsubscribe URL in html and text',()=>{
   const url='https://scentmarked.example/unsubscribe?token=abc%20123'
@@ -67,6 +67,12 @@ test('Resend request uses a stable delivery idempotency key',async()=>{
     if(previousFrom===undefined)delete process.env.RESEND_FROM_EMAIL
     else process.env.RESEND_FROM_EMAIL=previousFrom
   }
+})
+
+test('campaign HTML personalization escapes subscriber-supplied markup',()=>{
+  assert.equal(emailHtmlEscape('Ada & <script>alert("x")</script>'), 'Ada &amp; &lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;')
+  assert.equal(emailHtmlEscape("O'Neil"),'O&#39;Neil')
+  assert.equal(emailHtmlEscape('Plain Name'),'Plain Name')
 })
 
 test('campaign personalization normalizes whitespace and bounds greeting length',()=>{
