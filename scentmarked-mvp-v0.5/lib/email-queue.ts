@@ -4,6 +4,13 @@ import { siteUrl } from '@/lib/site'
 import { emailFirstName, emailHtmlEscape } from '@/lib/email-personalization'
 import { normalizeEmailBatchSize } from '@/lib/email-batch-size'
 
+export class EmailDeliveryPersistenceError extends Error{
+  constructor(){
+    super('Email was accepted by the provider, but delivery status could not be saved; manual reconciliation is required before retrying.')
+    this.name='EmailDeliveryPersistenceError'
+  }
+}
+
 type DbClient=any
 
 export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=25){
@@ -87,10 +94,10 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
         status:'sent',
         sent_at:new Date().toISOString()
       }).eq('id',row.id).eq('status','processing')
-      if(updateError)throw new Error('Email was accepted by the provider, but delivery status could not be saved; manual reconciliation is required before retrying.')
+      if(updateError)throw new EmailDeliveryPersistenceError()
       sent++
     }catch(error){
-      if(error instanceof Error&&error.message.includes('manual reconciliation is required'))throw error
+      if(error instanceof EmailDeliveryPersistenceError)throw error
       const {error:failureUpdateError}=await s.from('email_deliveries').update({
         status:'failed',
         failed_at:new Date().toISOString(),
