@@ -15,7 +15,13 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
 
   const {data:claimed,error:claimError}=await s.rpc('claim_email_delivery_batch',{p_campaign_id:campaignId,p_limit:safeBatchSize})
   if(claimError)throw new Error('Queued deliveries could not be claimed.')
-  const claimedIds=(claimed||[]).map((x:any)=>x.delivery_id)
+  if(!Array.isArray(claimed))throw new Error('Claimed deliveries returned an invalid response.')
+  const claimedIds=claimed.map((x:any)=>x?.delivery_id)
+  if(claimedIds.some((id:any)=>typeof id!=='string'||!id.trim())||new Set(claimedIds).size!==claimedIds.length){
+    const validIds=claimedIds.filter((id:any):id is string=>typeof id==='string'&&!!id.trim())
+    if(validIds.length)await s.rpc('release_email_delivery_claims',{p_delivery_ids:[...new Set(validIds)]})
+    throw new Error('Claimed deliveries returned invalid or duplicate IDs.')
+  }
   const releaseClaims=async()=>{
     if(claimedIds.length)await s.rpc('release_email_delivery_claims',{p_delivery_ids:claimedIds})
   }
