@@ -35,7 +35,7 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
 
   // An inner join can hide a claimed delivery if its CRM contact was deleted.
   // Release all claims rather than silently stranding missing rows in processing.
-  const loadedIds=new Set((rows||[]).map((row:any)=>row.id))
+  const loadedIds=new Set(Array.isArray(rows)?rows.map((row:any)=>row?.id):[])
   if(!Array.isArray(rows)||rows.length!==claimedIds.length||loadedIds.size!==claimedIds.length||claimedIds.some((id:any)=>!loadedIds.has(id))){
     await releaseClaims()
     throw new Error('Some claimed deliveries could not be loaded with their contacts.')
