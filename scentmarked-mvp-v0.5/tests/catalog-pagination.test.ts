@@ -49,3 +49,13 @@ test('invalid batches leave the previously accepted IDs unchanged',()=>{
  assert.deepEqual([...seen],['existing'])
  assert.equal(appendUniqueCatalogIds(seen,[{id:'new'}]),true)
 })
+
+test('invalid identifiers in a batch do not mutate accepted IDs',()=>{
+ const seen=new Set(['original'])
+ assert.equal(appendUniqueCatalogIds(seen,[{id:'valid'},{id:null}]),false)
+ assert.deepEqual([...seen],['original'])
+ assert.equal(appendUniqueCatalogIds(seen,[{id:'valid'},{id:''}]),false)
+ assert.deepEqual([...seen],['original'])
+ assert.equal(appendUniqueCatalogIds(seen,[{id:'valid'}]),true)
+ assert.deepEqual([...seen],['original','valid'])
+})
