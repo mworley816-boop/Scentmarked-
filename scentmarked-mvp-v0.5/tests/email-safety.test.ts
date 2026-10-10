@@ -4,6 +4,17 @@ import { marketingFooter, withMarketingFooter } from '../lib/email-footer.ts'
 import { getEmailProvider } from '../lib/email-provider.ts'
 import { emailFirstName, emailHtmlEscape } from '../lib/email-personalization.ts'
 import { normalizeEmailBatchSize } from '../lib/email-batch-size.ts'
+import { hasValidRecipientEmail } from '../lib/email-recipient.ts'
+
+test('marketing recipients must have plausible email addresses',()=>{
+  assert.equal(hasValidRecipientEmail('person@example.com'),true)
+  assert.equal(hasValidRecipientEmail(''),false)
+  assert.equal(hasValidRecipientEmail(null),false)
+  assert.equal(hasValidRecipientEmail('not-an-email'),false)
+  assert.equal(hasValidRecipientEmail('person@invalid'),false)
+  assert.equal(hasValidRecipientEmail('person@@example.com'),false)
+  assert.equal(hasValidRecipientEmail('a'.repeat(255)+'@example.com'),false)
+})
 
 test('email batches clamp invalid, fractional and oversized limits',()=>{
   assert.equal(normalizeEmailBatchSize(Number.NaN),25)
