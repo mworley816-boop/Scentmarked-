@@ -12,6 +12,14 @@ test('marketing footer includes the supplied unsubscribe URL in html and text',(
   assert.ok(footer.text.includes(url))
 })
 
+test('marketing footer escapes unsubscribe URL characters in HTML only',()=>{
+  const url='https://scentmarked.example/unsubscribe?token=a&next="<unsafe>'
+  const footer=marketingFooter(url)
+  assert.ok(footer.html.includes('token=a&amp;next=&quot;&lt;unsafe&gt;'))
+  assert.ok(!footer.html.includes('token=a&next="<unsafe>'))
+  assert.ok(footer.text.includes(url))
+})
+
 test('marketing footer is appended to campaign html and text',()=>{
   const body=withMarketingFooter('<p>Hello</p>','Hello','https://scentmarked.example/unsubscribe?token=abc')
   assert.ok(body.html.startsWith('<p>Hello</p>'))
