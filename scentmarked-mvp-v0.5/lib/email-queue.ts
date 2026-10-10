@@ -87,9 +87,10 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
         status:'sent',
         sent_at:new Date().toISOString()
       }).eq('id',row.id).eq('status','processing')
-      if(updateError)throw updateError
+      if(updateError)throw new Error('Email was accepted by the provider, but delivery status could not be saved; manual reconciliation is required before retrying.')
       sent++
-    }catch{
+    }catch(error){
+      if(error instanceof Error&&error.message.includes('manual reconciliation is required'))throw error
       const {error:failureUpdateError}=await s.from('email_deliveries').update({
         status:'failed',
         failed_at:new Date().toISOString(),
