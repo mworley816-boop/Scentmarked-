@@ -44,9 +44,9 @@ export default async function Admin({searchParams}:{searchParams:Promise<{q?:str
  const recent30=(x:any)=>{const clickedAt=new Date(x.clicked_at).getTime();return Number.isFinite(clickedAt)&&clickedAt<=now&&now-clickedAt<=30*24*60*60*1000}
  const perfumeClickMap=new Map<string,{total:number;recent:number}>(),offerClickMap=new Map<string,{total:number;recent:number}>()
  for(const x of affiliateClicks){
-  const perfumeKey=String(x.perfume_id),offerKey=String(x.offer_id),isRecent=recent30(x)
-  const perfumeStats=perfumeClickMap.get(perfumeKey)||{total:0,recent:0};perfumeStats.total++;if(isRecent)perfumeStats.recent++;perfumeClickMap.set(perfumeKey,perfumeStats)
-  const offerStats=offerClickMap.get(offerKey)||{total:0,recent:0};offerStats.total++;if(isRecent)offerStats.recent++;offerClickMap.set(offerKey,offerStats)
+  const perfumeKey=x.perfume_id==null?'':String(x.perfume_id),offerKey=x.offer_id==null?'':String(x.offer_id),isRecent=recent30(x)
+  if(perfumeKey){const perfumeStats=perfumeClickMap.get(perfumeKey)||{total:0,recent:0};perfumeStats.total++;if(isRecent)perfumeStats.recent++;perfumeClickMap.set(perfumeKey,perfumeStats)}
+  if(offerKey){const offerStats=offerClickMap.get(offerKey)||{total:0,recent:0};offerStats.total++;if(isRecent)offerStats.recent++;offerClickMap.set(offerKey,offerStats)}
  }
  const clickStats=(id:any)=>perfumeClickMap.get(String(id))||{total:0,recent:0}
  const offerClickStats=(id:any)=>offerClickMap.get(String(id))||{total:0,recent:0}
