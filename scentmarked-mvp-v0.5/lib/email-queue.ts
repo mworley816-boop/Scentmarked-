@@ -84,7 +84,7 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
       const personalize=(value:unknown,name:string)=>String(value??'').replaceAll('{{first_name}}',name)
       const body=withMarketingFooter(personalize(campaign.html_body,emailHtmlEscape(firstName)),personalize(campaign.text_body,firstName),unsubscribeUrl)
       const result=await provider.send({
-        to:contact.email,
+        to:contact.email.trim(),
         subject:personalize(campaign.subject,firstName),
         html:body.html,
         text:body.text,
