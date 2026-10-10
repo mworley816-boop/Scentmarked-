@@ -67,3 +67,12 @@ test('rejects null rows and whitespace-only IDs without changing seen state',()=
  assert.equal(appendUniqueCatalogIds(seen,[{id:'   '}]),false)
  assert.deepEqual([...seen],['existing'])
 })
+
+test('rejects leading or trailing whitespace in catalog IDs atomically',()=>{
+ const seen=new Set(['original'])
+ assert.equal(appendUniqueCatalogIds(seen,[{id:'valid'},{id:' padded'}]),false)
+ assert.deepEqual([...seen],['original'])
+ assert.equal(appendUniqueCatalogIds(seen,[{id:'trailing '}]),false)
+ assert.deepEqual([...seen],['original'])
+ assert.equal(appendUniqueCatalogIds(seen,[{id:'valid'}]),true)
+})
