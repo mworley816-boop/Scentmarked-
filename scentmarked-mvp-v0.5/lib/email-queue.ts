@@ -32,7 +32,9 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
     throw new Error('Claimed deliveries returned invalid or duplicate IDs.')
   }
   const releaseClaims=async()=>{
-    if(claimedIds.length)await s.rpc('release_email_delivery_claims',{p_delivery_ids:claimedIds})
+    if(!claimedIds.length)return
+    const {error:releaseError}=await s.rpc('release_email_delivery_claims',{p_delivery_ids:claimedIds})
+    if(releaseError)throw new Error('Claimed deliveries could not be released safely.')
   }
   const {data:rows,error:deliveryError}=claimedIds.length?await s.from('email_deliveries')
     .select('id,contact_id,crm_contacts!inner(email,first_name,unsubscribe_token,status,marketing_consent,marketing_consented_at,unsubscribed_at)')
