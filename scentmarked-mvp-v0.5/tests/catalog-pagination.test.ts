@@ -59,3 +59,11 @@ test('invalid identifiers in a batch do not mutate accepted IDs',()=>{
  assert.equal(appendUniqueCatalogIds(seen,[{id:'valid'}]),true)
  assert.deepEqual([...seen],['original','valid'])
 })
+
+test('rejects null rows and whitespace-only IDs without changing seen state',()=>{
+ const seen=new Set(['existing'])
+ assert.equal(appendUniqueCatalogIds(seen,[{id:'new'},null] as any),false)
+ assert.deepEqual([...seen],['existing'])
+ assert.equal(appendUniqueCatalogIds(seen,[{id:'   '}]),false)
+ assert.deepEqual([...seen],['existing'])
+})
