@@ -71,7 +71,7 @@ export default async function Admin({searchParams}:{searchParams:Promise<{q?:str
  const loadedPublished=perfumes.filter((p:any)=>p.status==='published').length
  const loadedUnpublished=perfumes.length-loadedPublished
  const databaseUnpublished=catalogCountAudit.total!=null&&catalogCountAudit.published!=null?catalogCountAudit.total-catalogCountAudit.published:null
- const catalogCountMismatch=!catalogCountAudit.error&&(catalogCountAudit.total!==perfumes.length||catalogCountAudit.published!==loadedPublished)
+ const catalogCountMismatch=!loadError&&!catalogCountAudit.error&&catalogCountAudit.total!=null&&catalogCountAudit.published!=null&&(catalogCountAudit.total!==perfumes.length||catalogCountAudit.published!==loadedPublished)
  const publishedPerfumes=perfumes.filter((p:any)=>p.status==='published')
  const publishedHealth={notes:publishedPerfumes.filter((p:any)=>missing(p).notes).length,sources:publishedPerfumes.filter((p:any)=>missing(p).sources).length,images:publishedPerfumes.filter((p:any)=>missing(p).image).length}
  const incomplete=perfumes.filter((p:any)=>{const m=missing(p);return m.notes||m.sources}).length
