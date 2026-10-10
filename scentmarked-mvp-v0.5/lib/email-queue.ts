@@ -69,12 +69,11 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
       continue
     }
 
-    const unsubscribeUrl=siteUrl+'/unsubscribe?token='+encodeURIComponent(String(contact.unsubscribe_token))
-    const firstName=emailFirstName(contact.first_name)
-    const personalize=(value:string,name:string)=>value.replaceAll('{{first_name}}',name)
-    const body=withMarketingFooter(personalize(campaign.html_body,emailHtmlEscape(firstName)),personalize(campaign.text_body||'',firstName),unsubscribeUrl)
-
     try{
+      const unsubscribeUrl=siteUrl+'/unsubscribe?token='+encodeURIComponent(String(contact.unsubscribe_token))
+      const firstName=emailFirstName(contact.first_name)
+      const personalize=(value:unknown,name:string)=>String(value??'').replaceAll('{{first_name}}',name)
+      const body=withMarketingFooter(personalize(campaign.html_body,emailHtmlEscape(firstName)),personalize(campaign.text_body,firstName),unsubscribeUrl)
       const result=await provider.send({
         to:contact.email,
         subject:personalize(campaign.subject,firstName),
