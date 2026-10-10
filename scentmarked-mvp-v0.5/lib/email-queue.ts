@@ -1,7 +1,7 @@
 import { getEmailProvider } from '@/lib/email-provider'
 import { withMarketingFooter } from '@/lib/email-footer'
 import { siteUrl } from '@/lib/site'
-import { emailFirstName } from '@/lib/email-personalization'
+import { emailFirstName, emailHtmlEscape } from '@/lib/email-personalization'
 
 type DbClient=any
 
@@ -57,13 +57,13 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
 
     const unsubscribeUrl=siteUrl+'/unsubscribe?token='+encodeURIComponent(String(contact.unsubscribe_token))
     const firstName=emailFirstName(contact.first_name)
-    const personalize=(value:string)=>value.replaceAll('{{first_name}}',firstName)
-    const body=withMarketingFooter(personalize(campaign.html_body),personalize(campaign.text_body||''),unsubscribeUrl)
+    const personalize=(value:string,name:string)=>value.replaceAll('{{first_name}}',name)
+    const body=withMarketingFooter(personalize(campaign.html_body,emailHtmlEscape(firstName)),personalize(campaign.text_body||'',firstName),unsubscribeUrl)
 
     try{
       const result=await provider.send({
         to:contact.email,
-        subject:personalize(campaign.subject),
+        subject:personalize(campaign.subject,firstName),
         html:body.html,
         text:body.text,
         deliveryId:row.id
