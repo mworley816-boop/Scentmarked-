@@ -89,12 +89,16 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
         text:body.text,
         deliveryId:row.id
       })
-      const {error:updateError}=await s.from('email_deliveries').update({
-        provider_message_id:result.providerMessageId,
-        status:'sent',
-        sent_at:new Date().toISOString()
-      }).eq('id',row.id).eq('status','processing')
-      if(updateError)throw new EmailDeliveryPersistenceError()
+      try{
+        const {error:updateError}=await s.from('email_deliveries').update({
+          provider_message_id:result.providerMessageId,
+          status:'sent',
+          sent_at:new Date().toISOString()
+        }).eq('id',row.id).eq('status','processing')
+        if(updateError)throw updateError
+      }catch{
+        throw new EmailDeliveryPersistenceError()
+      }
       sent++
     }catch(error){
       if(error instanceof EmailDeliveryPersistenceError)throw error
