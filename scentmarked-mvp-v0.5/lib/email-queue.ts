@@ -1,4 +1,4 @@
-import { getEmailProvider } from '@/lib/email-provider'
+import { EmailProviderConfirmationError, getEmailProvider } from '@/lib/email-provider'
 import { withMarketingFooter } from '@/lib/email-footer'
 import { siteUrl } from '@/lib/site'
 import { emailFirstName, emailHtmlEscape } from '@/lib/email-personalization'
@@ -102,7 +102,7 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
       }
       sent++
     }catch(error){
-      if(error instanceof EmailDeliveryPersistenceError)throw error
+      if(error instanceof EmailDeliveryPersistenceError||error instanceof EmailProviderConfirmationError)throw error
       const {error:failureUpdateError}=await s.from('email_deliveries').update({
         status:'failed',
         failed_at:new Date().toISOString(),
