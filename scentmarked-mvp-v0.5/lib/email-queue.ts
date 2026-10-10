@@ -2,12 +2,9 @@ import { getEmailProvider } from '@/lib/email-provider'
 import { withMarketingFooter } from '@/lib/email-footer'
 import { siteUrl } from '@/lib/site'
 import { emailFirstName, emailHtmlEscape } from '@/lib/email-personalization'
+import { normalizeEmailBatchSize } from '@/lib/email-batch-size'
 
 type DbClient=any
-
-export function normalizeEmailBatchSize(batchSize:number):number{
-  return typeof batchSize==='number'&&Number.isFinite(batchSize)?Math.max(1,Math.min(100,Math.trunc(batchSize)||25)):25
-}
 
 export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=25){
   const safeBatchSize=normalizeEmailBatchSize(batchSize)
