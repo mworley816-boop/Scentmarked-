@@ -5,8 +5,12 @@ import { emailFirstName, emailHtmlEscape } from '@/lib/email-personalization'
 
 type DbClient=any
 
+export function normalizeEmailBatchSize(batchSize:number):number{
+  return typeof batchSize==='number'&&Number.isFinite(batchSize)?Math.max(1,Math.min(100,Math.trunc(batchSize)||25)):25
+}
+
 export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=25){
-  const safeBatchSize=typeof batchSize==='number'&&Number.isFinite(batchSize)?Math.max(1,Math.min(100,Math.trunc(batchSize)||25)):25
+  const safeBatchSize=normalizeEmailBatchSize(batchSize)
   const {data:campaign,error:campaignError}=await s.from('email_campaigns')
     .select('id,subject,html_body,text_body,status')
     .eq('id',campaignId).maybeSingle()
