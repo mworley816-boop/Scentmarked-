@@ -22,12 +22,12 @@ async function updateContactStatus(formData:FormData){
   const status=String(formData.get('status')||'')
   const {s}=await requireAdmin('/admin/crm/'+contactId)
   if(!contactId||!statuses.includes(status as any))redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Choose a valid contact status.'))
-  const {data:existing,error:existingError}=await s.from('crm_contacts').select('id,status,unsubscribed_at').eq('id',contactId).maybeSingle()
+  const {data:existing,error:existingError}=await s.from('crm_contacts').select('id,status,unsubscribed_at,updated_at').eq('id',contactId).maybeSingle()
   if(existingError||!existing)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact could not be verified before changing status.'))
   if(status==='active'){
     if(existing.status==='unsubscribed'||existing.unsubscribed_at)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Unsubscribed contacts require a new consent workflow before reactivation.'))
   }
-  const {data, error}=await s.from('crm_contacts').update({status,updated_at:new Date().toISOString()}).eq('id',contactId).eq('status',existing.status).select('id,status')
+  const {data, error}=await s.from('crm_contacts').update({status,updated_at:new Date().toISOString()}).eq('id',contactId).eq('status',existing.status).eq('updated_at',existing.updated_at).select('id,status')
   if(error)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status could not be updated.'))
   if(!data?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status changed while editing. Refresh and try again.'))
   if(data.length!==1||data[0].id!==contactId)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Updated contact did not match the requested record.'))
