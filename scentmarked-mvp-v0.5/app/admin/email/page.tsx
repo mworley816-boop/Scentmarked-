@@ -35,18 +35,18 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const p=await searchParams
   const {s}=await requireAdmin()
 
-  const [{data:campaigns,error},{data:segments},{data:templates},{data:deliveries},{count:emailable}]=await Promise.all([
+  const [{data:campaigns,error},{data:segments},{data:templates},deliveries,{count:emailable}]=await Promise.all([
     s.from('email_campaigns').select('id,name,subject,status,scheduled_at,started_at,completed_at,created_at,crm_segments:segment_id(id,name)').order('created_at',{ascending:false}).limit(100),
     s.from('crm_segments').select('id,name,is_active').eq('is_active',true).order('name'),
     s.from('email_templates').select('id,name,subject,updated_at').order('updated_at',{ascending:false}).limit(50),
-    Promise.all(['queued','processing','sent','delivered','opened','clicked','bounced','failed','complained','unsubscribed','skipped'].map(async status=>({status,...await s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('status',status)}))),
+    Promise.all(['queued','processing','sent','delivered','opened','clicked','bounced','failed','complained','unsubscribed','skipped'].map(async deliveryStatus=>({deliveryStatus,...await s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('status',deliveryStatus)}))),
     s.from('crm_contacts').select('*',{count:'exact',head:true}).eq('status','active').eq('marketing_consent',true)
   ])
 
   const campaignRows=campaigns||[]
   const segmentRows=segments||[]
   const templateRows=templates||[]
-  const deliveryCounts=new Map((deliveries||[]).map((x:any)=>[x.status,x.count||0]))
+  const deliveryCounts=new Map(deliveries.map((x:any)=>[x.deliveryStatus,x.count||0]))
   const count=(status:string):number=>Number(deliveryCounts.get(status)||0)
   const sent=count('sent')+count('delivered')+count('opened')+count('clicked')
   const delivered=count('delivered')+count('opened')+count('clicked')
