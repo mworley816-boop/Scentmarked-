@@ -75,10 +75,7 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
         skipped_at:new Date().toISOString(),
         error_message:'Recipient was no longer eligible for marketing email at send time.'
       }).eq('id',row.id).eq('status','processing')
-      if(skipError){
-        failed++
-        continue
-      }
+      if(skipError)throw new Error('Ineligible recipient could not be marked skipped; campaign batch requires reconciliation.')
       skipped++
       continue
     }
