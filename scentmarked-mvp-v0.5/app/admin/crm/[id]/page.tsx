@@ -26,6 +26,8 @@ async function updateContactStatus(formData:FormData){
   const {data:existing,error:existingError}=await s.from('crm_contacts').select('id,status,unsubscribed_at,updated_at').eq('id',contactId).maybeSingle()
   if(existingError||!existing)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact could not be verified before changing status.'))
   const expectedStatus=String(formData.get('expected_status')||'')
+  const expectedUpdatedAt=String(formData.get('expected_updated_at')||'')
+  if(expectedUpdatedAt&&existing.updated_at!==expectedUpdatedAt)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact was edited since this page loaded. Refresh and try again.'))
   if(expectedStatus&&existing.status!==expectedStatus)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status changed since this page loaded. Refresh and try again.'))
   if(status==='active'){
     if(existing.status==='unsubscribed'||existing.unsubscribed_at)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Unsubscribed contacts require a new consent workflow before reactivation.'))
@@ -128,7 +130,7 @@ export default async function CrmContact({params,searchParams}:{params:Promise<{
     {relatedDataErrors&&<div className="notice error" role="alert">Could not load: {relatedDataErrors}. Displayed information may be incomplete.</div>}
     {p.saved==='status'&&<div className="notice" role="status">Contact status updated.</div>}
 
-    <article className="admin-card crm-contact-controls"><div><p className="eyebrow">CONTACT STATUS</p><h2>CRM delivery state</h2><p>Use suppression states to prevent inappropriate marketing delivery. Marketing consent remains a separate permission. Unsubscribed contacts cannot be reactivated here; renewed consent is required.</p></div><form action={updateContactStatus}><input type="hidden" name="contact_id" value={id}/><input type="hidden" name="expected_status" value={c.status}/><label>Status<select name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x} disabled={x==='active'&&(c.status==='unsubscribed'||Boolean(c.unsubscribed_at))}>{x}</option>)}</select></label><button type="submit">Update status</button></form></article>
+    <article className="admin-card crm-contact-controls"><div><p className="eyebrow">CONTACT STATUS</p><h2>CRM delivery state</h2><p>Use suppression states to prevent inappropriate marketing delivery. Marketing consent remains a separate permission. Unsubscribed contacts cannot be reactivated here; renewed consent is required.</p></div><form action={updateContactStatus}><input type="hidden" name="contact_id" value={id}/><input type="hidden" name="expected_status" value={c.status}/><input type="hidden" name="expected_updated_at" value={c.updated_at}/><label>Status<select name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x} disabled={x==='active'&&(c.status==='unsubscribed'||Boolean(c.unsubscribed_at))}>{x}</option>)}</select></label><button type="submit">Update status</button></form></article>
 
     <div className="admin-grid">
       <article className="admin-card"><p className="eyebrow">EMAIL CONSENT</p><h2>{c.marketing_consent?'Consented':'Not consented'}</h2><p>{c.marketing_consented_at?'Since '+new Date(c.marketing_consented_at).toLocaleDateString():c.unsubscribed_at?'Unsubscribed '+new Date(c.unsubscribed_at).toLocaleDateString():'No consent timestamp'}</p></article>
