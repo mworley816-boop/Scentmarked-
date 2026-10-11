@@ -4,6 +4,7 @@ import { siteUrl } from '@/lib/site'
 import { emailFirstName, emailHtmlEscape } from '@/lib/email-personalization'
 import { normalizeEmailBatchSize } from '@/lib/email-batch-size'
 import { hasValidRecipientEmail } from '@/lib/email-recipient'
+import { validClaimIds } from '@/lib/email-claim-validation'
 
 export class EmailDeliveryPersistenceError extends Error{
   constructor(){
@@ -34,7 +35,7 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
     throw new Error('Claimed deliveries exceeded the requested batch size.')
   }
   const claimedIds=claimed.map((x:any)=>x?.delivery_id)
-  if(claimedIds.some((id:any)=>typeof id!=='string'||!id.trim()||id!==id.trim())||new Set(claimedIds).size!==claimedIds.length){
+  if(validClaimIds(claimed)===null){
     const validIds=claimedIds.filter((id:any):id is string=>typeof id==='string'&&!!id.trim()&&id===id.trim())
     if(validIds.length){
       const {error:releaseError}=await s.rpc('release_email_delivery_claims',{p_delivery_ids:[...new Set(validIds)]})
