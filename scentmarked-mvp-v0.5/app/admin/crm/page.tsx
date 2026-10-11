@@ -20,7 +20,7 @@ async function updateContact(formData:FormData){
   'use server'
   const s=await requireAdmin()
   const id=String(formData.get('id')||'')
-  const status=String(formData.get('status')||'active')
+  const status=String(formData.get('status')||'')
   if(!id||!statuses.includes(status as any))redirect('/admin/crm?error='+encodeURIComponent('Invalid contact update.'))
   const expectedStatus=String(formData.get('expected_status')||'')
   const expectedUpdatedAt=String(formData.get('expected_updated_at')||'')
