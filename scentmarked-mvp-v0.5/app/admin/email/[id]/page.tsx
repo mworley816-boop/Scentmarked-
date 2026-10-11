@@ -196,10 +196,10 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   const processingList=processingRows||[]
   const processingWithProviderId=processingList.filter((delivery:any)=>typeof delivery.provider_message_id==='string'&&delivery.provider_message_id.trim()).length
   const processingWithoutProviderId=processingList.length-processingWithProviderId
-  const processingListTruncated=(counts.processing||0)>processingList.length
+  const processingListTruncated=!deliveryCountsError&&(counts.processing||0)>processingList.length
   const total=deliveryTotal||0
   const skipped=counts.skipped||0
-  const sentBase=total-(counts.queued||0)-(counts.processing||0)-skipped
+  const sentBase=Math.max(0,total-(counts.queued||0)-(counts.processing||0)-skipped)
   const delivered=(counts.delivered||0)+(counts.opened||0)+(counts.clicked||0)
   const opened=(counts.opened||0)+(counts.clicked||0)
   const clicked=counts.clicked||0
