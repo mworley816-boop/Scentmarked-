@@ -41,3 +41,9 @@ test('both CRM admin status actions verify activation has no unsubscribe marker'
     assert.match(source,/verified\.status!=='active'\|\|verified\.unsubscribed_at/,label)
   }
 })
+
+test('CRM list status submission rejects omitted status rather than activating by default',()=>{
+  assert.match(adminPage,/const status=String\(formData\.get\('status'\)\|\|''\)/)
+  assert.match(adminPage,/!statuses\.includes\(status as any\)/)
+  assert.doesNotMatch(adminPage,/const status=String\(formData\.get\('status'\)\|\|'active'\)/)
+})
