@@ -22,14 +22,17 @@ async function updateContact(formData:FormData){
   const id=String(formData.get('id')||'')
   const status=String(formData.get('status')||'active')
   if(!id||!statuses.includes(status as any))redirect('/admin/crm?error='+encodeURIComponent('Invalid contact update.'))
-  if(status==='active'){
-    const {data:contact,error:lookupError}=await s.from('crm_contacts').select('status,unsubscribed_at').eq('id',id).maybeSingle()
-    if(lookupError||!contact)redirect('/admin/crm?error='+encodeURIComponent('Contact could not be verified before reactivation.'))
-    if(contact.status==='unsubscribed'||contact.unsubscribed_at)redirect('/admin/crm?error='+encodeURIComponent('Unsubscribed contacts cannot be reactivated here. A new consent workflow is required.'))
-  }
-  const {data,error}=await s.from('crm_contacts').update({status,updated_at:new Date().toISOString()}).eq('id',id).select('id')
+  const expectedStatus=String(formData.get('expected_status')||'')
+  const expectedUpdatedAt=String(formData.get('expected_updated_at')||'')
+  if(!expectedStatus||!expectedUpdatedAt)redirect('/admin/crm?error='+encodeURIComponent('Status form is incomplete. Refresh and try again.'))
+  const {data:contact,error:lookupError}=await s.from('crm_contacts').select('id,status,unsubscribed_at,updated_at').eq('id',id).maybeSingle()
+  if(lookupError||!contact)redirect('/admin/crm?error='+encodeURIComponent('Contact could not be verified before changing status.'))
+  if(contact.status!==expectedStatus||contact.updated_at!==expectedUpdatedAt)redirect('/admin/crm?error='+encodeURIComponent('Contact was edited since this page loaded. Refresh and try again.'))
+  if(status==='active'&&(contact.status==='unsubscribed'||contact.unsubscribed_at))redirect('/admin/crm?error='+encodeURIComponent('Unsubscribed contacts cannot be reactivated here. A new consent workflow is required.'))
+  const {data,error}=await s.from('crm_contacts').update({status,updated_at:new Date().toISOString()}).eq('id',id).eq('status',expectedStatus).eq('updated_at',expectedUpdatedAt).select('id,status')
   if(error)redirect('/admin/crm?error='+encodeURIComponent('Contact could not be updated.'))
-  if(!data?.length)redirect('/admin/crm?error='+encodeURIComponent('No matching contact was found.'))
+  if(!data?.length)redirect('/admin/crm?error='+encodeURIComponent('Contact changed while editing. Refresh and try again.'))
+  if(data.length!==1||data[0].id!==id||data[0].status!==status)redirect('/admin/crm?error='+encodeURIComponent('Updated contact did not match the requested change.'))
   redirect('/admin/crm')
 }
 
@@ -44,7 +47,7 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
   const pageSize=100
 
   let query=s.from('crm_contacts')
-    .select('id,user_id,email,first_name,last_name,status,source,marketing_consent,marketing_consented_at,unsubscribed_at,last_engaged_at,created_at,profiles:user_id(display_name,scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at)',{count:'exact'})
+    .select('id,user_id,email,first_name,last_name,status,source,marketing_consent,marketing_consented_at,unsubscribed_at,last_engaged_at,created_at,updated_at,profiles:user_id(display_name,scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at)',{count:'exact'})
     .order('created_at',{ascending:false})
     .range((page-1)*pageSize,page*pageSize-1)
 
@@ -103,7 +106,7 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
       return <article className="crm-contact-row" key={c.id}>
         <div className="crm-contact-main"><div className="crm-contact-avatar">{name.slice(0,1).toUpperCase()}</div><div><div className="crm-badges"><span className={'crm-status '+c.status}>{c.status}</span><span>{c.user_id?'Member':'CRM only'}</span><span className={c.marketing_consent&&c.marketing_consented_at&&!c.unsubscribed_at&&c.status==='active'?'consented':'muted'}>{c.marketing_consent&&c.marketing_consented_at&&!c.unsubscribed_at&&c.status==='active'?'Email eligible':'No marketing'}</span></div><h2>{name}</h2><a className="crm-email" href={'mailto:'+c.email}>{c.email}</a><small>Added {new Date(c.created_at).toLocaleDateString()} · {c.source}</small></div></div>
         <div className="crm-contact-profile">{profile?<><strong>{profile.scent_profile_completed_at?'Scent profile complete':'Scent profile incomplete'}</strong>{loved.length>0&&<p>Loves {loved.join(', ')}</p>}{profile.scent_vibes?.length>0&&<p>{profile.scent_vibes.slice(0,4).join(' · ')}</p>}</>:<span className="muted">No linked scent profile</span>}</div>
-        <div className="crm-contact-actions"><form action={updateContact}><input type="hidden" name="id" value={c.id}/><select aria-label={'Status for '+name} name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x}>{x}</option>)}</select><button type="submit">Update</button></form><Link className="button" href={'/admin/crm/'+c.id}>Open contact</Link></div>
+        <div className="crm-contact-actions"><form action={updateContact}><input type="hidden" name="id" value={c.id}/><input type="hidden" name="expected_status" value={c.status}/><input type="hidden" name="expected_updated_at" value={c.updated_at}/><select aria-label={'Status for '+name} name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x} disabled={x==='active'&&(c.status==='unsubscribed'||!!c.unsubscribed_at)}>{x}</option>)}</select><button type="submit">Update</button></form><Link className="button" href={'/admin/crm/'+c.id}>Open contact</Link></div>
       </article>
     })}</div>}
     {!error&&<nav aria-label="CRM contact pages" style={{display:'flex',gap:12,alignItems:'center',marginTop:16}}>{page>1&&<Link className="button ghost" href={pageHref(page-1)}>Previous page</Link>}<span>Page {page}{totalPages!==null?` of ${totalPages}`:''}</span>{(totalPages!==null?page<totalPages:contacts.length===pageSize)&&<Link className="button ghost" href={pageHref(page+1)}>Next page</Link>}</nav>}
