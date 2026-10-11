@@ -58,8 +58,9 @@ async function addTag(formData:FormData){
   if(contactError||!contact)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact could not be verified before adding a tag.'))
   const {data:tag,error:tagError}=await s.from('crm_tags').upsert({name},{onConflict:'name'}).select('id').single()
   if(tagError||!tag)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag could not be saved.'))
-  const {data:attached,error}=await s.from('crm_contact_tags').upsert({contact_id:contactId,tag_id:tag.id},{onConflict:'contact_id,tag_id'}).select('tag_id')
+  const {data:attached,error}=await s.from('crm_contact_tags').upsert({contact_id:contactId,tag_id:tag.id},{onConflict:'contact_id,tag_id'}).select('contact_id,tag_id')
   if(error||!attached?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag could not be attached.'))
+  if(attached[0].contact_id!==contactId||attached[0].tag_id!==tag.id)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag attachment did not match the requested contact.'))
   redirect('/admin/crm/'+contactId)
 }
 
