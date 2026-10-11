@@ -65,6 +65,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const completedCampaigns=completedCountResult.count??campaignRows.filter((x:any)=>x.status==='sent').length
   const completedCampaignsAreRecentOnly=completedCountResult.error!==null||typeof completedCountResult.count!=='number'
   const campaignListTruncated=typeof totalCampaigns==='number'?totalCampaigns>campaignRows.length:campaignRows.length===100
+  const campaignTotalUnavailable=error!==null||typeof totalCampaigns!=='number'
   const pct=(n:number,d:number)=>d?Math.round(n/d*1000)/10:0
   const metricsUpdatedAt=new Date().toISOString()
 
@@ -74,6 +75,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
     {p.error&&<div className="notice error" role="alert">{p.error}</div>}
     {error&&<div className="notice error" role="alert">Campaign data could not be loaded. Apply the CRM/email migration before using this page.</div>}
     {completedCampaignsAreRecentOnly&&<div className="notice error" role="alert">Completed campaign total could not be retrieved; showing a count from the recent list only.</div>}
+    {campaignTotalUnavailable&&!error&&<div className="notice error" role="alert">Full campaign total is unavailable; showing recent campaigns only.</div>}
     {deliveryMetricsError&&<div className="notice error" role="alert">Some delivery counts could not be loaded; performance metrics may be incomplete.</div>}
     <div className="notice"><strong>Provider-gated sending:</strong> Campaigns can send only when the Resend environment variables are configured. Consent checks, unsubscribe processing, and verified webhook handling remain enforced.</div>
 
@@ -99,7 +101,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
         <div><strong>{skipped}</strong><p>Skipped · no email sent</p></div>
         <div><strong>{unsubscribed}</strong><p>Unsubscribes</p></div>
         <div><strong>{complained}</strong><p>Spam complaints</p></div>
-        <div><strong>{totalCampaigns??campaignCount}</strong><p>Total campaigns</p></div>
+        <div><strong>{totalCampaigns??campaignCount}</strong><p>{campaignTotalUnavailable?'Recent campaigns':'Total campaigns'}</p></div>
         <div><strong>{completedCampaigns}</strong><p>{completedCampaignsAreRecentOnly?'Completed in recent list':'Completed campaigns'}</p></div>
       </div>
     </article>}
