@@ -63,3 +63,12 @@ test('reconciliation view does not mistake missing provider IDs for unsent mail'
   assert.match(page,/missing IDs do not prove that an email was not sent/)
   assert.match(page,/provider_message_id\|\|'Not recorded'/)
 })
+
+test('campaign delivery analytics use exact counts instead of a capped status row fetch',()=>{
+  const page=readFileSync(join(process.cwd(),'app/admin/email/[id]/page.tsx'),'utf8')
+  assert.match(page,/deliveryStatuses\.map\(status=>s\.from\('email_deliveries'\)\.select\('id',\{count:'exact',head:true\}\)/)
+  assert.match(page,/const \{count:deliveryTotal,error:deliveryTotalError\}/)
+  assert.match(page,/Delivery analytics could not be fully loaded/)
+  assert.doesNotMatch(page,/\.select\('status'\)\.eq\('campaign_id',id\)/)
+  assert.doesNotMatch(page,/const total=rows\.length/)
+})
