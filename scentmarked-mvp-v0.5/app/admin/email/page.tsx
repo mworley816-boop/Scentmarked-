@@ -31,12 +31,15 @@ async function createCampaign(formData:FormData){
   redirect('/admin/email/'+data.id)
 }
 
-export default async function AdminEmail({searchParams}:{searchParams:Promise<{error?:string}>}){
+export default async function AdminEmail({searchParams}:{searchParams:Promise<{error?:string,page?:string}>}){
   const p=await searchParams
   const {s}=await requireAdmin()
+  const pageInput=Number(p.page||'1')
+  const page=Number.isSafeInteger(pageInput)&&pageInput>0?Math.min(pageInput,10000):1
+  const pageSize=50
 
   const [{data:campaigns,error,count:totalCampaigns},{data:segments},{data:templates},deliveries,{count:emailable},completedCountResult]=await Promise.all([
-    s.from('email_campaigns').select('id,name,subject,status,scheduled_at,started_at,completed_at,created_at,crm_segments:segment_id(id,name)',{count:'exact'}).order('created_at',{ascending:false}).limit(100),
+    s.from('email_campaigns').select('id,name,subject,status,scheduled_at,started_at,completed_at,created_at,crm_segments:segment_id(id,name)',{count:'exact'}).order('created_at',{ascending:false}).range((page-1)*pageSize,page*pageSize-1),
     s.from('crm_segments').select('id,name,is_active').eq('is_active',true).order('name'),
     s.from('email_templates').select('id,name,subject,updated_at').order('updated_at',{ascending:false}).limit(50),
     Promise.all(['queued','processing','sent','delivered','opened','clicked','bounced','failed','complained','unsubscribed','skipped'].map(async deliveryStatus=>({deliveryStatus,...await s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('status',deliveryStatus)}))),
@@ -64,7 +67,10 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const campaignCount=campaignRows.length
   const completedCampaigns=completedCountResult.count??campaignRows.filter((x:any)=>x.status==='sent').length
   const completedCampaignsAreRecentOnly=completedCountResult.error!==null||typeof completedCountResult.count!=='number'
-  const campaignListTruncated=typeof totalCampaigns==='number'?totalCampaigns>campaignRows.length:campaignRows.length===100
+  const campaignListTruncated=typeof totalCampaigns==='number'?totalCampaigns>page*pageSize:campaignRows.length===pageSize
+  const totalPages=typeof totalCampaigns==='number'?Math.ceil(totalCampaigns/pageSize):null
+  const campaignStart=campaignRows.length?(page-1)*pageSize+1:0
+  const campaignEnd=(page-1)*pageSize+campaignRows.length
   const campaignTotalUnavailable=error!==null||typeof totalCampaigns!=='number'
   const pct=(n:number,d:number)=>d?Math.round(n/d*1000)/10:0
   const metricsUpdatedAt=new Date().toISOString()
@@ -108,8 +114,9 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
 
     <article className="admin-card email-create-card" id="new-campaign"><div className="email-section-heading"><div><p className="eyebrow">NEW CAMPAIGN</p><h2>Create a draft</h2><p>Give the campaign a working name and subject. You can choose or change the audience later.</p></div></div><form action={createCampaign} className="email-create-form"><label>Campaign name<input name="name" maxLength={120} placeholder="October Gourmand Finds" required/></label><label>Email subject<input name="subject" maxLength={200} placeholder="Sweet new scents picked for you" required/></label><label>Audience segment<select name="segment_id" defaultValue=""><option value="">Choose later</option>{segmentRows.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><div><button type="submit">Create draft</button></div></form></article>
 
-    <div className="email-section-heading"><div><p className="eyebrow">CAMPAIGNS</p><h2>Recent campaigns</h2><p>Showing up to 100 most recent campaigns. Open a campaign to edit content, audience, scheduling or review delivery performance.</p>{campaignListTruncated&&<p className="notice">{typeof totalCampaigns==='number'?`${totalCampaigns-campaignRows.length} older campaign(s) are not shown here.`:'There may be additional older campaigns not shown here.'}</p>}</div></div>
+    <div className="email-section-heading"><div><p className="eyebrow">CAMPAIGNS</p><h2>Campaigns</h2><p>Showing {campaignStart}–{campaignEnd}{typeof totalCampaigns==='number'?` of ${totalCampaigns}`:''} campaigns, newest first. Open a campaign to edit content, audience, scheduling or review delivery performance.</p>{campaignListTruncated&&<p>Use Next page to browse older campaigns.</p>}</div></div>
     {!campaignRows.length?<div className="empty-state"><h2>No campaigns yet.</h2><p>Create your first draft above.</p></div>:<div className="admin-list">{campaignRows.map((c:any)=>{const segment=Array.isArray(c.crm_segments)?c.crm_segments[0]:c.crm_segments;return <article className="admin-card email-campaign-row" key={c.id}><div><div className="email-campaign-meta"><span className={'email-status '+c.status}>{c.status}</span>{segment&&<span>{segment.name}</span>}</div><h2>{c.name}</h2><p>{c.subject}</p><small>Created {new Date(c.created_at).toLocaleDateString()}{c.scheduled_at?' · Scheduled '+new Date(c.scheduled_at).toLocaleString():''}</small></div><Link className="button ghost" href={'/admin/email/'+c.id}>Open campaign</Link></article>})}</div>}
 
+    {!error&&<nav aria-label="Email campaign pages" style={{display:'flex',gap:12,alignItems:'center',marginTop:16}}>{page>1&&<Link className="button ghost" href={'/admin/email?page='+(page-1)}>Previous page</Link>}<span>Page {page}{totalPages!==null?` of ${totalPages}`:''}</span>{(totalPages!==null?page<totalPages:campaignRows.length===pageSize)&&<Link className="button ghost" href={'/admin/email?page='+(page+1)}>Next page</Link>}</nav>}
   </section></main>
 }
