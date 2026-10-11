@@ -29,3 +29,10 @@ test('worker logs categorized errors without raw exception messages',()=>{
   assert.match(worker,/processing_failure/)
   assert.doesNotMatch(worker,/error:error instanceof Error\?error\.message/)
 })
+
+test('uncertain delivery outcomes return conflict before routine server errors',()=>{
+  const conflict=worker.indexOf("if(reconciliationRequired)return NextResponse.json(summary,{status:409})")
+  const failure=worker.indexOf("if(failures>0)return NextResponse.json(summary,{status:500})")
+  assert.ok(conflict>=0,'worker must return 409 for reconciliation')
+  assert.ok(failure>conflict,'409 reconciliation response must take precedence over 500')
+})
