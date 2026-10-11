@@ -63,6 +63,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const campaignCount=campaignRows.length
   const completedCampaigns=campaignRows.filter((x:any)=>x.status==='sent').length
   const pct=(n:number,d:number)=>d?Math.round(n/d*1000)/10:0
+  const metricsUpdatedAt=new Date().toISOString()
 
   return <main><section className="admin-page">
     <div className="email-admin-hero"><div><p className="eyebrow">SCENTMARKED ADMIN</p><h1>Email Marketing</h1><p>Create campaigns, organize audiences and monitor email performance.</p></div><div className="email-hero-actions"><Link className="button ghost" href="/admin">← Admin</Link><a className="button" href="#new-campaign">+ New campaign</a></div></div>
@@ -80,7 +81,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
       <article className="admin-card"><p className="eyebrow">CLICKED</p><h2>{clicked}</h2><p>{pct(clicked,delivered)}% of delivered</p></article>
     </div>}
 
-    {!deliveryMetricsError&&<article className="admin-card email-performance"><p className="eyebrow">EMAIL HEALTH</p><h2>Overall performance</h2>
+    {!deliveryMetricsError&&<article className="admin-card email-performance"><p className="eyebrow">EMAIL HEALTH</p><h2>Overall performance</h2><p>Current delivery status totals across all campaigns · refreshed {new Date(metricsUpdatedAt).toLocaleString('en-US',{timeZone:'UTC',timeZoneName:'short'})}</p>
       <div className="admin-grid">
         <div><strong>{sent}</strong><p>Sent or later confirmed</p></div>
         <div><strong>{pct(delivered,attempted)}%</strong><p>Delivery rate · {delivered}/{attempted}</p></div>
