@@ -52,8 +52,8 @@ async function addTag(formData:FormData){
   if(!contactId||!name)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Enter a tag first.'))
   const {data:tag,error:tagError}=await s.from('crm_tags').upsert({name},{onConflict:'name'}).select('id').single()
   if(tagError||!tag)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag could not be saved.'))
-  const {error}=await s.from('crm_contact_tags').upsert({contact_id:contactId,tag_id:tag.id},{onConflict:'contact_id,tag_id'})
-  if(error)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag could not be attached.'))
+  const {data:attached,error}=await s.from('crm_contact_tags').upsert({contact_id:contactId,tag_id:tag.id},{onConflict:'contact_id,tag_id'}).select('tag_id')
+  if(error||!attached?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag could not be attached.'))
   redirect('/admin/crm/'+contactId)
 }
 
