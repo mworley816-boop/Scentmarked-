@@ -1,3 +1,9 @@
+export function releasableClaimIds(claimed:unknown):string[]{
+  if(!Array.isArray(claimed))return []
+  return [...new Set(claimed.map(row=>row&&typeof row==='object'?(row as {delivery_id?:unknown}).delivery_id:undefined)
+    .filter((id):id is string=>typeof id==='string'&&!!id.trim()&&id===id.trim()))]
+}
+
 export function validClaimIds(claimed:unknown):string[]|null{
   if(!Array.isArray(claimed))return null
   const ids=claimed.map(row=>row&&typeof row==='object'?(row as {delivery_id?:unknown}).delivery_id:undefined)
