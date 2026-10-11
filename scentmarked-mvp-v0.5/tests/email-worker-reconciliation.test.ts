@@ -56,3 +56,10 @@ test('campaign reconciliation view is read-only and shows processing delivery id
   assert.ok(section.includes('Processing delivery IDs'))
   assert.doesNotMatch(section,/formAction=|<form|\.update\(|\.rpc\(/)
 })
+
+test('reconciliation view does not mistake missing provider IDs for unsent mail',()=>{
+  const page=readFileSync(join(process.cwd(),'app/admin/email/[id]/page.tsx'),'utf8')
+  assert.match(page,/processingWithProviderId=processingList\.filter/)
+  assert.match(page,/missing IDs do not prove that an email was not sent/)
+  assert.match(page,/provider_message_id\|\|'Not recorded'/)
+})
