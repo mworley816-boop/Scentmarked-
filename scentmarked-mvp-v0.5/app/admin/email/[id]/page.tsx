@@ -178,7 +178,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   const deliveryCountResults=await Promise.all(deliveryStatuses.map(status=>s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('campaign_id',id).eq('status',status)))
   const counts:Record<string,number>={}
   deliveryStatuses.forEach((status,index)=>{counts[status]=deliveryCountResults[index].count||0})
-  const deliveryCountsError=deliveryCountResults.some(result=>result.error!==null)
+  const deliveryCountsError=deliveryCountResults.some(result=>result.error!==null||result.count===null)
   const {count:deliveryTotal,error:deliveryTotalError}=await s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('campaign_id',id)
   const editable=campaign.status==='draft'
   let audiencePreview=0
