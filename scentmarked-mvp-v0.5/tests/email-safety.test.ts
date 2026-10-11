@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { marketingFooter, withMarketingFooter } from '../lib/email-footer.ts'
-import { getEmailProvider } from '../lib/email-provider.ts'
+import { EmailProviderConfirmationError, getEmailProvider } from '../lib/email-provider.ts'
 import { emailFirstName, emailHtmlEscape } from '../lib/email-personalization.ts'
 import { normalizeEmailBatchSize } from '../lib/email-batch-size.ts'
 import { hasValidRecipientEmail } from '../lib/email-recipient.ts'
@@ -123,4 +123,32 @@ test('campaign personalization uses a safe first-name fallback',()=>{
   assert.equal(emailFirstName(null),'ScentMarked Friend')
   assert.equal(emailFirstName('   '),'ScentMarked Friend')
   assert.equal(emailFirstName('Member'),'Member')
+})
+
+test('ambiguous provider outcomes require reconciliation instead of automatic retry',async()=>{
+  const previousKey=process.env.RESEND_API_KEY
+  const previousFrom=process.env.RESEND_FROM_EMAIL
+  const previousFetch=globalThis.fetch
+  process.env.RESEND_API_KEY='test-key'
+  process.env.RESEND_FROM_EMAIL='updates@example.com'
+  const message={to:'member@example.com',subject:'Hello',html:'<p>Hello</p>',text:'Hello',deliveryId:'uncertain-1'}
+  try{
+    const scenarios=[
+      async()=>{throw new Error('network connection lost')},
+      async()=>new Response('not-json',{status:200}),
+      async()=>new Response(JSON.stringify({}),{status:200})
+    ]
+    for(const scenario of scenarios){
+      globalThis.fetch=(scenario as unknown) as typeof fetch
+      await assert.rejects(()=>getEmailProvider().send(message),EmailProviderConfirmationError)
+    }
+    globalThis.fetch=(async()=>new Response(JSON.stringify({message:'bad request'}),{status:400})) as typeof fetch
+    await assert.rejects(()=>getEmailProvider().send(message),/Email provider rejected the send request/)
+  }finally{
+    globalThis.fetch=previousFetch
+    if(previousKey===undefined)delete process.env.RESEND_API_KEY
+    else process.env.RESEND_API_KEY=previousKey
+    if(previousFrom===undefined)delete process.env.RESEND_FROM_EMAIL
+    else process.env.RESEND_FROM_EMAIL=previousFrom
+  }
 })
