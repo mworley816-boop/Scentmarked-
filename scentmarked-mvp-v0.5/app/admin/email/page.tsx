@@ -85,6 +85,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
     {campaignTotalUnavailable&&!error&&<div className="notice error" role="alert">Full campaign total is unavailable; showing recent campaigns only.</div>}
     {emailableCountUnavailable&&<div className="notice error" role="alert">Eligible subscriber count could not be retrieved. Verify CRM permissions and database availability.</div>}
     {deliveryMetricsError&&<div className="notice error" role="alert">Some delivery counts could not be loaded; performance metrics may be incomplete.</div>}
+    {!deliveryMetricsError&&count('processing')>0&&<div className="notice error" role="alert"><strong>Delivery reconciliation:</strong> {count('processing')} delivery record(s) remain in processing. These are not automatically retried. Review their provider outcomes before taking any manual action; an interrupted send may already have been accepted.</div>}
     <div className="notice"><strong>Provider-gated sending:</strong> Campaigns can send only when the Resend environment variables are configured. Consent checks, unsubscribe processing, and verified webhook handling remain enforced.</div>
 
     {!deliveryMetricsError&&<div className="admin-grid">
