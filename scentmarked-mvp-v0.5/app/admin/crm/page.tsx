@@ -22,6 +22,7 @@ async function updateContact(formData:FormData){
   const id=String(formData.get('id')||'')
   const status=String(formData.get('status')||'')
   if(!id||!statuses.includes(status as any))redirect('/admin/crm?error='+encodeURIComponent('Invalid contact update.'))
+  if(status==='active'&&String(formData.get('expected_status')||'')==='unsubscribed')redirect('/admin/crm?error='+encodeURIComponent('Unsubscribed contacts require renewed consent.'))
   const expectedStatus=String(formData.get('expected_status')||'')
   const expectedUpdatedAt=String(formData.get('expected_updated_at')||'')
   if(!expectedStatus||!expectedUpdatedAt)redirect('/admin/crm?error='+encodeURIComponent('Status form is incomplete. Refresh and try again.'))
