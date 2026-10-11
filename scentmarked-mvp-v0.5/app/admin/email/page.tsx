@@ -74,6 +74,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
 
     {!deliveryMetricsError&&<div className="admin-grid">
       <article className="admin-card"><p className="eyebrow">EMAILABLE</p><h2>{emailable||0}</h2><p>Active contacts with consent</p></article>
+      <article className="admin-card"><p className="eyebrow">SENT</p><h2>{sent}</h2><p>Accepted for sending or later confirmed</p></article>
       <article className="admin-card"><p className="eyebrow">DELIVERED</p><h2>{delivered}</h2><p>{pct(delivered,attempted)}% of attempted</p></article>
       <article className="admin-card"><p className="eyebrow">OPENED</p><h2>{opened}</h2><p>{pct(opened,delivered)}% of delivered</p></article>
       <article className="admin-card"><p className="eyebrow">CLICKED</p><h2>{clicked}</h2><p>{pct(clicked,delivered)}% of delivered</p></article>
@@ -81,6 +82,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
 
     {!deliveryMetricsError&&<article className="admin-card email-performance"><p className="eyebrow">EMAIL HEALTH</p><h2>Overall performance</h2>
       <div className="admin-grid">
+        <div><strong>{sent}</strong><p>Sent or later confirmed</p></div>
         <div><strong>{pct(delivered,attempted)}%</strong><p>Delivery rate · {delivered}/{attempted}</p></div>
         <div><strong>{pct(opened,delivered)}%</strong><p>Open rate · {opened}/{delivered}</p></div>
         <div><strong>{pct(clicked,delivered)}%</strong><p>Click rate · {clicked}/{delivered}</p></div>
