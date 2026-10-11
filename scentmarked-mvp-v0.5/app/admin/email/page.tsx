@@ -62,6 +62,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const deliveryMetricsError=deliveries.some((x:any)=>x.error||typeof x.count!=='number'||!Number.isSafeInteger(x.count)||x.count<0)
   const campaignCount=campaignRows.length
   const completedCampaigns=campaignRows.filter((x:any)=>x.status==='sent').length
+  const campaignListTruncated=campaignRows.length===100
   const pct=(n:number,d:number)=>d?Math.round(n/d*1000)/10:0
   const metricsUpdatedAt=new Date().toISOString()
 
@@ -102,7 +103,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
 
     <article className="admin-card email-create-card" id="new-campaign"><div className="email-section-heading"><div><p className="eyebrow">NEW CAMPAIGN</p><h2>Create a draft</h2><p>Give the campaign a working name and subject. You can choose or change the audience later.</p></div></div><form action={createCampaign} className="email-create-form"><label>Campaign name<input name="name" maxLength={120} placeholder="October Gourmand Finds" required/></label><label>Email subject<input name="subject" maxLength={200} placeholder="Sweet new scents picked for you" required/></label><label>Audience segment<select name="segment_id" defaultValue=""><option value="">Choose later</option>{segmentRows.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><div><button type="submit">Create draft</button></div></form></article>
 
-    <div className="email-section-heading"><div><p className="eyebrow">CAMPAIGNS</p><h2>Recent campaigns</h2><p>Open a campaign to edit content, audience, scheduling or review delivery performance.</p></div></div>
+    <div className="email-section-heading"><div><p className="eyebrow">CAMPAIGNS</p><h2>Recent campaigns</h2><p>Showing up to 100 most recent campaigns. Open a campaign to edit content, audience, scheduling or review delivery performance.</p>{campaignListTruncated&&<p className="notice">There may be additional older campaigns not shown here.</p>}</div></div>
     {!campaignRows.length?<div className="empty-state"><h2>No campaigns yet.</h2><p>Create your first draft above.</p></div>:<div className="admin-list">{campaignRows.map((c:any)=>{const segment=Array.isArray(c.crm_segments)?c.crm_segments[0]:c.crm_segments;return <article className="admin-card email-campaign-row" key={c.id}><div><div className="email-campaign-meta"><span className={'email-status '+c.status}>{c.status}</span>{segment&&<span>{segment.name}</span>}</div><h2>{c.name}</h2><p>{c.subject}</p><small>Created {new Date(c.created_at).toLocaleDateString()}{c.scheduled_at?' · Scheduled '+new Date(c.scheduled_at).toLocaleString():''}</small></div><Link className="button ghost" href={'/admin/email/'+c.id}>Open campaign</Link></article>})}</div>}
 
   </section></main>
