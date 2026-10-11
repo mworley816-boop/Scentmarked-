@@ -35,12 +35,13 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const p=await searchParams
   const {s}=await requireAdmin()
 
-  const [{data:campaigns,error,count:totalCampaigns},{data:segments},{data:templates},deliveries,{count:emailable}]=await Promise.all([
+  const [{data:campaigns,error,count:totalCampaigns},{data:segments},{data:templates},deliveries,{count:emailable},completedCountResult]=await Promise.all([
     s.from('email_campaigns').select('id,name,subject,status,scheduled_at,started_at,completed_at,created_at,crm_segments:segment_id(id,name)',{count:'exact'}).order('created_at',{ascending:false}).limit(100),
     s.from('crm_segments').select('id,name,is_active').eq('is_active',true).order('name'),
     s.from('email_templates').select('id,name,subject,updated_at').order('updated_at',{ascending:false}).limit(50),
     Promise.all(['queued','processing','sent','delivered','opened','clicked','bounced','failed','complained','unsubscribed','skipped'].map(async deliveryStatus=>({deliveryStatus,...await s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('status',deliveryStatus)}))),
-    s.from('crm_contacts').select('*',{count:'exact',head:true}).eq('status','active').eq('marketing_consent',true)
+    s.from('crm_contacts').select('*',{count:'exact',head:true}).eq('status','active').eq('marketing_consent',true),
+    s.from('email_campaigns').select('id',{count:'exact',head:true}).eq('status','sent')
   ])
 
   const campaignRows=campaigns||[]
@@ -61,8 +62,8 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const pending=count('queued')+count('processing')
   const deliveryMetricsError=deliveries.some((x:any)=>x.error||typeof x.count!=='number'||!Number.isSafeInteger(x.count)||x.count<0)
   const campaignCount=campaignRows.length
-  const completedCampaigns=campaignRows.filter((x:any)=>x.status==='sent').length
-  const completedCampaignsAreRecentOnly=typeof totalCampaigns==='number'&&totalCampaigns>campaignCount
+  const completedCampaigns=completedCountResult.count??campaignRows.filter((x:any)=>x.status==='sent').length
+  const completedCampaignsAreRecentOnly=completedCountResult.error!==null
   const campaignListTruncated=typeof totalCampaigns==='number'?totalCampaigns>campaignRows.length:campaignRows.length===100
   const pct=(n:number,d:number)=>d?Math.round(n/d*1000)/10:0
   const metricsUpdatedAt=new Date().toISOString()
