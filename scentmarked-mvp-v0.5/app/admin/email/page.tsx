@@ -38,7 +38,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const page=Number.isSafeInteger(pageInput)&&pageInput>0?Math.min(pageInput,10000):1
   const pageSize=50
 
-  const [{data:campaigns,error,count:totalCampaigns},{data:segments},{data:templates},deliveries,{count:emailable},completedCountResult]=await Promise.all([
+  const [{data:campaigns,error,count:totalCampaigns},{data:segments},{data:templates},deliveries,{count:emailable,error:emailableError},completedCountResult]=await Promise.all([
     s.from('email_campaigns').select('id,name,subject,status,scheduled_at,started_at,completed_at,created_at,crm_segments:segment_id(id,name)',{count:'exact'}).order('created_at',{ascending:false}).range((page-1)*pageSize,page*pageSize-1),
     s.from('crm_segments').select('id,name,is_active').eq('is_active',true).order('name'),
     s.from('email_templates').select('id,name,subject,updated_at').order('updated_at',{ascending:false}).limit(50),
@@ -64,6 +64,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const attempted=sent+bounced+failed+complained+unsubscribed
   const pending=count('queued')+count('processing')
   const deliveryMetricsError=deliveries.some((x:any)=>x.error||typeof x.count!=='number'||!Number.isSafeInteger(x.count)||x.count<0)
+  const emailableCountUnavailable=emailableError!==null||typeof emailable!=='number'
   const campaignCount=campaignRows.length
   const completedCampaigns=completedCountResult.count??campaignRows.filter((x:any)=>x.status==='sent').length
   const completedCampaignsAreRecentOnly=completedCountResult.error!==null||typeof completedCountResult.count!=='number'
@@ -77,16 +78,17 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
 
   return <main><section className="admin-page">
     <div className="email-admin-hero"><div><p className="eyebrow">SCENTMARKED ADMIN</p><h1>Email Marketing</h1><p>Create campaigns, organize audiences and monitor email performance.</p></div><div className="email-hero-actions"><Link className="button ghost" href="/admin">← Admin</Link><a className="button" href="#new-campaign">+ New campaign</a></div></div>
-    <nav className="email-workspaces" aria-label="Email marketing tools"><a href="#new-campaign"><span>CREATE</span><strong>New campaign</strong><small>Start a new email draft</small></a><Link href="/admin/email/templates"><span>DESIGN</span><strong>Templates</strong><small>{templateRows.length} reusable designs</small></Link><Link href="/admin/email/segments"><span>AUDIENCE</span><strong>Segments</strong><small>{segmentRows.length} saved audiences</small></Link><Link href="/admin/crm"><span>CRM</span><strong>Contacts</strong><small>{emailable||0} currently emailable</small></Link></nav>
+    <nav className="email-workspaces" aria-label="Email marketing tools"><a href="#new-campaign"><span>CREATE</span><strong>New campaign</strong><small>Start a new email draft</small></a><Link href="/admin/email/templates"><span>DESIGN</span><strong>Templates</strong><small>{templateRows.length} reusable designs</small></Link><Link href="/admin/email/segments"><span>AUDIENCE</span><strong>Segments</strong><small>{segmentRows.length} saved audiences</small></Link><Link href="/admin/crm"><span>CRM</span><strong>Contacts</strong><small>{emailableCountUnavailable?'Subscriber count unavailable':`${emailable} currently emailable`}</small></Link></nav>
     {p.error&&<div className="notice error" role="alert">{p.error}</div>}
     {error&&<div className="notice error" role="alert">Campaign data could not be loaded. Apply the CRM/email migration before using this page.</div>}
     {completedCampaignsAreRecentOnly&&<div className="notice error" role="alert">Completed campaign total could not be retrieved; showing a count from the recent list only.</div>}
     {campaignTotalUnavailable&&!error&&<div className="notice error" role="alert">Full campaign total is unavailable; showing recent campaigns only.</div>}
+    {emailableCountUnavailable&&<div className="notice error" role="alert">Eligible subscriber count could not be retrieved. Verify CRM permissions and database availability.</div>}
     {deliveryMetricsError&&<div className="notice error" role="alert">Some delivery counts could not be loaded; performance metrics may be incomplete.</div>}
     <div className="notice"><strong>Provider-gated sending:</strong> Campaigns can send only when the Resend environment variables are configured. Consent checks, unsubscribe processing, and verified webhook handling remain enforced.</div>
 
     {!deliveryMetricsError&&<div className="admin-grid">
-      <article className="admin-card"><p className="eyebrow">EMAILABLE</p><h2>{emailable||0}</h2><p>Active contacts with consent</p></article>
+      <article className="admin-card"><p className="eyebrow">EMAILABLE</p><h2>{emailableCountUnavailable?'—':emailable}</h2><p>Active contacts with recorded consent</p></article>
       <article className="admin-card"><p className="eyebrow">SENT</p><h2>{sent}</h2><p>Accepted for sending or later confirmed</p></article>
       <article className="admin-card"><p className="eyebrow">DELIVERED</p><h2>{delivered}</h2><p>{pct(delivered,attempted)}% of attempted</p></article>
       <article className="admin-card"><p className="eyebrow">OPENED</p><h2>{opened}</h2><p>{pct(opened,delivered)}% of delivered</p></article>
