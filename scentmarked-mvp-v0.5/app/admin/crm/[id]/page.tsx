@@ -30,6 +30,7 @@ async function updateContactStatus(formData:FormData){
   const {data, error}=await s.from('crm_contacts').update({status,updated_at:new Date().toISOString()}).eq('id',contactId).select('id,status')
   if(error)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status could not be updated.'))
   if(!data?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('No matching contact was updated.'))
+  if(data.length!==1||data[0].id!==contactId)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Updated contact did not match the requested record.'))
   if(data[0].status!==status)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status did not match the requested change.'))
   if(status==='unsubscribed'){
     const {data:verified,error:verificationError}=await s.from('crm_contacts').select('marketing_consent,unsubscribed_at').eq('id',contactId).maybeSingle()
