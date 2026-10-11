@@ -58,6 +58,8 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
   if(consent)filterParams.set('consent',consent)
   const pageHref=(n:number)=>'/admin/crm?'+new URLSearchParams([...filterParams.entries(),['page',String(n)]]).toString()
   const totalPages=typeof totalMatching==='number'?Math.ceil(totalMatching/pageSize):null
+  const resultStart=contacts.length?(page-1)*pageSize+1:0
+  const resultEnd=(page-1)*pageSize+contacts.length
 
   return <main><section className="admin-page">
     <div className="admin-heading"><div><p className="eyebrow">ADMIN · CRM</p><h1>Contacts</h1><p>Manage members, email consent, scent-profile context and customer status.</p></div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><Link className="button ghost" href="/admin">Back to Admin</Link><Link className="button" href="/admin/email">Email</Link></div></div>
@@ -72,7 +74,7 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
       <article className="admin-card"><p className="eyebrow">MEMBERS</p><h2>{members}</h2><p>Linked ScentMarked accounts</p></article>
     </div>
 
-    <p className="muted">Page {page}{typeof totalMatching==='number'?` · ${totalMatching} matching contacts across ${totalPages} page(s)`:''}. Active, emailable, and member counts above refer to this page.</p>
+    <p className="muted">Showing {resultStart}–{resultEnd}{typeof totalMatching==='number'?` of ${totalMatching} matching contacts`:''}. Active, emailable, and member counts above refer to this page.</p>
     <form method="get" className="admin-card crm-filter-bar">
       <label>Search<input name="q" defaultValue={q} placeholder="Email or name"/></label>
       <label>Status<select name="status" defaultValue={status}><option value="">All statuses</option>{statuses.map(x=><option key={x} value={x}>{x}</option>)}</select></label>
