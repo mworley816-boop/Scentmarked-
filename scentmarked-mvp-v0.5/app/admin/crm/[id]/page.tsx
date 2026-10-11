@@ -25,6 +25,8 @@ async function updateContactStatus(formData:FormData){
   if(status==='active'&&String(formData.get('expected_status')||'')==='unsubscribed')redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Unsubscribed contacts require renewed consent.'))
   const {data:existing,error:existingError}=await s.from('crm_contacts').select('id,status,unsubscribed_at,updated_at').eq('id',contactId).maybeSingle()
   if(existingError||!existing)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact could not be verified before changing status.'))
+  const expectedStatus=String(formData.get('expected_status')||'')
+  if(expectedStatus&&existing.status!==expectedStatus)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status changed since this page loaded. Refresh and try again.'))
   if(status==='active'){
     if(existing.status==='unsubscribed'||existing.unsubscribed_at)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Unsubscribed contacts require a new consent workflow before reactivation.'))
   }
