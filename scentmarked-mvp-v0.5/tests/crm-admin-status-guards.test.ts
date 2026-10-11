@@ -34,3 +34,10 @@ test('both CRM admin status actions verify unsubscribe normalization',()=>{
     assert.match(source,/!verified\.unsubscribed_at/,label)
   }
 })
+
+test('both CRM admin status actions verify activation has no unsubscribe marker',()=>{
+  for(const [label,source] of [['contacts list',adminPage],['contact detail',detailPage]] as const){
+    assert.match(source,/if\(status==='active'\)\{[\s\S]*?select\('status,unsubscribed_at'\)/,label)
+    assert.match(source,/verified\.status!=='active'\|\|verified\.unsubscribed_at/,label)
+  }
+})
