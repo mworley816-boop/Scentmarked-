@@ -72,3 +72,9 @@ test('campaign delivery analytics use exact counts instead of a capped status ro
   assert.doesNotMatch(page,/\.select\('status'\)\.eq\('campaign_id',id\)/)
   assert.doesNotMatch(page,/const total=rows\.length/)
 })
+
+test('campaign analytics report missing count responses as incomplete',()=>{
+  const page=readFileSync(join(process.cwd(),'app/admin/email/[id]/page.tsx'),'utf8')
+  assert.match(page,/deliveryCountResults\.some\(result=>result\.error!==null\|\|result\.count===null\)/)
+  assert.match(page,/processingListTruncated=!deliveryCountsError/)
+})
