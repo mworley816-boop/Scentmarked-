@@ -58,6 +58,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const unsubscribed=count('unsubscribed')
   const skipped=count('skipped')
   const attempted=sent+bounced+failed+complained+unsubscribed+count('processing')
+  const pending=count('queued')+count('processing')
   const deliveryMetricsError=deliveries.some((x:any)=>x.error||typeof x.count!=='number'||!Number.isSafeInteger(x.count)||x.count<0)
   const campaignCount=campaignRows.length
   const completedCampaigns=campaignRows.filter((x:any)=>x.status==='sent').length
@@ -84,6 +85,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
         <div><strong>{pct(opened,delivered)}%</strong><p>Open rate · {opened}/{delivered}</p></div>
         <div><strong>{pct(clicked,delivered)}%</strong><p>Click rate · {clicked}/{delivered}</p></div>
         <div><strong>{pct(bounced,attempted)}%</strong><p>Bounce rate · {bounced}/{attempted}</p></div>
+        <div><strong>{pending}</strong><p>Queued or processing</p></div>
         <div><strong>{failed}</strong><p>Failed deliveries</p></div>
         <div><strong>{skipped}</strong><p>Skipped · no email sent</p></div>
         <div><strong>{unsubscribed}</strong><p>Unsubscribes</p></div>
