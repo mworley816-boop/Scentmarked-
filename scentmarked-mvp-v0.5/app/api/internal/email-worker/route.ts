@@ -33,7 +33,8 @@ export async function POST(request:Request){
       results.push({campaignId,...await sendQueuedCampaign(s,campaignId,25)})
     }catch(error){
       failures++
-      console.error('Email worker campaign batch failed',{campaignId,error:error instanceof Error?error.message:'Campaign batch failed.'})
+      // Keep provider/database exception details out of operational logs.
+      console.error('Email worker campaign batch failed',{campaignId,errorType:error instanceof EmailDeliveryPersistenceError?'delivery_persistence':error instanceof EmailProviderConfirmationError?'provider_confirmation':'processing_failure'})
       const reconciliationRequired=error instanceof EmailDeliveryPersistenceError||error instanceof EmailProviderConfirmationError
       results.push({campaignId,ok:false,reconciliationRequired,error:reconciliationRequired?'Delivery outcome uncertain; manual reconciliation required.':'Campaign batch failed.'})
     }
