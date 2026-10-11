@@ -35,8 +35,8 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const p=await searchParams
   const {s}=await requireAdmin()
 
-  const [{data:campaigns,error},{data:segments},{data:templates},deliveries,{count:emailable}]=await Promise.all([
-    s.from('email_campaigns').select('id,name,subject,status,scheduled_at,started_at,completed_at,created_at,crm_segments:segment_id(id,name)').order('created_at',{ascending:false}).limit(100),
+  const [{data:campaigns,error,count:totalCampaigns},{data:segments},{data:templates},deliveries,{count:emailable}]=await Promise.all([
+    s.from('email_campaigns').select('id,name,subject,status,scheduled_at,started_at,completed_at,created_at,crm_segments:segment_id(id,name)',{count:'exact'}).order('created_at',{ascending:false}).limit(100),
     s.from('crm_segments').select('id,name,is_active').eq('is_active',true).order('name'),
     s.from('email_templates').select('id,name,subject,updated_at').order('updated_at',{ascending:false}).limit(50),
     Promise.all(['queued','processing','sent','delivered','opened','clicked','bounced','failed','complained','unsubscribed','skipped'].map(async deliveryStatus=>({deliveryStatus,...await s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('status',deliveryStatus)}))),
@@ -96,7 +96,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
         <div><strong>{skipped}</strong><p>Skipped · no email sent</p></div>
         <div><strong>{unsubscribed}</strong><p>Unsubscribes</p></div>
         <div><strong>{complained}</strong><p>Spam complaints</p></div>
-        <div><strong>{campaignCount}</strong><p>Recent campaigns</p></div>
+        <div><strong>{totalCampaigns??campaignCount}</strong><p>Total campaigns</p></div>
         <div><strong>{completedCampaigns}</strong><p>Completed campaigns</p></div>
       </div>
     </article>}
