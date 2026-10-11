@@ -221,6 +221,8 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
       <article className="admin-card"><p className="eyebrow">DELIVERIES</p><h2>{total}</h2><p>{delivered} delivered · {opened} opened · {clicked} clicked{(counts.processing||0)>0?' · '+counts.processing+' processing':''}</p></article>
     </div>
 
+    {(counts.processing||0)>0&&<article className="admin-card" role="alert"><p className="eyebrow">MANUAL RECONCILIATION</p><h2>{counts.processing} delivery record{counts.processing===1?'':'s'} awaiting investigation</h2><p>These records remain in processing and will not be automatically reclaimed. A provider may already have accepted the email. Verify each delivery with your email provider before deciding whether any manual status correction or retry is appropriate.</p><p>Do not requeue these records solely because they have been processing for a long time.</p></article>}
+
     <article className="admin-card"><p className="eyebrow">CAMPAIGN ANALYTICS</p><h2>Performance</h2>
       <div className="admin-grid">
         <div><strong>{rate(delivered,sentBase)}%</strong><p>Delivery rate · {delivered}/{sentBase}</p></div>
