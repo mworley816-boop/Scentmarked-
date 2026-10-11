@@ -22,6 +22,7 @@ async function updateContactStatus(formData:FormData){
   const status=String(formData.get('status')||'')
   const {s}=await requireAdmin('/admin/crm/'+contactId)
   if(!contactId||!statuses.includes(status as any))redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Choose a valid contact status.'))
+  if(status==='active'&&String(formData.get('expected_status')||'')==='unsubscribed')redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Unsubscribed contacts require renewed consent.'))
   const {data:existing,error:existingError}=await s.from('crm_contacts').select('id,status,unsubscribed_at,updated_at').eq('id',contactId).maybeSingle()
   if(existingError||!existing)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact could not be verified before changing status.'))
   if(status==='active'){
@@ -125,7 +126,7 @@ export default async function CrmContact({params,searchParams}:{params:Promise<{
     {relatedDataErrors&&<div className="notice error" role="alert">Could not load: {relatedDataErrors}. Displayed information may be incomplete.</div>}
     {p.saved==='status'&&<div className="notice" role="status">Contact status updated.</div>}
 
-    <article className="admin-card crm-contact-controls"><div><p className="eyebrow">CONTACT STATUS</p><h2>CRM delivery state</h2><p>Use suppression states to prevent inappropriate marketing delivery. Marketing consent remains a separate permission. Unsubscribed contacts cannot be reactivated here; renewed consent is required.</p></div><form action={updateContactStatus}><input type="hidden" name="contact_id" value={id}/><label>Status<select name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x} disabled={x==='active'&&(c.status==='unsubscribed'||Boolean(c.unsubscribed_at))}>{x}</option>)}</select></label><button type="submit">Update status</button></form></article>
+    <article className="admin-card crm-contact-controls"><div><p className="eyebrow">CONTACT STATUS</p><h2>CRM delivery state</h2><p>Use suppression states to prevent inappropriate marketing delivery. Marketing consent remains a separate permission. Unsubscribed contacts cannot be reactivated here; renewed consent is required.</p></div><form action={updateContactStatus}><input type="hidden" name="contact_id" value={id}/><input type="hidden" name="expected_status" value={c.status}/><label>Status<select name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x} disabled={x==='active'&&(c.status==='unsubscribed'||Boolean(c.unsubscribed_at))}>{x}</option>)}</select></label><button type="submit">Update status</button></form></article>
 
     <div className="admin-grid">
       <article className="admin-card"><p className="eyebrow">EMAIL CONSENT</p><h2>{c.marketing_consent?'Consented':'Not consented'}</h2><p>{c.marketing_consented_at?'Since '+new Date(c.marketing_consented_at).toLocaleDateString():c.unsubscribed_at?'Unsubscribed '+new Date(c.unsubscribed_at).toLocaleDateString():'No consent timestamp'}</p></article>
