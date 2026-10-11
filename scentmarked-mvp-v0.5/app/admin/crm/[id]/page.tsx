@@ -90,6 +90,8 @@ export default async function CrmContact({params,searchParams}:{params:Promise<{
   const {count:totalEmailCount,error:totalEmailCountError}=await s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('contact_id',id)
   const olderEmailCount=totalEmailCountError||totalEmailCount==null?null:Math.max(0,totalEmailCount-emailRows.length)
   const {count:totalNoteCount,error:totalNoteCountError}=await s.from('crm_notes').select('id',{count:'exact',head:true}).eq('contact_id',id)
+  const {count:totalTagCount,error:totalTagCountError}=await s.from('crm_contact_tags').select('tag_id',{count:'exact',head:true}).eq('contact_id',id)
+  const undisplayedTagCount=totalTagCountError||totalTagCount==null?null:Math.max(0,totalTagCount-tags.length)
   const olderNoteCount=totalNoteCountError||totalNoteCount==null?null:Math.max(0,totalNoteCount-(notes?.length||0))
   const skippedCount=emailRows.filter((x:any)=>x.status==='skipped').length
   const attempted=emailRows.filter((x:any)=>!['queued','skipped'].includes(x.status)).length
@@ -114,7 +116,7 @@ export default async function CrmContact({params,searchParams}:{params:Promise<{
       <article className="admin-card"><p className="eyebrow">LAST ENGAGED</p><h2>{c.last_engaged_at?new Date(c.last_engaged_at).toLocaleDateString():'—'}</h2><p>CRM engagement</p></article>
     </div>
 
-    <article className="admin-card crm-tags-card"><p className="eyebrow">ORGANIZATION</p><h2>Tags</h2><div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>{tags.length?tags.map((t:any)=><form action={removeTag} key={t.id}><input type="hidden" name="contact_id" value={id}/><input type="hidden" name="tag_id" value={t.id}/><button className="button ghost" type="submit" title="Remove tag">{t.name} ×</button></form>):<p>No tags yet.</p>}</div><form action={addTag} style={{display:'flex',gap:8,flexWrap:'wrap'}}><input type="hidden" name="contact_id" value={id}/><label className="sr-only" htmlFor="crm-add-tag">Add contact tag</label><input id="crm-add-tag" name="tag" maxLength={60} placeholder="e.g. gourmand-lover" required/><button type="submit">Add tag</button></form></article>
+    <article className="admin-card crm-tags-card"><p className="eyebrow">ORGANIZATION</p><h2>Tags</h2>{undisplayedTagCount===null?<p>Tag count unavailable; some tags may not be shown.</p>:undisplayedTagCount>0?<p>{undisplayedTagCount} additional tags are not displayed.</p>:null}<div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>{tags.length?tags.map((t:any)=><form action={removeTag} key={t.id}><input type="hidden" name="contact_id" value={id}/><input type="hidden" name="tag_id" value={t.id}/><button className="button ghost" type="submit" title="Remove tag">{t.name} ×</button></form>):<p>No tags yet.</p>}</div><form action={addTag} style={{display:'flex',gap:8,flexWrap:'wrap'}}><input type="hidden" name="contact_id" value={id}/><label className="sr-only" htmlFor="crm-add-tag">Add contact tag</label><input id="crm-add-tag" name="tag" maxLength={60} placeholder="e.g. gourmand-lover" required/><button type="submit">Add tag</button></form></article>
 
     {profile&&<article className="admin-card crm-scent-profile">
       <div className="crm-card-heading"><div><p className="eyebrow">SCENTMARKED PROFILE</p><h2>Scent preferences</h2></div><span className={profile.scent_profile_completed_at?'data-ready':'data-missing'}>{profile.scent_profile_completed_at?'✓ Complete':'Incomplete'}</span></div>
