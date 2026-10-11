@@ -72,9 +72,10 @@ async function removeTag(formData:FormData){
   if(!contactId||!Number.isSafeInteger(tagId)||tagId<=0)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Choose a valid tag to remove.'))
   const {data:contact,error:contactError}=await s.from('crm_contacts').select('id').eq('id',contactId).maybeSingle()
   if(contactError||!contact)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact could not be verified before removing a tag.'))
-  const {data,error}=await s.from('crm_contact_tags').delete().eq('contact_id',contactId).eq('tag_id',tagId).select('tag_id')
+  const {data,error}=await s.from('crm_contact_tags').delete().eq('contact_id',contactId).eq('tag_id',tagId).select('contact_id,tag_id')
   if(error)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag could not be removed.'))
   if(!data?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag was not attached to this contact.'))
+  if(data[0].contact_id!==contactId||data[0].tag_id!==tagId)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Removed tag did not match the requested contact.'))
   redirect('/admin/crm/'+contactId)
 }
 
