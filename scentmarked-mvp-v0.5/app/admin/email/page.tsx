@@ -62,6 +62,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const deliveryMetricsError=deliveries.some((x:any)=>x.error||typeof x.count!=='number'||!Number.isSafeInteger(x.count)||x.count<0)
   const campaignCount=campaignRows.length
   const completedCampaigns=campaignRows.filter((x:any)=>x.status==='sent').length
+  const completedCampaignsAreRecentOnly=typeof totalCampaigns==='number'&&totalCampaigns>campaignCount
   const campaignListTruncated=typeof totalCampaigns==='number'?totalCampaigns>campaignRows.length:campaignRows.length===100
   const pct=(n:number,d:number)=>d?Math.round(n/d*1000)/10:0
   const metricsUpdatedAt=new Date().toISOString()
@@ -97,7 +98,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
         <div><strong>{unsubscribed}</strong><p>Unsubscribes</p></div>
         <div><strong>{complained}</strong><p>Spam complaints</p></div>
         <div><strong>{totalCampaigns??campaignCount}</strong><p>Total campaigns</p></div>
-        <div><strong>{completedCampaigns}</strong><p>Completed campaigns</p></div>
+        <div><strong>{completedCampaigns}</strong><p>{completedCampaignsAreRecentOnly?'Completed in recent list':'Completed campaigns'}</p></div>
       </div>
     </article>}
 
