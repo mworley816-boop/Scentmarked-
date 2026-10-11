@@ -47,3 +47,10 @@ test('CRM list status submission rejects omitted status rather than activating b
   assert.match(adminPage,/!statuses\.includes\(status as any\)/)
   assert.doesNotMatch(adminPage,/const status=String\(formData\.get\('status'\)\|\|'active'\)/)
 })
+
+test('both CRM status actions reject invalid original contact states',()=>{
+  for(const [label,source] of [['contacts list',adminPage],['contact detail',detailPage]] as const){
+    assert.match(source,/statuses\.includes\(expectedStatus as any\)/,label)
+    assert.match(source,/Original contact status is invalid/,label)
+  }
+})
