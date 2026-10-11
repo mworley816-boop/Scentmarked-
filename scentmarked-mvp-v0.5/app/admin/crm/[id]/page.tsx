@@ -38,6 +38,10 @@ async function updateContactStatus(formData:FormData){
   if(!data?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status changed while editing. Refresh and try again.'))
   if(data.length!==1||data[0].id!==contactId)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Updated contact did not match the requested record.'))
   if(data[0].status!==status)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status did not match the requested change.'))
+  if(status==='active'){
+    const {data:verified,error:verificationError}=await s.from('crm_contacts').select('status,unsubscribed_at').eq('id',contactId).maybeSingle()
+    if(verificationError||!verified||verified.status!=='active'||verified.unsubscribed_at)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact activation state could not be verified.'))
+  }
   if(status==='unsubscribed'){
     const {data:verified,error:verificationError}=await s.from('crm_contacts').select('marketing_consent,unsubscribed_at').eq('id',contactId).maybeSingle()
     if(verificationError||!verified||verified.marketing_consent!==false||!verified.unsubscribed_at)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Unsubscribe consent state could not be verified.'))
