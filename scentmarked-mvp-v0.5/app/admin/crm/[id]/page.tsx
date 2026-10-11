@@ -31,6 +31,10 @@ async function updateContactStatus(formData:FormData){
   if(error)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status could not be updated.'))
   if(!data?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('No matching contact was updated.'))
   if(data[0].status!==status)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status did not match the requested change.'))
+  if(status==='unsubscribed'){
+    const {data:verified,error:verificationError}=await s.from('crm_contacts').select('marketing_consent,unsubscribed_at').eq('id',contactId).maybeSingle()
+    if(verificationError||!verified||verified.marketing_consent!==false||!verified.unsubscribed_at)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Unsubscribe consent state could not be verified.'))
+  }
   redirect('/admin/crm/'+contactId+'?saved=status')
 }
 
