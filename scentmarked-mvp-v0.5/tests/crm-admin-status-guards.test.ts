@@ -25,3 +25,12 @@ for(const [label,source] of [['contacts list',adminPage],['contact detail',detai
     assert.match(source,/consent workflow|renewed consent/)
   })
 }
+
+test('both CRM admin status actions verify unsubscribe normalization',()=>{
+  for(const [label,source] of [['contacts list',adminPage],['contact detail',detailPage]] as const){
+    assert.match(source,/if\(status==='unsubscribed'\)/,label)
+    assert.match(source,/select\('marketing_consent,unsubscribed_at'\)/,label)
+    assert.match(source,/verified\.marketing_consent!==false/,label)
+    assert.match(source,/!verified\.unsubscribed_at/,label)
+  }
+})
