@@ -74,7 +74,7 @@ export default async function CrmContact({params,searchParams}:{params:Promise<{
   const p=await searchParams
   const {s}=await requireAdmin('/admin/crm/'+id)
 
-  const [{data:contact,error},{data:notes},{data:tagLinks},{data:deliveries}]=await Promise.all([
+  const [{data:contact,error},{data:notes,error:notesError},{data:tagLinks,error:tagLinksError},{data:deliveries,error:deliveriesError}]=await Promise.all([
     s.from('crm_contacts').select('id,user_id,email,first_name,last_name,status,source,marketing_consent,marketing_consented_at,unsubscribed_at,last_engaged_at,created_at,updated_at,profiles:user_id(display_name,scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_favorite_perfume_ids,scent_profile_completed_at)').eq('id',id).maybeSingle(),
     s.from('crm_notes').select('id,body,created_at').eq('contact_id',id).order('created_at',{ascending:false}).limit(100),
     s.from('crm_contact_tags').select('tag_id,crm_tags:tag_id(id,name)').eq('contact_id',id),
@@ -83,6 +83,7 @@ export default async function CrmContact({params,searchParams}:{params:Promise<{
 
   if(error||!contact)notFound()
   const c=contact as any
+  const relatedDataErrors=[notesError&&'private notes',tagLinksError&&'contact tags',deliveriesError&&'email activity'].filter(Boolean).join(', ')
   const profile=Array.isArray(c.profiles)?c.profiles[0]:c.profiles
   const name=[c.first_name,c.last_name].filter(Boolean).join(' ')||profile?.display_name||'Unnamed contact'
   const tags=(tagLinks||[]).map((x:any)=>Array.isArray(x.crm_tags)?x.crm_tags[0]:x.crm_tags).filter(Boolean)
@@ -106,6 +107,7 @@ export default async function CrmContact({params,searchParams}:{params:Promise<{
   return <main><section className="admin-page">
     <div className="crm-profile-hero"><div className="crm-profile-identity"><div className="crm-profile-avatar">{name.slice(0,1).toUpperCase()}</div><div><p className="eyebrow">CRM CONTACT</p><h1>{name}</h1><a href={'mailto:'+c.email}>{c.email}</a><div className="crm-badges"><span className={'crm-status '+c.status}>{c.status}</span><span>{c.user_id?'ScentMarked member':'CRM only'}</span><span className={c.marketing_consent&&c.marketing_consented_at&&!c.unsubscribed_at&&c.status==='active'?'consented':'muted'}>{c.marketing_consent&&c.marketing_consented_at&&!c.unsubscribed_at&&c.status==='active'?'Email eligible':'No marketing'}</span></div></div></div><div className="crm-profile-actions"><Link className="button ghost" href="/admin/crm">← Contacts</Link><Link className="button" href="/admin/email">Email marketing</Link></div></div>
     {p.error&&<div className="notice error" role="alert">{p.error}</div>}
+    {relatedDataErrors&&<div className="notice error" role="alert">Could not load: {relatedDataErrors}. Displayed information may be incomplete.</div>}
     {p.saved==='status'&&<div className="notice" role="status">Contact status updated.</div>}
 
     <article className="admin-card crm-contact-controls"><div><p className="eyebrow">CONTACT STATUS</p><h2>CRM delivery state</h2><p>Use suppression states to prevent inappropriate marketing delivery. Marketing consent remains a separate permission.</p></div><form action={updateContactStatus}><input type="hidden" name="contact_id" value={id}/><label>Status<select name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x}>{x}</option>)}</select></label><button type="submit">Update status</button></form></article>
