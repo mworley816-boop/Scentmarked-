@@ -178,3 +178,24 @@ test('repeated provider requests for one delivery reuse the same idempotency key
     else process.env.RESEND_FROM_EMAIL=previousFrom
   }
 })
+
+test('ambiguous provider failure explains reconciliation without assuming HTTP success',async()=>{
+  const previousKey=process.env.RESEND_API_KEY
+  const previousFrom=process.env.RESEND_FROM_EMAIL
+  const previousFetch=globalThis.fetch
+  process.env.RESEND_API_KEY='test-key'
+  process.env.RESEND_FROM_EMAIL='updates@example.com'
+  globalThis.fetch=(async()=>{throw new Error('connection reset')}) as typeof fetch
+  try{
+    await assert.rejects(
+      ()=>getEmailProvider().send({to:'member@example.com',subject:'Hello',html:'<p>Hello</p>',text:'Hello',deliveryId:'uncertain-message'}),
+      (error:unknown)=>error instanceof EmailProviderConfirmationError&&/acceptance could not be confirmed/.test(error.message)&&/manual reconciliation/.test(error.message)
+    )
+  }finally{
+    globalThis.fetch=previousFetch
+    if(previousKey===undefined)delete process.env.RESEND_API_KEY
+    else process.env.RESEND_API_KEY=previousKey
+    if(previousFrom===undefined)delete process.env.RESEND_FROM_EMAIL
+    else process.env.RESEND_FROM_EMAIL=previousFrom
+  }
+})
