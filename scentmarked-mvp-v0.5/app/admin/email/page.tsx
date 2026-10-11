@@ -63,7 +63,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const deliveryMetricsError=deliveries.some((x:any)=>x.error||typeof x.count!=='number'||!Number.isSafeInteger(x.count)||x.count<0)
   const campaignCount=campaignRows.length
   const completedCampaigns=completedCountResult.count??campaignRows.filter((x:any)=>x.status==='sent').length
-  const completedCampaignsAreRecentOnly=completedCountResult.error!==null
+  const completedCampaignsAreRecentOnly=completedCountResult.error!==null||typeof completedCountResult.count!=='number'
   const campaignListTruncated=typeof totalCampaigns==='number'?totalCampaigns>campaignRows.length:campaignRows.length===100
   const pct=(n:number,d:number)=>d?Math.round(n/d*1000)/10:0
   const metricsUpdatedAt=new Date().toISOString()
@@ -73,6 +73,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
     <nav className="email-workspaces" aria-label="Email marketing tools"><a href="#new-campaign"><span>CREATE</span><strong>New campaign</strong><small>Start a new email draft</small></a><Link href="/admin/email/templates"><span>DESIGN</span><strong>Templates</strong><small>{templateRows.length} reusable designs</small></Link><Link href="/admin/email/segments"><span>AUDIENCE</span><strong>Segments</strong><small>{segmentRows.length} saved audiences</small></Link><Link href="/admin/crm"><span>CRM</span><strong>Contacts</strong><small>{emailable||0} currently emailable</small></Link></nav>
     {p.error&&<div className="notice error" role="alert">{p.error}</div>}
     {error&&<div className="notice error" role="alert">Campaign data could not be loaded. Apply the CRM/email migration before using this page.</div>}
+    {completedCampaignsAreRecentOnly&&<div className="notice error" role="alert">Completed campaign total could not be retrieved; showing a count from the recent list only.</div>}
     {deliveryMetricsError&&<div className="notice error" role="alert">Some delivery counts could not be loaded; performance metrics may be incomplete.</div>}
     <div className="notice"><strong>Provider-gated sending:</strong> Campaigns can send only when the Resend environment variables are configured. Consent checks, unsubscribe processing, and verified webhook handling remain enforced.</div>
 
