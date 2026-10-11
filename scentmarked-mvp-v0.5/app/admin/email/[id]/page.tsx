@@ -185,6 +185,12 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
     const {count}=await s.from('crm_contacts').select('id',{count:'exact',head:true}).eq('status','active').eq('marketing_consent',true).not('marketing_consented_at','is',null).is('unsubscribed_at',null)
     audiencePreview=count||0
   }
+  const {data:processingRows,error:processingError}=await s.from('email_deliveries')
+    .select('id,processing_started_at,provider_message_id')
+    .eq('campaign_id',id).eq('status','processing')
+    .order('processing_started_at',{ascending:true,nullsFirst:true}).limit(50)
+  const processingList=processingRows||[]
+  const processingListTruncated=(counts.processing||0)>processingList.length
   const total=rows.length
   const skipped=counts.skipped||0
   const sentBase=total-(counts.queued||0)-(counts.processing||0)-skipped
@@ -222,6 +228,8 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
     </div>
 
     {(counts.processing||0)>0&&<article className="admin-card" role="alert"><p className="eyebrow">MANUAL RECONCILIATION</p><h2>{counts.processing} delivery record{counts.processing===1?'':'s'} awaiting investigation</h2><p>These records remain in processing and will not be automatically reclaimed. A provider may already have accepted the email. Verify each delivery with your email provider before deciding whether any manual status correction or retry is appropriate.</p><p>Do not requeue these records solely because they have been processing for a long time.</p></article>}
+
+    {(counts.processing||0)>0&&<article className="admin-card"><p className="eyebrow">RECONCILIATION DETAILS</p><h2>Processing delivery IDs</h2><p>Read-only investigation records. Verify provider acceptance before any manual action.</p>{processingError?<p role="alert">Processing delivery details could not be loaded.</p>:<><div style={{overflowX:'auto'}}><table><thead><tr><th>Delivery ID</th><th>Processing since</th><th>Provider message ID</th></tr></thead><tbody>{processingList.map((delivery:any)=><tr key={delivery.id}><td><code>{delivery.id}</code></td><td>{delivery.processing_started_at?new Date(delivery.processing_started_at).toLocaleString():'Not recorded'}</td><td>{delivery.provider_message_id||'Not recorded'}</td></tr>)}</tbody></table></div>{processingListTruncated&&<p>Showing the oldest {processingList.length} of {counts.processing} processing deliveries.</p>}</>}</article>}
 
     <article className="admin-card"><p className="eyebrow">CAMPAIGN ANALYTICS</p><h2>Performance</h2>
       <div className="admin-grid">
