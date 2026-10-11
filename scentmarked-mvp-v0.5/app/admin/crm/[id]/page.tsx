@@ -42,8 +42,9 @@ async function addNote(formData:FormData){
   if(!contactId||!body)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Enter a note first.'))
   const {data:contact,error:contactError}=await s.from('crm_contacts').select('id').eq('id',contactId).maybeSingle()
   if(contactError||!contact)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact could not be verified before saving a note.'))
-  const {data,error}=await s.from('crm_notes').insert({contact_id:contactId,author_user_id:user.id,body}).select('id')
+  const {data,error}=await s.from('crm_notes').insert({contact_id:contactId,author_user_id:user.id,body}).select('id,contact_id')
   if(error||!data?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Note could not be saved.'))
+  if(data[0].contact_id!==contactId)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Saved note did not match the requested contact.'))
   redirect('/admin/crm/'+contactId)
 }
 
