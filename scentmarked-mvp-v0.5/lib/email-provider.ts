@@ -41,8 +41,11 @@ class ResendProvider implements EmailProvider{
     }catch{
       throw new EmailProviderConfirmationError()
     }
-    const body=await response.json().catch(()=>({}))
     if(!response.ok)throw new Error('Email provider rejected the send request.')
+    // A successful HTTP response with an unreadable body leaves acceptance
+    // uncertain, so it must not be retried as an ordinary send failure.
+    let body:{id?:unknown}
+    try{body=await response.json()}catch{throw new EmailProviderConfirmationError()}
     if(typeof body?.id!=='string'||!body.id.trim())throw new EmailProviderConfirmationError()
     return {providerMessageId:body.id.trim()}
   }
