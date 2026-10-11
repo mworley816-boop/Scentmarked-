@@ -63,7 +63,9 @@ async function removeTag(formData:FormData){
   const tagId=Number(formData.get('tag_id'))
   const {s}=await requireAdmin('/admin/crm/'+contactId)
   if(!contactId||!Number.isSafeInteger(tagId))redirect('/admin/crm/'+contactId)
-  await s.from('crm_contact_tags').delete().eq('contact_id',contactId).eq('tag_id',tagId)
+  const {data,error}=await s.from('crm_contact_tags').delete().eq('contact_id',contactId).eq('tag_id',tagId).select('tag_id')
+  if(error)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag could not be removed.'))
+  if(!data?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag was not attached to this contact.'))
   redirect('/admin/crm/'+contactId)
 }
 
