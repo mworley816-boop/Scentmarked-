@@ -29,6 +29,7 @@ async function updateContactStatus(formData:FormData){
   const expectedUpdatedAt=String(formData.get('expected_updated_at')||'')
   if(expectedUpdatedAt&&existing.updated_at!==expectedUpdatedAt)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact was edited since this page loaded. Refresh and try again.'))
   if(expectedStatus&&existing.status!==expectedStatus)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact status changed since this page loaded. Refresh and try again.'))
+  if(!expectedStatus||!expectedUpdatedAt)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Status form is incomplete. Refresh and try again.'))
   if(status==='active'){
     if(existing.status==='unsubscribed'||existing.unsubscribed_at)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Unsubscribed contacts require a new consent workflow before reactivation.'))
   }
