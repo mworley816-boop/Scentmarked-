@@ -10,7 +10,7 @@ export type ProviderSendResult={providerMessageId:string}
 
 export class EmailProviderConfirmationError extends Error{
   constructor(){
-    super('Email provider returned a successful response without a valid message ID; manual reconciliation is required before retrying.')
+    super('Email provider acceptance could not be confirmed; manual reconciliation is required before retrying.')
     this.name='EmailProviderConfirmationError'
   }
 }
