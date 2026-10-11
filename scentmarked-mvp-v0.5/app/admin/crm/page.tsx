@@ -25,6 +25,7 @@ async function updateContact(formData:FormData){
   const expectedStatus=String(formData.get('expected_status')||'')
   const expectedUpdatedAt=String(formData.get('expected_updated_at')||'')
   if(!expectedStatus||!expectedUpdatedAt)redirect('/admin/crm?error='+encodeURIComponent('Status form is incomplete. Refresh and try again.'))
+  if(!statuses.includes(expectedStatus as any))redirect('/admin/crm?error='+encodeURIComponent('Original contact status is invalid. Refresh and try again.'))
   const {data:contact,error:lookupError}=await s.from('crm_contacts').select('id,status,unsubscribed_at,updated_at').eq('id',id).maybeSingle()
   if(lookupError||!contact)redirect('/admin/crm?error='+encodeURIComponent('Contact could not be verified before changing status.'))
   if(contact.status!==expectedStatus||contact.updated_at!==expectedUpdatedAt)redirect('/admin/crm?error='+encodeURIComponent('Contact was edited since this page loaded. Refresh and try again.'))
