@@ -99,11 +99,11 @@ export default async function CrmContact({params,searchParams}:{params:Promise<{
   const tags=(tagLinks||[]).map((x:any)=>Array.isArray(x.crm_tags)?x.crm_tags[0]:x.crm_tags).filter(Boolean)
   const emailRows=deliveries||[]
   const {count:totalEmailCount,error:totalEmailCountError}=await s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('contact_id',id)
-  const olderEmailCount=totalEmailCountError||totalEmailCount==null?null:Math.max(0,totalEmailCount-emailRows.length)
+  const olderEmailCount=totalEmailCountError||totalEmailCount==null||deliveriesError?null:Math.max(0,totalEmailCount-emailRows.length)
   const {count:totalNoteCount,error:totalNoteCountError}=await s.from('crm_notes').select('id',{count:'exact',head:true}).eq('contact_id',id)
   const {count:totalTagCount,error:totalTagCountError}=await s.from('crm_contact_tags').select('tag_id',{count:'exact',head:true}).eq('contact_id',id)
-  const undisplayedTagCount=totalTagCountError||totalTagCount==null?null:Math.max(0,totalTagCount-tags.length)
-  const olderNoteCount=totalNoteCountError||totalNoteCount==null?null:Math.max(0,totalNoteCount-(notes?.length||0))
+  const undisplayedTagCount=totalTagCountError||totalTagCount==null||tagLinksError?null:Math.max(0,totalTagCount-tags.length)
+  const olderNoteCount=totalNoteCountError||totalNoteCount==null||notesError?null:Math.max(0,totalNoteCount-(notes?.length||0))
   const skippedCount=emailRows.filter((x:any)=>x.status==='skipped').length
   const attempted=emailRows.filter((x:any)=>!['queued','skipped'].includes(x.status)).length
   const deliveredCount=emailRows.filter((x:any)=>['delivered','opened','clicked'].includes(x.status)).length
