@@ -39,6 +39,8 @@ async function addNote(formData:FormData){
   const body=String(formData.get('body')||'').trim().slice(0,4000)
   const {s,user}=await requireAdmin('/admin/crm/'+contactId)
   if(!contactId||!body)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Enter a note first.'))
+  const {data:contact,error:contactError}=await s.from('crm_contacts').select('id').eq('id',contactId).maybeSingle()
+  if(contactError||!contact)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact could not be verified before saving a note.'))
   const {data,error}=await s.from('crm_notes').insert({contact_id:contactId,author_user_id:user.id,body}).select('id')
   if(error||!data?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Note could not be saved.'))
   redirect('/admin/crm/'+contactId)
