@@ -4,7 +4,7 @@ import { siteUrl } from '@/lib/site'
 import { emailFirstName, emailHtmlEscape } from '@/lib/email-personalization'
 import { normalizeEmailBatchSize } from '@/lib/email-batch-size'
 import { hasValidRecipientEmail } from '@/lib/email-recipient'
-import { validClaimIds } from '@/lib/email-claim-validation'
+import { releasableClaimIds, validClaimIds } from '@/lib/email-claim-validation'
 
 export class EmailDeliveryPersistenceError extends Error{
   constructor(){
@@ -27,18 +27,18 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
   if(claimError)throw new Error('Queued deliveries could not be claimed.')
   if(!Array.isArray(claimed))throw new Error('Claimed deliveries returned an invalid response.')
   if(claimed.length>safeBatchSize){
-    const ids=claimed.map((row:any)=>row?.delivery_id).filter((id:any):id is string=>typeof id==='string'&&!!id.trim()&&id===id.trim())
+    const ids=releasableClaimIds(claimed)
     if(ids.length){
-      const {error:releaseError}=await s.rpc('release_email_delivery_claims',{p_delivery_ids:[...new Set(ids)]})
+      const {error:releaseError}=await s.rpc('release_email_delivery_claims',{p_delivery_ids:ids})
       if(releaseError)throw new Error('Oversized email delivery claims could not be released safely.')
     }
     throw new Error('Claimed deliveries exceeded the requested batch size.')
   }
   const claimedIds=claimed.map((x:any)=>x?.delivery_id)
   if(validClaimIds(claimed)===null){
-    const validIds=claimedIds.filter((id:any):id is string=>typeof id==='string'&&!!id.trim()&&id===id.trim())
+    const validIds=releasableClaimIds(claimed)
     if(validIds.length){
-      const {error:releaseError}=await s.rpc('release_email_delivery_claims',{p_delivery_ids:[...new Set(validIds)]})
+      const {error:releaseError}=await s.rpc('release_email_delivery_claims',{p_delivery_ids:validIds})
       if(releaseError)throw new Error('Invalid delivery claims could not be released safely.')
     }
     throw new Error('Claimed deliveries returned invalid or duplicate IDs.')
