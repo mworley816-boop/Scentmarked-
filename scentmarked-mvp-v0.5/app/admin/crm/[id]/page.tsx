@@ -49,7 +49,7 @@ async function addNote(formData:FormData){
   if(contactError||!contact)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Contact could not be verified before saving a note.'))
   const {data,error}=await s.from('crm_notes').insert({contact_id:contactId,author_user_id:user.id,body}).select('id,contact_id')
   if(error||!data?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Note could not be saved.'))
-  if(data[0].contact_id!==contactId)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Saved note did not match the requested contact.'))
+  if(data.length!==1||data[0].contact_id!==contactId)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Saved note did not match the requested contact.'))
   redirect('/admin/crm/'+contactId)
 }
 
@@ -65,7 +65,7 @@ async function addTag(formData:FormData){
   if(tagError||!tag)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag could not be saved.'))
   const {data:attached,error}=await s.from('crm_contact_tags').upsert({contact_id:contactId,tag_id:tag.id},{onConflict:'contact_id,tag_id'}).select('contact_id,tag_id')
   if(error||!attached?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag could not be attached.'))
-  if(attached[0].contact_id!==contactId||attached[0].tag_id!==tag.id)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag attachment did not match the requested contact.'))
+  if(attached.length!==1||attached[0].contact_id!==contactId||attached[0].tag_id!==tag.id)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag attachment did not match the requested contact.'))
   redirect('/admin/crm/'+contactId)
 }
 
@@ -80,7 +80,7 @@ async function removeTag(formData:FormData){
   const {data,error}=await s.from('crm_contact_tags').delete().eq('contact_id',contactId).eq('tag_id',tagId).select('contact_id,tag_id')
   if(error)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag could not be removed.'))
   if(!data?.length)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Tag was not attached to this contact.'))
-  if(data[0].contact_id!==contactId||data[0].tag_id!==tagId)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Removed tag did not match the requested contact.'))
+  if(data.length!==1||data[0].contact_id!==contactId||data[0].tag_id!==tagId)redirect('/admin/crm/'+contactId+'?error='+encodeURIComponent('Removed tag did not match the requested contact.'))
   redirect('/admin/crm/'+contactId)
 }
 
