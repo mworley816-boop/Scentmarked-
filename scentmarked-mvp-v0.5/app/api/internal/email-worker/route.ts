@@ -39,7 +39,8 @@ export async function POST(request:Request){
     }
   }
 
-  const summary={ok:failures===0,processed:results.length,failures,durationMs:Date.now()-startedAt,results}
+  const reconciliationRequired=results.some(result=>result.reconciliationRequired===true)
+  const summary={ok:failures===0,processed:results.length,failures,reconciliationRequired,durationMs:Date.now()-startedAt,results}
   console.info('Email worker run complete',{ok:summary.ok,processed:summary.processed,failures:summary.failures,durationMs:summary.durationMs})
   if(failures>0)return NextResponse.json(summary,{status:500})
   return NextResponse.json(summary)
