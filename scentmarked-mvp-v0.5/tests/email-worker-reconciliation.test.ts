@@ -36,3 +36,11 @@ test('uncertain delivery outcomes return conflict before routine server errors',
   assert.ok(conflict>=0,'worker must return 409 for reconciliation')
   assert.ok(failure>conflict,'409 reconciliation response must take precedence over 500')
 })
+
+test('delivery claims do not automatically recycle uncertain processing rows',()=>{
+  const migration=readFileSync(join(process.cwd(),'supabase/migrations/20261011010000_prevent_uncertain_email_delivery_reclaims.sql'),'utf8')
+  assert.match(migration,/create or replace function public\.claim_email_delivery_batch/)
+  assert.match(migration,/status='queued'/)
+  assert.doesNotMatch(migration,/processing_started_at\s*<\s*now\(\)/)
+  assert.doesNotMatch(migration,/set status='queued'/)
+})
