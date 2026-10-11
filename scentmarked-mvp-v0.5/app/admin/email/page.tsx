@@ -87,6 +87,8 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
         <div><strong>{pct(opened,delivered)}%</strong><p>Open rate · {opened}/{delivered}</p></div>
         <div><strong>{pct(clicked,delivered)}%</strong><p>Click rate · {clicked}/{delivered}</p></div>
         <div><strong>{pct(bounced,attempted)}%</strong><p>Bounce rate · {bounced}/{attempted}</p></div>
+        <div><strong>{pct(complained,attempted)}%</strong><p>Spam complaint rate · {complained}/{attempted}</p></div>
+        <div><strong>{pct(unsubscribed,attempted)}%</strong><p>Unsubscribe rate · {unsubscribed}/{attempted}</p></div>
         <div><strong>{pending}</strong><p>Queued or processing</p></div>
         <div><strong>{failed}</strong><p>Failed deliveries</p></div>
         <div><strong>{skipped}</strong><p>Skipped · no email sent</p></div>
