@@ -80,12 +80,12 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
     const eligible=contact?.status==='active'&&contact?.marketing_consent===true&&!!contact?.marketing_consented_at&&!contact?.unsubscribed_at&&typeof contact?.unsubscribe_token==='string'&&!!contact.unsubscribe_token.trim()&&hasValidRecipientEmail(contact?.email)
     if(!eligible){
       try{
-        const {error:skipError}=await s.from('email_deliveries').update({
+        const {data:skippedRow,error:skipError}=await s.from('email_deliveries').update({
           status:'skipped',
           skipped_at:new Date().toISOString(),
           error_message:'Recipient was no longer eligible for marketing email at send time.'
-        }).eq('id',row.id).eq('status','processing')
-        if(skipError)throw skipError
+        }).eq('id',row.id).eq('status','processing').select('id')
+        if(skipError||!Array.isArray(skippedRow)||skippedRow.length!==1||skippedRow[0]?.id!==row.id)throw new Error('Skipped delivery status was not confirmed.')
       }catch{
         throw new Error('Ineligible recipient could not be marked skipped; campaign batch requires reconciliation.')
       }
