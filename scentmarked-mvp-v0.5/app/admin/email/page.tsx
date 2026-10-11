@@ -76,7 +76,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
       <article className="admin-card"><p className="eyebrow">DELIVERED</p><h2>{delivered}</h2><p>{pct(delivered,attempted)}% of attempted</p></article>
       <article className="admin-card"><p className="eyebrow">OPENED</p><h2>{opened}</h2><p>{pct(opened,delivered)}% of delivered</p></article>
       <article className="admin-card"><p className="eyebrow">CLICKED</p><h2>{clicked}</h2><p>{pct(clicked,delivered)}% of delivered</p></article>
-    </div>
+    </div>}
 
     {!deliveryMetricsError&&<article className="admin-card email-performance"><p className="eyebrow">EMAIL HEALTH</p><h2>Overall performance</h2>
       <div className="admin-grid">
@@ -90,7 +90,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
         <div><strong>{complained}</strong><p>Spam complaints</p></div>
         <div><strong>{campaignCount}</strong><p>Recent campaigns</p></div>
         <div><strong>{completedCampaigns}</strong><p>Completed campaigns</p></div>
-      </div>}
+      </div>
     </article>}
 
     <article className="admin-card email-create-card" id="new-campaign"><div className="email-section-heading"><div><p className="eyebrow">NEW CAMPAIGN</p><h2>Create a draft</h2><p>Give the campaign a working name and subject. You can choose or change the audience later.</p></div></div><form action={createCampaign} className="email-create-form"><label>Campaign name<input name="name" maxLength={120} placeholder="October Gourmand Finds" required/></label><label>Email subject<input name="subject" maxLength={200} placeholder="Sweet new scents picked for you" required/></label><label>Audience segment<select name="segment_id" defaultValue=""><option value="">Choose later</option>{segmentRows.map((x:any)=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><div><button type="submit">Create draft</button></div></form></article>
