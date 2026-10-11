@@ -109,12 +109,16 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
       sent++
     }catch(error){
       if(error instanceof EmailDeliveryPersistenceError||error instanceof EmailProviderConfirmationError)throw error
-      const {error:failureUpdateError}=await s.from('email_deliveries').update({
-        status:'failed',
-        failed_at:new Date().toISOString(),
-        error_message:'Delivery processing failed.'
-      }).eq('id',row.id).eq('status','processing')
-      if(failureUpdateError)throw new Error('Delivery failed but its failure status could not be saved.')
+      try{
+        const {error:failureUpdateError}=await s.from('email_deliveries').update({
+          status:'failed',
+          failed_at:new Date().toISOString(),
+          error_message:'Delivery processing failed.'
+        }).eq('id',row.id).eq('status','processing')
+        if(failureUpdateError)throw failureUpdateError
+      }catch{
+        throw new Error('Delivery failed but its failure status could not be saved.')
+      }
       failed++
     }
   }
