@@ -25,7 +25,14 @@ export async function sendQueuedCampaign(s:DbClient,campaignId:string,batchSize=
   const {data:claimed,error:claimError}=await s.rpc('claim_email_delivery_batch',{p_campaign_id:campaignId,p_limit:safeBatchSize})
   if(claimError)throw new Error('Queued deliveries could not be claimed.')
   if(!Array.isArray(claimed))throw new Error('Claimed deliveries returned an invalid response.')
-  if(claimed.length>safeBatchSize)throw new Error('Claimed deliveries exceeded the requested batch size; manual claim reconciliation is required.')
+  if(claimed.length>safeBatchSize){
+    const ids=claimed.map((row:any)=>row?.delivery_id).filter((id:any):id is string=>typeof id==='string'&&!!id.trim()&&id===id.trim())
+    if(ids.length){
+      const {error:releaseError}=await s.rpc('release_email_delivery_claims',{p_delivery_ids:[...new Set(ids)]})
+      if(releaseError)throw new Error('Oversized email delivery claims could not be released safely.')
+    }
+    throw new Error('Claimed deliveries exceeded the requested batch size.')
+  }
   const claimedIds=claimed.map((x:any)=>x?.delivery_id)
   if(claimedIds.some((id:any)=>typeof id!=='string'||!id.trim()||id!==id.trim())||new Set(claimedIds).size!==claimedIds.length){
     const validIds=claimedIds.filter((id:any):id is string=>typeof id==='string'&&!!id.trim()&&id===id.trim())
