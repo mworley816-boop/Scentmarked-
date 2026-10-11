@@ -22,3 +22,10 @@ test('worker summary surfaces reconciliation state and logs affected campaign ID
 test('worker returns non-success response when campaign processing fails',()=>{
   assert.match(worker,/if\(failures>0\)return NextResponse\.json\(summary,\{status:500\}\)/)
 })
+
+test('worker logs categorized errors without raw exception messages',()=>{
+  assert.match(worker,/errorType:error instanceof EmailDeliveryPersistenceError/)
+  assert.match(worker,/provider_confirmation/)
+  assert.match(worker,/processing_failure/)
+  assert.doesNotMatch(worker,/error:error instanceof Error\?error\.message/)
+})
