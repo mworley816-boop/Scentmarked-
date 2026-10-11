@@ -152,3 +152,29 @@ test('ambiguous provider outcomes require reconciliation instead of automatic re
     else process.env.RESEND_FROM_EMAIL=previousFrom
   }
 })
+
+test('repeated provider requests for one delivery reuse the same idempotency key',async()=>{
+  const previousKey=process.env.RESEND_API_KEY
+  const previousFrom=process.env.RESEND_FROM_EMAIL
+  const previousFetch=globalThis.fetch
+  process.env.RESEND_API_KEY='test-key'
+  process.env.RESEND_FROM_EMAIL='updates@example.com'
+  const keys:string[]=[]
+  globalThis.fetch=(async(_input:RequestInfo|URL,init?:RequestInit)=>{
+    keys.push(new Headers(init?.headers).get('Idempotency-Key')||'')
+    return new Response(JSON.stringify({id:'provider-same-message'}),{status:200})
+  }) as typeof fetch
+  try{
+    const message={to:'member@example.com',subject:'Hello',html:'<p>Hello</p>',text:'Hello',deliveryId:'stable-99'}
+    const first=await getEmailProvider().send(message)
+    const second=await getEmailProvider().send(message)
+    assert.deepEqual(keys,['scentmarked-delivery-stable-99','scentmarked-delivery-stable-99'])
+    assert.equal(first.providerMessageId,second.providerMessageId)
+  }finally{
+    globalThis.fetch=previousFetch
+    if(previousKey===undefined)delete process.env.RESEND_API_KEY
+    else process.env.RESEND_API_KEY=previousKey
+    if(previousFrom===undefined)delete process.env.RESEND_FROM_EMAIL
+    else process.env.RESEND_FROM_EMAIL=previousFrom
+  }
+})
