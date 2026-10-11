@@ -22,6 +22,11 @@ async function updateContact(formData:FormData){
   const id=String(formData.get('id')||'')
   const status=String(formData.get('status')||'active')
   if(!id||!statuses.includes(status as any))redirect('/admin/crm?error='+encodeURIComponent('Invalid contact update.'))
+  if(status==='active'){
+    const {data:contact,error:lookupError}=await s.from('crm_contacts').select('status,unsubscribed_at').eq('id',id).maybeSingle()
+    if(lookupError||!contact)redirect('/admin/crm?error='+encodeURIComponent('Contact could not be verified before reactivation.'))
+    if(contact.status==='unsubscribed'||contact.unsubscribed_at)redirect('/admin/crm?error='+encodeURIComponent('Unsubscribed contacts cannot be reactivated here. A new consent workflow is required.'))
+  }
   const {data,error}=await s.from('crm_contacts').update({status,updated_at:new Date().toISOString()}).eq('id',id).select('id')
   if(error)redirect('/admin/crm?error='+encodeURIComponent('Contact could not be updated.'))
   if(!data?.length)redirect('/admin/crm?error='+encodeURIComponent('No matching contact was found.'))
