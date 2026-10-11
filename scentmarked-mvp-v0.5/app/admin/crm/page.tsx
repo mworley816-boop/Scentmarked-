@@ -47,11 +47,19 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
   if(status)query=query.eq('status',status)
   if(consent)query=query.eq('marketing_consent',consent==='yes')
 
-  const {data,error,count:totalMatching}=await query
+  const [{data,error,count:totalMatching},activeCountResult,eligibleCountResult,memberCountResult]=await Promise.all([
+    query,
+    s.from('crm_contacts').select('id',{count:'exact',head:true}).eq('status','active'),
+    s.from('crm_contacts').select('id',{count:'exact',head:true}).eq('status','active').eq('marketing_consent',true).not('marketing_consented_at','is',null).is('unsubscribed_at',null),
+    s.from('crm_contacts').select('id',{count:'exact',head:true}).not('user_id','is',null)
+  ])
   const contacts=(data||[]) as any[]
   const active=contacts.filter(x=>x.status==='active').length
   const subscribed=contacts.filter(x=>x.marketing_consent&&x.marketing_consented_at&&!x.unsubscribed_at&&x.status==='active').length
   const members=contacts.filter(x=>x.user_id).length
+  const activeTotal=activeCountResult.error?null:activeCountResult.count
+  const eligibleTotal=eligibleCountResult.error?null:eligibleCountResult.count
+  const memberTotal=memberCountResult.error?null:memberCountResult.count
   const filterParams=new URLSearchParams()
   if(q)filterParams.set('q',q)
   if(status)filterParams.set('status',status)
@@ -69,12 +77,12 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
 
     <div className="admin-grid">
       <article className="admin-card"><p className="eyebrow">RESULTS</p><h2>{contacts.length}</h2><p>Contacts on this page</p></article>
-      <article className="admin-card"><p className="eyebrow">ACTIVE</p><h2>{active}</h2><p>Active contacts</p></article>
-      <article className="admin-card"><p className="eyebrow">EMAILABLE</p><h2>{subscribed}</h2><p>Active with marketing consent</p></article>
-      <article className="admin-card"><p className="eyebrow">MEMBERS</p><h2>{members}</h2><p>Linked ScentMarked accounts</p></article>
+      <article className="admin-card"><p className="eyebrow">ACTIVE</p><h2>{activeTotal??active}</h2><p>{activeTotal===null?'Active on this page':'Active contacts overall'}</p></article>
+      <article className="admin-card"><p className="eyebrow">EMAILABLE</p><h2>{eligibleTotal??subscribed}</h2><p>{eligibleTotal===null?'Eligible on this page':'Eligible contacts overall'}</p></article>
+      <article className="admin-card"><p className="eyebrow">MEMBERS</p><h2>{memberTotal??members}</h2><p>{memberTotal===null?'Members on this page':'Linked accounts overall'}</p></article>
     </div>
 
-    <p className="muted">Showing {resultStart}–{resultEnd}{typeof totalMatching==='number'?` of ${totalMatching} matching contacts`:''}. Active, emailable, and member counts above refer to this page.</p>
+    <p className="muted">Showing {resultStart}–{resultEnd}{typeof totalMatching==='number'?` of ${totalMatching} matching contacts`:''}. Summary counts cover all contacts when available; otherwise they are labeled as page-only.</p>
     <form method="get" className="admin-card crm-filter-bar">
       <label>Search<input name="q" defaultValue={q} placeholder="Email or name"/></label>
       <label>Status<select name="status" defaultValue={status}><option value="">All statuses</option>{statuses.map(x=><option key={x} value={x}>{x}</option>)}</select></label>
