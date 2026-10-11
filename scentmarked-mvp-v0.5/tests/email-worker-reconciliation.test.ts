@@ -8,7 +8,7 @@ const worker=readFileSync(join(process.cwd(),'app/api/internal/email-worker/rout
 test('email worker distinguishes uncertain delivery outcomes from routine failures',()=>{
   assert.match(worker,/error instanceof EmailDeliveryPersistenceError/)
   assert.match(worker,/error instanceof EmailProviderConfirmationError/)
-  assert.match(worker,/reconciliationRequired:error/)
+  assert.match(worker,/reconciliationRequired,error:reconciliationRequired/)
   assert.match(worker,/manual reconciliation required/)
 })
 
