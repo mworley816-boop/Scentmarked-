@@ -29,11 +29,18 @@ class ResendProvider implements EmailProvider{
   }
 
   async send(message:OutboundEmail):Promise<ProviderSendResult>{
-    const response=await fetch('https://api.resend.com/emails',{
+    // A provider timeout or connection failure does not establish whether the
+    // message was accepted. Do not mark it failed and retry automatically.
+    let response:Response
+    try{
+      response=await fetch('https://api.resend.com/emails',{
       method:'POST',
       headers:{'Authorization':'Bearer '+this.apiKey,'Content-Type':'application/json','Idempotency-Key':'scentmarked-delivery-'+message.deliveryId},
       body:JSON.stringify({from:this.from,to:[message.to],subject:message.subject,html:message.html,text:message.text})
-    })
+      })
+    }catch{
+      throw new EmailProviderConfirmationError()
+    }
     const body=await response.json().catch(()=>({}))
     if(!response.ok)throw new Error('Email provider rejected the send request.')
     if(typeof body?.id!=='string'||!body.id.trim())throw new EmailProviderConfirmationError()
