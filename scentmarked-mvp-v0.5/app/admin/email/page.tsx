@@ -57,7 +57,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
   const complained=count('complained')
   const unsubscribed=count('unsubscribed')
   const skipped=count('skipped')
-  const attempted=sent+bounced+failed+complained+unsubscribed+count('processing')
+  const attempted=sent+bounced+failed+complained+unsubscribed
   const pending=count('queued')+count('processing')
   const deliveryMetricsError=deliveries.some((x:any)=>x.error||typeof x.count!=='number'||!Number.isSafeInteger(x.count)||x.count<0)
   const campaignCount=campaignRows.length
