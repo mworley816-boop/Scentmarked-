@@ -28,27 +28,36 @@ async function updateContact(formData:FormData){
   redirect('/admin/crm')
 }
 
-export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:string,status?:string,consent?:string,error?:string}>}){
+export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:string,status?:string,consent?:string,page?:string,error?:string}>}){
   const p=await searchParams
   const s=await requireAdmin()
   const q=(p.q||'').trim().slice(0,120)
   const status=statuses.includes(p.status as any)?p.status:''
   const consent=p.consent==='yes'||p.consent==='no'?p.consent:''
+  const pageNumber=Number(p.page||'1')
+  const page=Number.isSafeInteger(pageNumber)&&pageNumber>0?Math.min(pageNumber,10000):1
+  const pageSize=100
 
   let query=s.from('crm_contacts')
-    .select('id,user_id,email,first_name,last_name,status,source,marketing_consent,marketing_consented_at,unsubscribed_at,last_engaged_at,created_at,profiles:user_id(display_name,scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at)')
+    .select('id,user_id,email,first_name,last_name,status,source,marketing_consent,marketing_consented_at,unsubscribed_at,last_engaged_at,created_at,profiles:user_id(display_name,scent_loved_notes,scent_avoided_notes,scent_sweetness,scent_projection,scent_longevity,scent_max_price,scent_occasions,scent_vibes,scent_presentations,scent_profile_completed_at)',{count:'exact'})
     .order('created_at',{ascending:false})
-    .limit(250)
+    .range((page-1)*pageSize,page*pageSize-1)
 
   if(q)query=query.or('email.ilike.%'+q.replaceAll('%','')+'%,first_name.ilike.%'+q.replaceAll('%','')+'%,last_name.ilike.%'+q.replaceAll('%','')+'%')
   if(status)query=query.eq('status',status)
   if(consent)query=query.eq('marketing_consent',consent==='yes')
 
-  const {data,error}=await query
+  const {data,error,count:totalMatching}=await query
   const contacts=(data||[]) as any[]
   const active=contacts.filter(x=>x.status==='active').length
   const subscribed=contacts.filter(x=>x.marketing_consent&&x.status==='active').length
   const members=contacts.filter(x=>x.user_id).length
+  const filterParams=new URLSearchParams()
+  if(q)filterParams.set('q',q)
+  if(status)filterParams.set('status',status)
+  if(consent)filterParams.set('consent',consent)
+  const pageHref=(n:number)=>'/admin/crm?'+new URLSearchParams([...filterParams.entries(),['page',String(n)]]).toString()
+  const totalPages=typeof totalMatching==='number'?Math.ceil(totalMatching/pageSize):null
 
   return <main><section className="admin-page">
     <div className="admin-heading"><div><p className="eyebrow">ADMIN · CRM</p><h1>Contacts</h1><p>Manage members, email consent, scent-profile context and customer status.</p></div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><Link className="button ghost" href="/admin">Back to Admin</Link><Link className="button" href="/admin/email">Email</Link></div></div>
@@ -57,12 +66,13 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
     {error&&<div className="notice error" role="alert">CRM contacts could not be loaded. Apply the CRM migration before using this page.</div>}
 
     <div className="admin-grid">
-      <article className="admin-card"><p className="eyebrow">RESULTS</p><h2>{contacts.length}</h2><p>Contacts shown</p></article>
+      <article className="admin-card"><p className="eyebrow">RESULTS</p><h2>{contacts.length}</h2><p>Contacts on this page</p></article>
       <article className="admin-card"><p className="eyebrow">ACTIVE</p><h2>{active}</h2><p>Active contacts</p></article>
       <article className="admin-card"><p className="eyebrow">EMAILABLE</p><h2>{subscribed}</h2><p>Active with marketing consent</p></article>
       <article className="admin-card"><p className="eyebrow">MEMBERS</p><h2>{members}</h2><p>Linked ScentMarked accounts</p></article>
     </div>
 
+    <p className="muted">Page {page}{typeof totalMatching==='number'?` · ${totalMatching} matching contacts across ${totalPages} page(s)`:''}. Active, emailable, and member counts above refer to this page.</p>
     <form method="get" className="admin-card crm-filter-bar">
       <label>Search<input name="q" defaultValue={q} placeholder="Email or name"/></label>
       <label>Status<select name="status" defaultValue={status}><option value="">All statuses</option>{statuses.map(x=><option key={x} value={x}>{x}</option>)}</select></label>
@@ -81,5 +91,6 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
         <div className="crm-contact-actions"><form action={updateContact}><input type="hidden" name="id" value={c.id}/><select aria-label={'Status for '+name} name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x}>{x}</option>)}</select><button type="submit">Update</button></form><Link className="button" href={'/admin/crm/'+c.id}>Open contact</Link></div>
       </article>
     })}</div>}
+    {!error&&<nav aria-label="CRM contact pages" style={{display:'flex',gap:12,alignItems:'center',marginTop:16}}>{page>1&&<Link className="button ghost" href={pageHref(page-1)}>Previous page</Link>}<span>Page {page}{totalPages!==null?` of ${totalPages}`:''}</span>{(totalPages!==null?page<totalPages:contacts.length===pageSize)&&<Link className="button ghost" href={pageHref(page+1)}>Next page</Link>}</nav>}
   </section></main>
 }
