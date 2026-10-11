@@ -43,7 +43,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
     s.from('crm_segments').select('id,name,is_active').eq('is_active',true).order('name'),
     s.from('email_templates').select('id,name,subject,updated_at').order('updated_at',{ascending:false}).limit(50),
     Promise.all(['queued','processing','sent','delivered','opened','clicked','bounced','failed','complained','unsubscribed','skipped'].map(async deliveryStatus=>({deliveryStatus,...await s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('status',deliveryStatus)}))),
-    s.from('crm_contacts').select('*',{count:'exact',head:true}).eq('status','active').eq('marketing_consent',true),
+    s.from('crm_contacts').select('id',{count:'exact',head:true}).eq('status','active').eq('marketing_consent',true).not('marketing_consented_at','is',null).is('unsubscribed_at',null),
     s.from('email_campaigns').select('id',{count:'exact',head:true}).eq('status','sent')
   ])
 
