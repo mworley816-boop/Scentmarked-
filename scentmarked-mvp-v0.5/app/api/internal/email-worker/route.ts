@@ -41,7 +41,8 @@ export async function POST(request:Request){
 
   const reconciliationRequired=results.some(result=>result.reconciliationRequired===true)
   const summary={ok:failures===0,processed:results.length,failures,reconciliationRequired,durationMs:Date.now()-startedAt,results}
-  console.info('Email worker run complete',{ok:summary.ok,processed:summary.processed,failures:summary.failures,durationMs:summary.durationMs})
+  console.info('Email worker run complete',{ok:summary.ok,processed:summary.processed,failures:summary.failures,reconciliationRequired:summary.reconciliationRequired,durationMs:summary.durationMs})
+  if(reconciliationRequired)console.error('Email delivery reconciliation required',{campaignIds:results.filter(result=>result.reconciliationRequired===true).map(result=>result.campaignId)})
   if(failures>0)return NextResponse.json(summary,{status:500})
   return NextResponse.json(summary)
 }
