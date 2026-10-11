@@ -39,24 +39,26 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
     s.from('email_campaigns').select('id,name,subject,status,scheduled_at,started_at,completed_at,created_at,crm_segments:segment_id(id,name)').order('created_at',{ascending:false}).limit(100),
     s.from('crm_segments').select('id,name,is_active').eq('is_active',true).order('name'),
     s.from('email_templates').select('id,name,subject,updated_at').order('updated_at',{ascending:false}).limit(50),
-    s.from('email_deliveries').select('status'),
+    Promise.all(['queued','processing','sent','delivered','opened','clicked','bounced','failed','complained','unsubscribed','skipped'].map(async status=>({status,...await s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('status',status)}))),
     s.from('crm_contacts').select('*',{count:'exact',head:true}).eq('status','active').eq('marketing_consent',true)
   ])
 
   const campaignRows=campaigns||[]
   const segmentRows=segments||[]
   const templateRows=templates||[]
-  const ds=deliveries||[]
-  const sent=ds.filter((x:any)=>['sent','delivered','opened','clicked'].includes(x.status)).length
-  const delivered=ds.filter((x:any)=>['delivered','opened','clicked'].includes(x.status)).length
-  const opened=ds.filter((x:any)=>['opened','clicked'].includes(x.status)).length
-  const clicked=ds.filter((x:any)=>x.status==='clicked').length
-  const bounced=ds.filter((x:any)=>x.status==='bounced').length
-  const failed=ds.filter((x:any)=>x.status==='failed').length
-  const complained=ds.filter((x:any)=>x.status==='complained').length
-  const unsubscribed=ds.filter((x:any)=>x.status==='unsubscribed').length
-  const skipped=ds.filter((x:any)=>x.status==='skipped').length
-  const attempted=ds.filter((x:any)=>!['queued','skipped'].includes(x.status)).length
+  const deliveryCounts=new Map((deliveries||[]).map((x:any)=>[x.status,x.count||0]))
+  const count=(status:string):number=>Number(deliveryCounts.get(status)||0)
+  const sent=count('sent')+count('delivered')+count('opened')+count('clicked')
+  const delivered=count('delivered')+count('opened')+count('clicked')
+  const opened=count('opened')+count('clicked')
+  const clicked=count('clicked')
+  const bounced=count('bounced')
+  const failed=count('failed')
+  const complained=count('complained')
+  const unsubscribed=count('unsubscribed')
+  const skipped=count('skipped')
+  const attempted=sent+bounced+failed+complained+unsubscribed+count('processing')
+  const deliveryMetricsError=(deliveries||[]).some((x:any)=>x.error||typeof x.count!=='number')
   const campaignCount=campaignRows.length
   const completedCampaigns=campaignRows.filter((x:any)=>x.status==='sent').length
   const pct=(n:number,d:number)=>d?Math.round(n/d*1000)/10:0
@@ -66,6 +68,7 @@ export default async function AdminEmail({searchParams}:{searchParams:Promise<{e
     <nav className="email-workspaces" aria-label="Email marketing tools"><a href="#new-campaign"><span>CREATE</span><strong>New campaign</strong><small>Start a new email draft</small></a><Link href="/admin/email/templates"><span>DESIGN</span><strong>Templates</strong><small>{templateRows.length} reusable designs</small></Link><Link href="/admin/email/segments"><span>AUDIENCE</span><strong>Segments</strong><small>{segmentRows.length} saved audiences</small></Link><Link href="/admin/crm"><span>CRM</span><strong>Contacts</strong><small>{emailable||0} currently emailable</small></Link></nav>
     {p.error&&<div className="notice error" role="alert">{p.error}</div>}
     {error&&<div className="notice error" role="alert">Campaign data could not be loaded. Apply the CRM/email migration before using this page.</div>}
+    {deliveryMetricsError&&<div className="notice error" role="alert">Some delivery counts could not be loaded; performance metrics may be incomplete.</div>}
     <div className="notice"><strong>Provider-gated sending:</strong> Campaigns can send only when the Resend environment variables are configured. Consent checks, unsubscribe processing, and verified webhook handling remain enforced.</div>
 
     <div className="admin-grid">
