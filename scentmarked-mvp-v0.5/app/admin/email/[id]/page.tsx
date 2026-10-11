@@ -164,18 +164,22 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   const {id}=await params
   const p=await searchParams
   const s=await requireAdmin('/admin/email/'+id)
-  const [{data:c,error},{data:segments},{data:templates},{data:deliveryRows}]=await Promise.all([
+  const [{data:c,error},{data:segments},{data:templates}]=await Promise.all([
     s.from('email_campaigns').select('id,name,subject,preview_text,html_body,text_body,status,segment_id,template_id,scheduled_at,started_at,completed_at,created_at,updated_at').eq('id',id).maybeSingle(),
     s.from('crm_segments').select('id,name,is_active').eq('is_active',true).order('name'),
-    s.from('email_templates').select('id,name,subject').order('name'),
-    s.from('email_deliveries').select('status').eq('campaign_id',id)
+    s.from('email_templates').select('id,name,subject').order('name')
   ])
   if(error||!c)notFound()
   const campaign=c as any
   const segmentOptions=segments||[]
   const templateOptions=templates||[]
-  const rows=deliveryRows||[]
-  const counts=rows.reduce((a:any,x:any)=>{a[x.status]=(a[x.status]||0)+1;return a},{})
+  // Exact head-only counts avoid Supabase's default row limit on campaign analytics.
+  const deliveryStatuses=['queued','processing','sent','delivered','opened','clicked','bounced','failed','skipped','complained','unsubscribed'] as const
+  const deliveryCountResults=await Promise.all(deliveryStatuses.map(status=>s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('campaign_id',id).eq('status',status)))
+  const counts:Record<string,number>={}
+  deliveryStatuses.forEach((status,index)=>{counts[status]=deliveryCountResults[index].count||0})
+  const deliveryCountsError=deliveryCountResults.some(result=>result.error!==null)
+  const {count:deliveryTotal,error:deliveryTotalError}=await s.from('email_deliveries').select('id',{count:'exact',head:true}).eq('campaign_id',id)
   const editable=campaign.status==='draft'
   let audiencePreview=0
   if(campaign.segment_id){
@@ -193,7 +197,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
   const processingWithProviderId=processingList.filter((delivery:any)=>typeof delivery.provider_message_id==='string'&&delivery.provider_message_id.trim()).length
   const processingWithoutProviderId=processingList.length-processingWithProviderId
   const processingListTruncated=(counts.processing||0)>processingList.length
-  const total=rows.length
+  const total=deliveryTotal||0
   const skipped=counts.skipped||0
   const sentBase=total-(counts.queued||0)-(counts.processing||0)-skipped
   const delivered=(counts.delivered||0)+(counts.opened||0)+(counts.clicked||0)
@@ -233,7 +237,7 @@ export default async function EditCampaign({params,searchParams}:{params:Promise
 
     {(counts.processing||0)>0&&<article className="admin-card"><p className="eyebrow">RECONCILIATION DETAILS</p><h2>Processing delivery IDs</h2><p>Read-only investigation records. Verify provider acceptance before any manual action. {processingWithProviderId} of {processingList.length} displayed records have a stored provider message ID; missing IDs do not prove that an email was not sent. {processingWithoutProviderId} displayed records have no stored provider message ID.</p>{processingError?<p role="alert">Processing delivery details could not be loaded.</p>:<><div style={{overflowX:'auto'}}><table><thead><tr><th>Delivery ID</th><th>Processing since</th><th>Provider message ID</th></tr></thead><tbody>{processingList.map((delivery:any)=><tr key={delivery.id}><td><code>{delivery.id}</code></td><td>{delivery.processing_started_at?new Date(delivery.processing_started_at).toLocaleString():'Not recorded'}</td><td>{delivery.provider_message_id||'Not recorded'}</td></tr>)}</tbody></table></div>{processingListTruncated&&<p>Showing the oldest {processingList.length} of {counts.processing} processing deliveries.</p>}</>}</article>}
 
-    <article className="admin-card"><p className="eyebrow">CAMPAIGN ANALYTICS</p><h2>Performance</h2>
+    <article className="admin-card"><p className="eyebrow">CAMPAIGN ANALYTICS</p>{(deliveryCountsError||deliveryTotalError)&&<p role="alert">Delivery analytics could not be fully loaded. Counts may be incomplete.</p>}<h2>Performance</h2>
       <div className="admin-grid">
         <div><strong>{rate(delivered,sentBase)}%</strong><p>Delivery rate · {delivered}/{sentBase}</p></div>
         <div><strong>{rate(opened,delivered)}%</strong><p>Open rate · {opened}/{delivered}</p></div>
