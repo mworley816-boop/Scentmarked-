@@ -50,7 +50,7 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
   const {data,error,count:totalMatching}=await query
   const contacts=(data||[]) as any[]
   const active=contacts.filter(x=>x.status==='active').length
-  const subscribed=contacts.filter(x=>x.marketing_consent&&x.status==='active').length
+  const subscribed=contacts.filter(x=>x.marketing_consent&&x.marketing_consented_at&&!x.unsubscribed_at&&x.status==='active').length
   const members=contacts.filter(x=>x.user_id).length
   const filterParams=new URLSearchParams()
   if(q)filterParams.set('q',q)
@@ -88,7 +88,7 @@ export default async function AdminCrm({searchParams}:{searchParams:Promise<{q?:
       const name=[c.first_name,c.last_name].filter(Boolean).join(' ')||profile?.display_name||'Unnamed contact'
       const loved=(profile?.scent_loved_notes||[]).slice(0,6)
       return <article className="crm-contact-row" key={c.id}>
-        <div className="crm-contact-main"><div className="crm-contact-avatar">{name.slice(0,1).toUpperCase()}</div><div><div className="crm-badges"><span className={'crm-status '+c.status}>{c.status}</span><span>{c.user_id?'Member':'CRM only'}</span><span className={c.marketing_consent&&c.status==='active'?'consented':'muted'}>{c.marketing_consent&&c.status==='active'?'Email eligible':'No marketing'}</span></div><h2>{name}</h2><a className="crm-email" href={'mailto:'+c.email}>{c.email}</a><small>Added {new Date(c.created_at).toLocaleDateString()} · {c.source}</small></div></div>
+        <div className="crm-contact-main"><div className="crm-contact-avatar">{name.slice(0,1).toUpperCase()}</div><div><div className="crm-badges"><span className={'crm-status '+c.status}>{c.status}</span><span>{c.user_id?'Member':'CRM only'}</span><span className={c.marketing_consent&&c.marketing_consented_at&&!c.unsubscribed_at&&c.status==='active'?'consented':'muted'}>{c.marketing_consent&&c.marketing_consented_at&&!c.unsubscribed_at&&c.status==='active'?'Email eligible':'No marketing'}</span></div><h2>{name}</h2><a className="crm-email" href={'mailto:'+c.email}>{c.email}</a><small>Added {new Date(c.created_at).toLocaleDateString()} · {c.source}</small></div></div>
         <div className="crm-contact-profile">{profile?<><strong>{profile.scent_profile_completed_at?'Scent profile complete':'Scent profile incomplete'}</strong>{loved.length>0&&<p>Loves {loved.join(', ')}</p>}{profile.scent_vibes?.length>0&&<p>{profile.scent_vibes.slice(0,4).join(' · ')}</p>}</>:<span className="muted">No linked scent profile</span>}</div>
         <div className="crm-contact-actions"><form action={updateContact}><input type="hidden" name="id" value={c.id}/><select aria-label={'Status for '+name} name="status" defaultValue={c.status}>{statuses.map(x=><option key={x} value={x}>{x}</option>)}</select><button type="submit">Update</button></form><Link className="button" href={'/admin/crm/'+c.id}>Open contact</Link></div>
       </article>
