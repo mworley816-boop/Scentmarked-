@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { sendQueuedCampaign } from '@/lib/email-queue'
+import { EmailDeliveryPersistenceError, sendQueuedCampaign } from '@/lib/email-queue'
+import { EmailProviderConfirmationError } from '@/lib/email-provider'
 
 export const dynamic='force-dynamic'
 
@@ -33,7 +34,8 @@ export async function POST(request:Request){
     }catch(error){
       failures++
       console.error('Email worker campaign batch failed',{campaignId,error:error instanceof Error?error.message:'Campaign batch failed.'})
-      results.push({campaignId,ok:false,error:'Campaign batch failed.'})
+      const reconciliationRequired=error instanceof EmailDeliveryPersistenceError||error instanceof EmailProviderConfirmationError
+      results.push({campaignId,ok:false,reconciliationRequired,error:reconciliationRequired?'Delivery outcome uncertain; manual reconciliation required.':'Campaign batch failed.'})
     }
   }
 
