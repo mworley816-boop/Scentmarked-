@@ -33,19 +33,24 @@ export function AtlasHtmlIntake(){
   finally{setReadingFile(false)}
  }
 
- const [preview,setPreview]=useState<{title:string;notes:string[];missing:string[]}|null>(null)
+ const [preview,setPreview]=useState<{title:string;notes:string[];missing:string[];snapshot:string}|null>(null)
+ const snapshot=()=>JSON.stringify({brand,name,sourceUrl,html})
  function inspect(){
   setPreview(null);setMessage('')
   try{
    const result=prepareAtlasHtmlResearch({candidate:{brand,name,manufacturerUrl:sourceUrl,sourceNotes:[]},sourceUrl,capturedAt:new Date().toISOString(),response:{status:200,contentType:'text/html',contentLength:null},html})
    const notes=result.queueCandidate.sourceNotes
    const missing=['Top','Heart','Base'].filter(tier=>!notes.some(note=>note.startsWith(tier+': ')))
-   setPreview({title:result.pageTitle,notes,missing})
+   setPreview({title:result.pageTitle,notes,missing,snapshot:snapshot()})
   }catch(error){setMessage(error instanceof Error?error.message:'Unable to preview research')}
  }
  async function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault()
-  if(!preview){setMessage('Preview the extracted notes before submitting.');return}
+  if(!preview||preview.snapshot!==snapshot()){
+   setPreview(null)
+   setMessage('Research details changed. Preview the extracted notes again before submitting.')
+   return
+  }
   setBusy(true);setMessage('')
   try{
    const response=await fetch('/api/admin/atlas-research/submit',{
