@@ -45,7 +45,8 @@ export async function POST(request:Request){
   for(const perfume of data){
    const brandRelation=perfume.brands as unknown
    const brand=Array.isArray(brandRelation)?brandRelation[0]?.name:(brandRelation as {name?:string}|null)?.name
-   if(typeof brand==='string')existing.push({brand,name:perfume.name})
+   if(typeof brand!=='string'||!brand.trim())return NextResponse.json({error:'Catalog contains an unresolved brand; duplicate check cannot complete safely'},{status:503})
+   existing.push({brand,name:perfume.name})
   }
   if(data.length<pageSize)break
   if(offset+pageSize===20000)return NextResponse.json({error:'Catalog duplicate scan exceeded safety limit'},{status:503})
