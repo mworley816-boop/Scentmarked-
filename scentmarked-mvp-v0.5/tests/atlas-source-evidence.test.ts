@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {assessAtlasSourceEvidence} from '../lib/atlas-source-evidence.ts'
 
 const candidate={brand:'Arabiyat',name:'Example',manufacturerUrl:'https://manufacturer.example/perfume',sourceNotes:[]}
-const evidence={manufacturerUrl:candidate.manufacturerUrl,observedUrl:candidate.manufacturerUrl,pageTitle:'Example fragrance',fetchedAt:'2026-01-01T00:00:00Z'}
+const evidence={manufacturerUrl:candidate.manufacturerUrl,observedUrl:candidate.manufacturerUrl,pageTitle:'Example fragrance',fetchedAt:new Date().toISOString()}
 
 test('accepts consistent HTTPS evidence metadata without claiming manufacturer ownership',()=>{
  const result=assessAtlasSourceEvidence(candidate,evidence)
