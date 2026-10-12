@@ -7,7 +7,7 @@ export type AtlasSourceEvidence={
  fetchedAt:string
 }
 export type AtlasSourceAssessment={
- verified:boolean
+ metadataConsistent:boolean
  reasons:string[]
  evidence:AtlasSourceEvidence
 }
@@ -27,5 +27,5 @@ export function assessAtlasSourceEvidence(candidate:PerfumeResearchCandidate,evi
  if(!evidence.pageTitle.trim())reasons.push('Page title is missing')
  const timestamp=Date.parse(evidence.fetchedAt)
  if(!Number.isFinite(timestamp)||timestamp>Date.now()+60_000||timestamp<Date.now()-1000*60*60*24*365)reasons.push('Evidence timestamp is invalid')
- return {verified:reasons.length===0,reasons,evidence}
+ return {metadataConsistent:reasons.length===0,reasons,evidence}
 }
