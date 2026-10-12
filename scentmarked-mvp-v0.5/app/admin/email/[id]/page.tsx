@@ -71,7 +71,7 @@ async function sendTestEmail(formData:FormData){
     const body=withMarketingFooter(personalize(campaign.html_body),personalize(campaign.text_body||''),siteUrl+'/privacy-choices')
     await provider.send({to:email,subject:'[TEST] '+personalize(campaign.subject),html:body.html,text:body.text,deliveryId:'test-'+id+'-'+Date.now()})
   }catch(error){
-    const message=error instanceof Error?error.message:'Test email could not be sent.'
+    const message=error instanceof Error&&error.name==='EmailProviderConfirmationError'?'Test email acceptance could not be confirmed. Check the provider before sending another test.':'Test email could not be sent. Check provider configuration and logs.'
     redirect('/admin/email/'+id+'?error='+encodeURIComponent(message))
   }
   redirect('/admin/email/'+id+'?tested=1')
