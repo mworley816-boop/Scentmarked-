@@ -21,7 +21,7 @@ export function prepareAtlasHtmlResearch(input:{
  if(!metadata.title)throw new Error('Missing source page title')
  // Strip scripts/styles and tags, preserving block boundaries for explicit note labels.
  const visible=input.html.replace(/<(script|style|head)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,' ')
-  .replace(/<\s*br\s*\/?\s*>|<\/\s*(?:p|div|li|h[1-6])\s*>/gi,'\n')
+  .replace(/<\s*br\s*\/?\s*>|<\/?\s*(?:p|div|li|h[1-6])\b[^>]*>/gi,'\n')
   .replace(/<[^>]*>/g,' ')
   .replace(/&amp;/gi,'&').replace(/&nbsp;/gi,' ')
  const proposal=buildAtlasNoteReviewProposal(input.candidate,visible,input.sourceUrl,input.capturedAt)
