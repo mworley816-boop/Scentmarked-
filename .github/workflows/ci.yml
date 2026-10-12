@@ -3,7 +3,7 @@ name: ScentMarked CI
 on:
   workflow_dispatch:
   push:
-    branches: [main, feature/atlas-research-review-ready-20261012, feature/atlas-research-intake-validation]
+    branches: [main, feature/atlas-research-intake-validation, feature/atlas-research-review-ready-20261012]
   pull_request:
     branches: [main]
 
