@@ -7,19 +7,19 @@ const evidence={manufacturerUrl:candidate.manufacturerUrl,observedUrl:candidate.
 
 test('accepts consistent HTTPS evidence metadata without claiming manufacturer ownership',()=>{
  const result=assessAtlasSourceEvidence(candidate,evidence)
- assert.equal(result.verified,true)
+ assert.equal(result.metadataConsistent,true)
  assert.deepEqual(result.reasons,[])
 })
 
 test('flags mismatched observed host and missing title',()=>{
  const result=assessAtlasSourceEvidence(candidate,{...evidence,observedUrl:'https://unrelated.example/item',pageTitle:''})
- assert.equal(result.verified,false)
+ assert.equal(result.metadataConsistent,false)
  assert.ok(result.reasons.some(reason=>reason.includes('host')))
  assert.ok(result.reasons.some(reason=>reason.includes('title')))
 })
 
 test('rejects unsafe observed URL and invalid timestamp',()=>{
  const result=assessAtlasSourceEvidence(candidate,{...evidence,observedUrl:'http://manufacturer.example',fetchedAt:'not-a-date'})
- assert.equal(result.verified,false)
+ assert.equal(result.metadataConsistent,false)
  assert.ok(result.reasons.length>=2)
 })
