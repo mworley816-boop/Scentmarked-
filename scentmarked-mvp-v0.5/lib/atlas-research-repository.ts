@@ -1,5 +1,5 @@
 import type {AtlasResearchReviewRecord} from './atlas-research-review'
-import {serializeAtlasResearchRow,deserializeAtlasResearchRow,type AtlasResearchStoredRow} from './atlas-research-storage'
+import {serializeAtlasResearchRow,deserializeAtlasResearchRow,type AtlasResearchStoredRow} from './atlas-research-storage.ts'
 
 export interface AtlasResearchQueueStore {
  list():Promise<AtlasResearchStoredRow[]>
