@@ -19,7 +19,7 @@ export function assessAtlasManufacturerDomain(input:{
  const matched=input.registry.some(entry=>{
   const reviewedHost=entry.hostname.toLowerCase()
   // Registry values must be bare DNS hostnames, never URLs or wildcard patterns.
-  if(!/^[a-z0-9-]+(?:\\.[a-z0-9-]+)+$/.test(reviewedHost))return false
+  if(!/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(reviewedHost))return false
   if(reviewedHost.split('.').some(label=>label.startsWith('-')||label.endsWith('-')))return false
   return entry.brand.trim().toLocaleLowerCase('en-US')===brand&&reviewedHost===hostname
  })
