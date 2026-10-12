@@ -54,7 +54,7 @@ export async function POST(request:Request){
  const identity=perfumeResearchIdentity(normalized.brand,normalized.name)
  const duplicates=existing.filter(row=>perfumeResearchIdentity(row.brand,row.name)===identity)
  const id=crypto.randomUUID()
- const prepared=prepareAtlasResearchSubmission(normalized,duplicates.map(row=>({brand:row.brand,name:row.perfume_name})),id,new Date().toISOString())
+ const prepared=prepareAtlasResearchSubmission(normalized,duplicates,id,new Date().toISOString())
  if(!prepared.accepted)return NextResponse.json({error:'Invalid research candidate',details:prepared.errors},{status:400})
  const record=createAtlasResearchReviewRecord(prepared.submission)
  const {error:insertError}=await s.from('atlas_research_queue').insert(serializeAtlasResearchRow(record))
