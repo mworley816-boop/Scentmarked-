@@ -23,3 +23,12 @@ test('rejects unsafe observed URL and invalid timestamp',()=>{
  assert.equal(result.metadataConsistent,false)
  assert.ok(result.reasons.length>=2)
 })
+
+test('rejects local and IP-literal source hosts before automated fetching',()=>{
+ for(const host of ['localhost','service.internal','127.0.0.1','[::1]','printer.local']){
+  const url=`https://${host}/fragrance`
+  const result=assessAtlasSourceEvidence({...candidate,manufacturerUrl:url},{...evidence,manufacturerUrl:url,observedUrl:url})
+  assert.equal(result.metadataConsistent,false,`Expected ${host} to be rejected`)
+  assert.ok(result.reasons.some(reason=>reason.includes('public domain')))
+ }
+})
