@@ -22,3 +22,10 @@ test('keeps the first note tier separate from page metadata and preceding paragr
 test('does not extract notes embedded in script or style elements',()=>{
  assert.throws(()=>prepareAtlasHtmlResearch({...base,html:'<title>Rose</title><script>Top Notes: Fake</script><style>Base Notes: Fake</style><p>Beautiful scent</p>'}),/No explicitly labeled notes/)
 })
+
+test('labels offline HTML as manual and rejects transport provenance claims',()=>{
+ const html='<title>Rose</title><p>Top Notes: Pear</p>'
+ const result=prepareAtlasHtmlResearch({...base,html})
+ assert.equal(result.provenance,'manual')
+ assert.throws(()=>prepareAtlasHtmlResearch({...base,html,provenance:'transport'}),/authenticated fetcher/)
+})

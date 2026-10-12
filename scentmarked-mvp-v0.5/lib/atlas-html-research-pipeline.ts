@@ -12,7 +12,9 @@ export function prepareAtlasHtmlResearch(input:{
  capturedAt:string
  response:AtlasResponseMetadata
  html:string
-}):{pageTitle:string;proposal:AtlasNoteReviewProposal;queueCandidate:PerfumeResearchCandidate}{
+ provenance?:'manual'|'transport'
+}):{pageTitle:string;proposal:AtlasNoteReviewProposal;queueCandidate:PerfumeResearchCandidate;provenance:'manual'|'transport'}{
+ if(input.provenance==='transport')throw new Error('Verified transport provenance requires an authenticated fetcher; offline HTML cannot claim it')
  if(!assessAtlasFetchTarget(input.sourceUrl).allowed)throw new Error('Unsafe source URL')
  const response=assessAtlasResearchResponse(input.response)
  if(!response.allowed)throw new Error('Invalid source response: '+response.reasons.join(', '))
@@ -25,5 +27,5 @@ export function prepareAtlasHtmlResearch(input:{
   .replace(/<[^>]*>/g,' ')
   .replace(/&amp;/gi,'&').replace(/&nbsp;/gi,' ')
  const proposal=buildAtlasNoteReviewProposal(input.candidate,visible,input.sourceUrl,input.capturedAt)
- return {pageTitle:metadata.title,proposal,queueCandidate:atlasNoteProposalToCandidate(proposal)}
+ return {pageTitle:metadata.title,proposal,queueCandidate:atlasNoteProposalToCandidate(proposal),provenance:'manual'}
 }
