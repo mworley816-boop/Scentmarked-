@@ -15,3 +15,13 @@ test('checks DNS and budgets on redirects',()=>{
  assert.equal(assessAtlasResearchHop({...safe,previousUrl:'https://example.com/old',target:'http://example.com/new'}).allowed,false)
  assert.equal(assessAtlasResearchHop({...safe,target:'https://example.com',budget:{redirects:4,elapsedMs:100,receivedBytes:0}}).allowed,false)
 })
+
+test('allows same-origin redirect but rejects cross-origin redirect',()=>{
+ const same=assessAtlasResearchHop({...safe,previousUrl:'https://example.com/old',target:'/new'})
+ assert.equal(same.allowed,true)
+ assert.equal(same.targetUrl,'https://example.com/new')
+ const cross=assessAtlasResearchHop({...safe,previousUrl:'https://example.com/old',target:'https://other.example/new'})
+ assert.equal(cross.allowed,false)
+ assert.equal(cross.targetUrl,null)
+ assert.ok(cross.reasons.some(reason=>reason.includes('same origin')))
+})
