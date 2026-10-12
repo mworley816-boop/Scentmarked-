@@ -20,3 +20,13 @@ test('review metadata survives storage serialization',()=>{
  const reviewed=reviewAtlasResearchRecord(createAtlasResearchReviewRecord(prepared.submission),'approve','admin-1',timestamp,'Verified manufacturer source')
  assert.deepEqual(deserializeAtlasResearchRow(serializeAtlasResearchRow(reviewed)),reviewed)
 })
+
+test('rejected duplicates retain their original duplicate classification',()=>{
+ const prepared=prepareAtlasResearchSubmission(candidate,[{brand:'Arabiyat',name:'Sugar'}],'research-3',timestamp)
+ if(!prepared.accepted)throw new Error('Expected duplicate submission')
+ const reviewed=reviewAtlasResearchRecord(createAtlasResearchReviewRecord(prepared.submission),'reject','admin-1',timestamp,'Duplicate of existing catalog record')
+ const restored=deserializeAtlasResearchRow(serializeAtlasResearchRow(reviewed))
+ assert.equal(restored.status,'rejected')
+ assert.equal(restored.decision,'duplicate')
+ assert.deepEqual(restored,reviewed)
+})
