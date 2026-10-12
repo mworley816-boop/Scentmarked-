@@ -14,3 +14,11 @@ test('rejects unsafe or uninformative HTML',()=>{
  assert.throws(()=>prepareAtlasHtmlResearch({...base,html:'<title>Rose</title><p>Lovely fragrance</p>'}),/No explicitly labeled notes/)
  assert.throws(()=>prepareAtlasHtmlResearch({...base,html:'<title>Rose</title><script>Top Notes: Fake</script>'}),/No explicitly labeled notes/)
 })
+
+test('keeps the first note tier separate from page metadata and preceding paragraphs',()=>{
+ const result=prepareAtlasHtmlResearch({...base,html:'<html><head><title>Rose</title><meta name="description" content="Fragrance"></head><body><p>Discover Rose</p><p>Top Notes: Pear, Bergamot</p><p>Heart Notes: Jasmine</p><p>Base Notes: Musk</p></body></html>'})
+ assert.deepEqual(result.queueCandidate.sourceNotes,['Top: Pear','Top: Bergamot','Heart: Jasmine','Base: Musk'])
+})
+test('does not extract notes embedded in script or style elements',()=>{
+ assert.throws(()=>prepareAtlasHtmlResearch({...base,html:'<title>Rose</title><script>Top Notes: Fake</script><style>Base Notes: Fake</style><p>Beautiful scent</p>'}),/No explicitly labeled notes/)
+})
