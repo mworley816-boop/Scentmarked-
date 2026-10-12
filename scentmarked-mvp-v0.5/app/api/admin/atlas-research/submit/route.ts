@@ -1,3 +1,4 @@
+import {prepareAtlasHtmlResearch} from '@/lib/atlas-html-research-pipeline'
 import {NextResponse} from 'next/server'
 import {buildAtlasNoteReviewProposal} from '@/lib/atlas-note-review-proposal'
 import {atlasNoteProposalToCandidate} from '@/lib/atlas-note-queue-adapter'
@@ -20,6 +21,18 @@ export async function POST(request:Request){
  const input=body as Record<string,unknown>
  let candidate=input.candidate
  if(!candidate||typeof candidate!=='object'||Array.isArray(candidate))return NextResponse.json({error:'Candidate is required'},{status:400})
+ if(input.sourceHtml!==undefined){
+  if(input.sourceText!==undefined)return NextResponse.json({error:'Supply either sourceHtml or sourceText, not both'},{status:400})
+  if(typeof input.sourceHtml!=='string'||typeof input.sourceUrl!=='string'||typeof input.capturedAt!=='string')return NextResponse.json({error:'Invalid HTML research evidence'},{status:400})
+  const response=input.response
+  if(!response||typeof response!=='object'||Array.isArray(response))return NextResponse.json({error:'HTML response metadata required'},{status:400})
+  const metadata=response as Record<string,unknown>
+  if(typeof metadata.status!=='number'||!(typeof metadata.contentType==='string'||metadata.contentType===null)||!(typeof metadata.contentLength==='string'||metadata.contentLength===null))return NextResponse.json({error:'Invalid HTML response metadata'},{status:400})
+  try{
+   const prepared=prepareAtlasHtmlResearch({candidate:candidate as Parameters<typeof prepareAtlasHtmlResearch>[0]['candidate'],sourceUrl:input.sourceUrl,capturedAt:input.capturedAt,response:{status:metadata.status,contentType:metadata.contentType as string|null,contentLength:metadata.contentLength as string|null},html:input.sourceHtml})
+   candidate=prepared.queueCandidate
+  }catch(error){return NextResponse.json({error:'Invalid HTML research proposal',details:error instanceof Error?error.message:'Unknown validation error'},{status:400})}
+ }
  if(input.sourceText!==undefined){
   if(typeof input.sourceText!=='string'||typeof input.sourceUrl!=='string'||typeof input.capturedAt!=='string')return NextResponse.json({error:'Invalid source text evidence'},{status:400})
   try{
