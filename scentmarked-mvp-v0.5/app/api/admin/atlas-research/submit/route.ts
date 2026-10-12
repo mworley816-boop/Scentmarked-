@@ -1,6 +1,7 @@
 import {NextResponse} from 'next/server'
 import {createClient} from '@/lib/supabase/server'
 import {prepareAtlasResearchSubmission} from '@/lib/atlas-research-submission'
+import {validatePerfumeResearchCandidate,perfumeResearchIdentity} from '@/lib/atlas-research-intake'
 import {createAtlasResearchReviewRecord} from '@/lib/atlas-research-review'
 import {serializeAtlasResearchRow} from '@/lib/atlas-research-storage'
 
@@ -16,13 +17,17 @@ export async function POST(request:Request){
  const input=body as Record<string,unknown>
  const candidate=input.candidate
  if(!candidate||typeof candidate!=='object'||Array.isArray(candidate))return NextResponse.json({error:'Candidate is required'},{status:400})
- const data=candidate as Record<string,unknown>
- const brand=typeof data.brand==='string'?data.brand.trim():''
- const name=typeof data.name==='string'?data.name.trim():''
- const {data:existing,error:existingError}=await s.from('atlas_research_queue').select('brand,perfume_name').eq('brand',brand).eq('perfume_name',name).limit(1)
+ const validated=validatePerfumeResearchCandidate(candidate)
+ if(!validated.valid||!validated.normalized)return NextResponse.json({error:'Invalid research candidate',details:validated.errors},{status:400})
+ const normalized=validated.normalized
+ // Check the whole research queue rather than relying on case-sensitive exact matches.
+ const {data:existing,error:existingError}=await s.from('atlas_research_queue').select('brand,perfume_name').limit(1000)
  if(existingError)return NextResponse.json({error:'Unable to check existing research'},{status:500})
+ if((existing||[]).length===1000)return NextResponse.json({error:'Research duplicate check requires pagination'},{status:503})
+ const identity=perfumeResearchIdentity(normalized.brand,normalized.name)
+ const duplicates=(existing||[]).filter(row=>perfumeResearchIdentity(row.brand,row.perfume_name)===identity)
  const id=crypto.randomUUID()
- const prepared=prepareAtlasResearchSubmission(candidate,(existing||[]).map(row=>({brand:row.brand,name:row.perfume_name})),id,new Date().toISOString())
+ const prepared=prepareAtlasResearchSubmission(normalized,duplicates.map(row=>({brand:row.brand,name:row.perfume_name})),id,new Date().toISOString())
  if(!prepared.accepted)return NextResponse.json({error:'Invalid research candidate',details:prepared.errors},{status:400})
  const record=createAtlasResearchReviewRecord(prepared.submission)
  const {error:insertError}=await s.from('atlas_research_queue').insert(serializeAtlasResearchRow(record))
