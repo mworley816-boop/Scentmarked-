@@ -16,13 +16,16 @@ export function AtlasHtmlIntake(){
   const file=event.target.files?.[0]
   event.target.value=''
   if(!file)return
-  setPreview(null);setMessage('')
+  setPreview(null);setMessage('');setImportedFile('')
   if(!/\.html?$/i.test(file.name)){setMessage('Choose an .html or .htm file.');return}
   if(file.size>900000){setMessage('HTML file exceeds the 900 KB import limit.');return}
   setReadingFile(true)
   try{
    const content=await file.text()
    if(!content.trim()){setMessage('HTML file is empty.');return}
+   if(!/<(?:!doctype\s+html|html|head|body|title|main|article)\b/i.test(content)){
+    setMessage('Selected file does not appear to contain an HTML page.');return
+   }
    setHtml(content)
    setImportedFile(file.name)
    setMessage('HTML imported. Preview the extracted notes before submitting.')
