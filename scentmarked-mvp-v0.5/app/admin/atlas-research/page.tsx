@@ -2,6 +2,7 @@ import Link from 'next/link'
 import {redirect} from 'next/navigation'
 import {createClient} from '@/lib/supabase/server'
 import {AtlasReviewActions} from './review-actions'
+import {AtlasBatchIntake} from './batch-intake'
 
 export const metadata={title:'Atlas Research Queue',robots:{index:false,follow:false}}
 export const dynamic='force-dynamic'
@@ -24,6 +25,7 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
   <Link href="/admin">← Admin Studio</Link>
   <h1>Atlas research review queue</h1>
   <p>Research is held for human verification. This page does not automatically publish perfumes.</p>
+  <AtlasBatchIntake />
   <nav aria-label="Research status filters" className="admin-filters">
    {statuses.map(item=><Link key={item} className="button ghost" aria-current={item===status?'page':undefined} href={item==='all'?'/admin/atlas-research':'/admin/atlas-research?status='+item}>{item.replaceAll('_',' ')}</Link>)}
   </nav>
