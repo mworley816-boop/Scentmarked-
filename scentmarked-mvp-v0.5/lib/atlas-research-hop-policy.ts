@@ -19,6 +19,11 @@ export function assessAtlasResearchHop(input:{
   const redirect=assessAtlasRedirectTarget(input.previousUrl,input.target)
   reasons.push(...redirect.reasons)
   targetUrl=redirect.targetUrl
+  if(targetUrl){
+   const previous=new URL(input.previousUrl)
+   const next=new URL(targetUrl)
+   if(previous.origin!==next.origin){reasons.push('Research redirects must remain on the same origin');targetUrl=null}
+  }
  }else{
   const preflight=assessAtlasFetchTarget(input.target)
   reasons.push(...preflight.reasons)
