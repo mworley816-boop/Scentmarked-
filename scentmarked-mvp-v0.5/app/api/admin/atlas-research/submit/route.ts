@@ -20,12 +20,29 @@ export async function POST(request:Request){
  const validated=validatePerfumeResearchCandidate(candidate)
  if(!validated.valid||!validated.normalized)return NextResponse.json({error:'Invalid research candidate',details:validated.errors},{status:400})
  const normalized=validated.normalized
- // Check the whole research queue rather than relying on case-sensitive exact matches.
- const {data:existing,error:existingError}=await s.from('atlas_research_queue').select('brand,perfume_name').limit(1000)
- if(existingError)return NextResponse.json({error:'Unable to check existing research'},{status:500})
- if((existing||[]).length===1000)return NextResponse.json({error:'Research duplicate check requires pagination'},{status:503})
+ // Exhaustively scan queue and catalog in bounded pages; fail closed on errors.
+ const existing:{brand:string;name:string}[]=[]
+ const pageSize=500
+ for(let offset=0;offset<20000;offset+=pageSize){
+  const {data,error}=await s.from('atlas_research_queue').select('brand,perfume_name').order('id').range(offset,offset+pageSize-1)
+  if(error||!data)return NextResponse.json({error:'Unable to check existing research'},{status:503})
+  existing.push(...data.map(row=>({brand:row.brand,name:row.perfume_name})))
+  if(data.length<pageSize)break
+  if(offset+pageSize===20000)return NextResponse.json({error:'Research queue duplicate scan exceeded safety limit'},{status:503})
+ }
+ for(let offset=0;offset<20000;offset+=pageSize){
+  const {data,error}=await s.from('perfumes').select('name,brands(name)').order('id').range(offset,offset+pageSize-1)
+  if(error||!data)return NextResponse.json({error:'Unable to check perfume catalog'},{status:503})
+  for(const perfume of data){
+   const brandRelation=perfume.brands as unknown
+   const brand=Array.isArray(brandRelation)?brandRelation[0]?.name:(brandRelation as {name?:string}|null)?.name
+   if(typeof brand==='string')existing.push({brand,name:perfume.name})
+  }
+  if(data.length<pageSize)break
+  if(offset+pageSize===20000)return NextResponse.json({error:'Catalog duplicate scan exceeded safety limit'},{status:503})
+ }
  const identity=perfumeResearchIdentity(normalized.brand,normalized.name)
- const duplicates=(existing||[]).filter(row=>perfumeResearchIdentity(row.brand,row.perfume_name)===identity)
+ const duplicates=existing.filter(row=>perfumeResearchIdentity(row.brand,row.name)===identity)
  const id=crypto.randomUUID()
  const prepared=prepareAtlasResearchSubmission(normalized,duplicates.map(row=>({brand:row.brand,name:row.perfume_name})),id,new Date().toISOString())
  if(!prepared.accepted)return NextResponse.json({error:'Invalid research candidate',details:prepared.errors},{status:400})
