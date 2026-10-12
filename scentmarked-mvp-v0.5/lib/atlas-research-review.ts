@@ -2,7 +2,7 @@ import type {AtlasResearchSubmission} from './atlas-research-submission'
 
 export type AtlasResearchReviewStatus='needs_source_review'|'duplicate'|'approved'|'rejected'
 
-export type AtlasResearchReviewRecord=AtlasResearchSubmission & {
+export type AtlasResearchReviewRecord=Omit<AtlasResearchSubmission,'reviewedAt'|'reviewedBy'> & {
  status:AtlasResearchReviewStatus
  reviewedAt:string|null
  reviewedBy:string|null
