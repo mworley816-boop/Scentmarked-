@@ -52,3 +52,15 @@ export function assessAtlasFetchTarget(rawUrl:string):{allowed:boolean;reasons:s
  if(parsed&&(parsed.hostname.endsWith('.')||parsed.hash))reasons.push('Fetch target must not contain a trailing-dot host or fragment')
  return {allowed:reasons.length===0,reasons}
 }
+
+/** Validate each redirect before following it; the network layer must separately check resolved IPs. */
+export function assessAtlasRedirectTarget(previousUrl:string,location:string):{allowed:boolean;targetUrl:string|null;reasons:string[]}{
+ const reasons:string[]=[]
+ let next:URL
+ try{next=new URL(location,previousUrl)}catch{return {allowed:false,targetUrl:null,reasons:['Invalid redirect location']}}
+ const check=assessAtlasFetchTarget(next.href)
+ reasons.push(...check.reasons)
+ const prior=assessAtlasFetchTarget(previousUrl)
+ if(!prior.allowed)reasons.push('Previous fetch URL is unsafe')
+ return {allowed:reasons.length===0,targetUrl:reasons.length===0?next.href:null,reasons}
+}
