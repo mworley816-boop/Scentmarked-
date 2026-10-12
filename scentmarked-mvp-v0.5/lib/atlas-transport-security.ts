@@ -15,3 +15,11 @@ export function assessAtlasTransportSecurity(input:AtlasTransportSecurity):{read
  }
  return {ready:missing.length===0,missing}
 }
+
+/** Attestations supplied as JSON or by an untrusted caller are not proof that
+ * a network connection actually used a pinned IP and verified TLS hostname.
+ * Keep this gate closed until a trusted transport implementation exists.
+ */
+export function assertAtlasVerifiedTransportUnavailable():never{
+ throw new Error('Verified Atlas transport is unavailable: trusted pinned-IP HTTPS fetcher not configured')
+}
