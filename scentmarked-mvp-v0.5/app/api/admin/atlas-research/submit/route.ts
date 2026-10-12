@@ -27,7 +27,7 @@ export async function POST(request:Request){
   const fields=evidence as Record<string,unknown>
   if(!['manufacturerUrl','observedUrl','pageTitle','fetchedAt'].every(key=>typeof fields[key]==='string'))return NextResponse.json({error:'Incomplete source evidence'},{status:400})
   const assessment=assessAtlasSourceEvidence(normalized,fields as AtlasSourceEvidence)
-  if(!assessment.verified)return NextResponse.json({error:'Inconsistent source evidence',details:assessment.reasons},{status:400})
+  if(!assessment.metadataConsistent)return NextResponse.json({error:'Inconsistent source evidence',details:assessment.reasons},{status:400})
  }
  // Exhaustively scan queue and catalog in bounded pages; fail closed on errors.
  const existing:{brand:string;name:string}[]=[]
