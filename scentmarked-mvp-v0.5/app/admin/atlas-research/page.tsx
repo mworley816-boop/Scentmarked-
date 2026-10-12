@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import {redirect} from 'next/navigation'
 import {createClient} from '@/lib/supabase/server'
+import {AtlasReviewActions} from './review-actions'
 
 export const metadata={title:'Atlas Research Queue',robots:{index:false,follow:false}}
 export const dynamic='force-dynamic'
@@ -34,6 +35,7 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
     <p>Notes: {Array.isArray(row.source_notes)?row.source_notes.join(', '):'Unavailable'}</p>
     {row.review_note&&<p>Review: {row.review_note}</p>}
     <a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a>
+    {(row.status==='needs_source_review'||row.status==='duplicate')&&<AtlasReviewActions id={row.id} decision={row.decision} />}
     </div>
    </article>)}</div>}
   </>}
