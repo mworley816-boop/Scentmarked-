@@ -11,6 +11,7 @@ export function AtlasHtmlIntake(){
  const [message,setMessage]=useState('')
  const [busy,setBusy]=useState(false)
  const [readingFile,setReadingFile]=useState(false)
+ const [importedFile,setImportedFile]=useState('')
  async function importHtml(event:ChangeEvent<HTMLInputElement>){
   const file=event.target.files?.[0]
   event.target.value=''
@@ -23,6 +24,7 @@ export function AtlasHtmlIntake(){
    const content=await file.text()
    if(!content.trim()){setMessage('HTML file is empty.');return}
    setHtml(content)
+   setImportedFile(file.name)
    setMessage('HTML imported. Preview the extracted notes before submitting.')
   }catch{setMessage('Unable to read the selected HTML file.')}
   finally{setReadingFile(false)}
@@ -54,7 +56,7 @@ export function AtlasHtmlIntake(){
    const result=await response.json() as {error?:string;details?:unknown;status?:string}
    if(!response.ok){setMessage(result.error??'Submission failed');return}
    setMessage('Submitted user-supplied HTML for review. Refresh the queue to see the new entry. Source ownership and HTTP response are not verified.')
-   setHtml('');setPreview(null)
+   setHtml('');setPreview(null);setImportedFile('')
   }catch{setMessage('Network error. Try again.')}
   finally{setBusy(false)}
  }
@@ -66,7 +68,8 @@ export function AtlasHtmlIntake(){
    <label>Perfume name <input required maxLength={160} value={name} onChange={e=>setName(e.target.value)} /></label>
    <label>Manufacturer HTTPS URL <input required type="url" value={sourceUrl} onChange={e=>setSourceUrl(e.target.value)} /></label>
    <label>Import a saved HTML page <input type="file" accept=".html,.htm,text/html" disabled={busy||readingFile} onChange={importHtml} /></label>
-   <label>Page HTML <textarea required rows={8} maxLength={900000} value={html} onChange={e=>setHtml(e.target.value)} /></label>
+   {importedFile&&<p>Imported file: {importedFile}. Confirm the manufacturer URL matches this saved page before submission.</p>}
+   <label>Page HTML <textarea required rows={8} maxLength={900000} value={html} onChange={e=>{setHtml(e.target.value);setImportedFile('')}} /></label>
    <button type="button" disabled={busy||readingFile} onClick={inspect}>Preview extracted notes</button>
    {preview&&<div aria-live="polite"><h3>Review extraction: {preview.title}</h3><ul>{preview.notes.map((note,index)=><li key={index}>{note}</li>)}</ul>{preview.missing.length>0&&<p role="status">Not found in supplied HTML: {preview.missing.join(', ')} notes. This does not prove those notes are absent from the fragrance.</p>}<p>These notes are unverified and will require source review.</p></div>}
    <button type="submit" disabled={busy||readingFile||!preview}>{busy?'Submitting…':'Submit for review'}</button>
