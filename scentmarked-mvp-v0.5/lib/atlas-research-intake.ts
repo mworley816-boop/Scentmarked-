@@ -36,3 +36,17 @@ export function hasResearchCatalogDuplicate(candidate:PerfumeResearchCandidate,e
  const key=perfumeResearchIdentity(candidate.brand,candidate.name)
  return existing.some(item=>perfumeResearchIdentity(item.brand,item.name)===key)
 }
+
+export type ResearchReviewDecision = 'invalid' | 'duplicate' | 'needs_source_review'
+
+export function classifyPerfumeResearchCandidate(
+ input:unknown,
+ existing:ReadonlyArray<{brand:string,name:string}>
+):{decision:ResearchReviewDecision; errors:string[]; candidate:PerfumeResearchCandidate|null}{
+ const validation=validatePerfumeResearchCandidate(input)
+ if(!validation.valid||!validation.normalized)return {decision:'invalid',errors:validation.errors,candidate:null}
+ if(hasResearchCatalogDuplicate(validation.normalized,existing)){
+  return {decision:'duplicate',errors:['Matching brand and perfume name already exist in catalog'],candidate:validation.normalized}
+ }
+ return {decision:'needs_source_review',errors:[],candidate:validation.normalized}
+}
