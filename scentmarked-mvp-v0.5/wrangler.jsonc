@@ -19,6 +19,8 @@
     "binding": "ASSETS"
   },
 
+  "previews": {},
+
   "observability": {
     "enabled": true
   }
