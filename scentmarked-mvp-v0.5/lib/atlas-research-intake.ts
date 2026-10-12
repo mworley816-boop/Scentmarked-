@@ -22,7 +22,7 @@ export function validatePerfumeResearchCandidate(input: unknown): ResearchValida
  if (!name || name.length>180) errors.push('Name must be 1–180 characters')
  let parsed:URL|null=null
  try { parsed=new URL(url) } catch {}
- if (!parsed || parsed.protocol!=='https:' || !parsed.hostname || parsed.username || parsed.password) errors.push('Manufacturer URL must be an HTTPS URL without credentials')
+ if (!parsed || parsed.protocol!=='https:' || !parsed.hostname || parsed.username || parsed.password || parsed.port) errors.push('Manufacturer URL must be an HTTPS URL without credentials')
  const notes=Array.isArray(data.sourceNotes)&&data.sourceNotes.every(x=>typeof x==='string')?data.sourceNotes.map((x:string)=>x.trim()):[]
  if (!Array.isArray(data.sourceNotes) || !data.sourceNotes.every(x=>typeof x==='string') || notes.some((x:string)=>!x||x.length>120) || notes.length>100) errors.push('Source notes must be up to 100 nonempty strings of at most 120 characters')
  return {valid:errors.length===0,errors,normalized:errors.length?null:{brand,name,manufacturerUrl:url,sourceNotes:notes}}
