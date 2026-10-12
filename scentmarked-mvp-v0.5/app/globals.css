@@ -571,3 +571,9 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .hero-search button{flex-shrink:0;border:0;border-radius:999px;background:var(--brown);color:#fff;padding:10px 18px;font:700 12px Arial,sans-serif;cursor:pointer}
 .hero-search button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 @media(max-width:600px){.hero-search{padding:0 7px 0 12px}.hero-search input[type="search"]{padding:0 4px;font-size:13px}.hero-search button{padding:10px 12px}}
+
+/* Admin fragrance editor: compact, touch-friendly section navigation */
+.admin-editor-jump{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 24px}
+.admin-editor-jump a{display:inline-flex;align-items:center;min-height:42px;padding:9px 14px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--ink);text-decoration:none;font-size:13px;font-weight:600}
+.admin-editor-jump a:hover,.admin-editor-jump a:focus-visible{background:#f0e1cf;outline-offset:3px}
+.admin-editor [id="product-image"],.admin-editor [id="core-record"],.admin-editor [id="verified-notes"],.admin-editor [id="scent-accords"],.admin-editor [id="clone-relationships"],.admin-editor [id="affiliate-offers"],.admin-editor [id="source-records"]{scroll-margin-top:95px}
