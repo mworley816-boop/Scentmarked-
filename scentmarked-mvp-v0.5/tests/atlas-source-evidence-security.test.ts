@@ -7,16 +7,16 @@ const evidence={manufacturerUrl:candidate.manufacturerUrl,observedUrl:candidate.
 
 test('rejects evidence referring to a different submitted source',()=>{
  const result=assessAtlasSourceEvidence(candidate,{...evidence,manufacturerUrl:'https://different.example'})
- assert.equal(result.verified,false)
+ assert.equal(result.metadataConsistent,false)
  assert.ok(result.reasons.some(reason=>reason.includes('does not match')))
 })
 
 test('rejects custom-port observed source URLs',()=>{
  const result=assessAtlasSourceEvidence(candidate,{...evidence,observedUrl:'https://manufacturer.example:8443/perfume'})
- assert.equal(result.verified,false)
+ assert.equal(result.metadataConsistent,false)
 })
 
 test('rejects evidence timestamps older than one year',()=>{
  const result=assessAtlasSourceEvidence(candidate,{...evidence,fetchedAt:'2020-01-01T00:00:00Z'})
- assert.equal(result.verified,false)
+ assert.equal(result.metadataConsistent,false)
 })
