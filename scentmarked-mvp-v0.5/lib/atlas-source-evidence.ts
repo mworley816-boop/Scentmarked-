@@ -52,3 +52,30 @@ export function assessAtlasFetchTarget(rawUrl:string):{allowed:boolean;reasons:s
  if(parsed&&(parsed.hostname.endsWith('.')||parsed.hash))reasons.push('Fetch target must not contain a trailing-dot host or fragment')
  return {allowed:reasons.length===0,reasons}
 }
+
+/** Validate each redirect before following it; the network layer must separately check resolved IPs. */
+export function assessAtlasRedirectTarget(previousUrl:string,location:string):{allowed:boolean;targetUrl:string|null;reasons:string[]}{
+ const reasons:string[]=[]
+ let next:URL
+ try{next=new URL(location,previousUrl)}catch{return {allowed:false,targetUrl:null,reasons:['Invalid redirect location']}}
+ const check=assessAtlasFetchTarget(next.href)
+ reasons.push(...check.reasons)
+ const prior=assessAtlasFetchTarget(previousUrl)
+ if(!prior.allowed)reasons.push('Previous fetch URL is unsafe')
+ return {allowed:reasons.length===0,targetUrl:reasons.length===0?next.href:null,reasons}
+}
+
+/** Reject private, loopback, link-local, multicast and special-use IPs after DNS lookup.
+ * The caller must verify every resolved A/AAAA record and ensure the actual connection
+ * uses a vetted address; DNS rebinding is not prevented by preflight alone.
+ */
+export function isAllowedAtlasResolvedIp(address:string):boolean{
+ const ipv4=address.split('.')
+ if(ipv4.length===4&&ipv4.every(x=>/^\d{1,3}$/.test(x)&&Number(x)<=255)){
+  const [a,b,c]=ipv4.map(Number)
+  if(a===0||a===10||a===127||a>=224||a===169&&b===254||a===172&&b>=16&&b<=31||a===192&&b===168||a===100&&b>=64&&b<=127||a===192&&b===0||a===198&&(b===18||b===19)||a===192&&b===0&&c===2||a===198&&b===51&&c===100||a===203&&b===0&&c===113)return false
+  return true
+ }
+ // Fail closed for IPv6 until the network layer has a trusted IPv6 parser.
+ return false
+}
