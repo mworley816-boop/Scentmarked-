@@ -10,12 +10,14 @@ export function AtlasHtmlIntake(){
  const [html,setHtml]=useState('')
  const [message,setMessage]=useState('')
  const [busy,setBusy]=useState(false)
- const [preview,setPreview]=useState<{title:string;notes:string[]}|null>(null)
+ const [preview,setPreview]=useState<{title:string;notes:string[];missing:string[]}|null>(null)
  function inspect(){
   setPreview(null);setMessage('')
   try{
    const result=prepareAtlasHtmlResearch({candidate:{brand,name,manufacturerUrl:sourceUrl,sourceNotes:[]},sourceUrl,capturedAt:new Date().toISOString(),response:{status:200,contentType:'text/html',contentLength:null},html})
-   setPreview({title:result.pageTitle,notes:result.queueCandidate.sourceNotes})
+   const notes=result.queueCandidate.sourceNotes
+   const missing=['Top','Heart','Base'].filter(tier=>!notes.some(note=>note.startsWith(tier+': ')))
+   setPreview({title:result.pageTitle,notes,missing})
   }catch(error){setMessage(error instanceof Error?error.message:'Unable to preview research')}
  }
  async function submit(event:FormEvent<HTMLFormElement>){
@@ -47,7 +49,7 @@ export function AtlasHtmlIntake(){
    <label>Manufacturer HTTPS URL <input required type="url" value={sourceUrl} onChange={e=>setSourceUrl(e.target.value)} /></label>
    <label>Page HTML <textarea required rows={8} maxLength={900000} value={html} onChange={e=>setHtml(e.target.value)} /></label>
    <button type="button" disabled={busy} onClick={inspect}>Preview extracted notes</button>
-   {preview&&<div aria-live="polite"><h3>Review extraction: {preview.title}</h3><ul>{preview.notes.map((note,index)=><li key={index}>{note}</li>)}</ul><p>These notes are unverified and will require source review.</p></div>}
+   {preview&&<div aria-live="polite"><h3>Review extraction: {preview.title}</h3><ul>{preview.notes.map((note,index)=><li key={index}>{note}</li>)}</ul>{preview.missing.length>0&&<p role="status">Not found in supplied HTML: {preview.missing.join(', ')} notes. This does not prove those notes are absent from the fragrance.</p>}<p>These notes are unverified and will require source review.</p></div>}
    <button type="submit" disabled={busy||!preview}>{busy?'Submitting…':'Submit for review'}</button>
    {message&&<p role="status">{message}</p>}
   </form>
