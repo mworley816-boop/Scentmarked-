@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {assessAtlasSourceEvidence,assessAtlasFetchTarget} from '../lib/atlas-source-evidence.ts'
+import {assessAtlasSourceEvidence,assessAtlasFetchTarget,assessAtlasRedirectTarget} from '../lib/atlas-source-evidence.ts'
 
 const candidate={brand:'Arabiyat',name:'Example',manufacturerUrl:'https://manufacturer.example/perfume',sourceNotes:[]}
 const evidence={manufacturerUrl:candidate.manufacturerUrl,observedUrl:candidate.manufacturerUrl,pageTitle:'Example fragrance',fetchedAt:new Date().toISOString()}
@@ -38,4 +38,16 @@ test('preflight fetch policy permits public HTTPS names and blocks unsafe URL fo
  for(const url of ['http://example.com','https://localhost/test','https://127.0.0.1/test','https://[::1]/','https://example.com:8443/','https://user:pass@example.com/','https://example.com./','https://example.com/#fragment']){
   assert.equal(assessAtlasFetchTarget(url).allowed,false,`Expected rejection: ${url}`)
  }
+})
+
+test('redirect preflight validates relative links and rejects unsafe destinations',()=>{
+ const good=assessAtlasRedirectTarget('https://example.com/fragrance','/new-fragrance')
+ assert.equal(good.allowed,true)
+ assert.equal(good.targetUrl,'https://example.com/new-fragrance')
+ for(const location of ['http://example.com/item','https://localhost/item','https://127.0.0.1/item','https://example.com:8443/item','//[::1]/item']){
+  const result=assessAtlasRedirectTarget('https://example.com/fragrance',location)
+  assert.equal(result.allowed,false,`Expected rejection: ${location}`)
+  assert.equal(result.targetUrl,null)
+ }
+ assert.equal(assessAtlasRedirectTarget('http://example.com','https://example.com').allowed,false)
 })
