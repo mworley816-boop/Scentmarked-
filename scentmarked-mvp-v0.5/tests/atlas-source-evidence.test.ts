@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {assessAtlasSourceEvidence} from '../lib/atlas-source-evidence.ts'
+import {assessAtlasSourceEvidence,assessAtlasFetchTarget} from '../lib/atlas-source-evidence.ts'
 
 const candidate={brand:'Arabiyat',name:'Example',manufacturerUrl:'https://manufacturer.example/perfume',sourceNotes:[]}
 const evidence={manufacturerUrl:candidate.manufacturerUrl,observedUrl:candidate.manufacturerUrl,pageTitle:'Example fragrance',fetchedAt:new Date().toISOString()}
@@ -30,5 +30,12 @@ test('rejects local and IP-literal source hosts before automated fetching',()=>{
   const result=assessAtlasSourceEvidence({...candidate,manufacturerUrl:url},{...evidence,manufacturerUrl:url,observedUrl:url})
   assert.equal(result.metadataConsistent,false,`Expected ${host} to be rejected`)
   assert.ok(result.reasons.some(reason=>reason.includes('public domain')))
+ }
+})
+
+test('preflight fetch policy permits public HTTPS names and blocks unsafe URL forms',()=>{
+ assert.equal(assessAtlasFetchTarget('https://example.com/perfume').allowed,true)
+ for(const url of ['http://example.com','https://localhost/test','https://127.0.0.1/test','https://[::1]/','https://example.com:8443/','https://user:pass@example.com/','https://example.com./','https://example.com/#fragment']){
+  assert.equal(assessAtlasFetchTarget(url).allowed,false,`Expected rejection: ${url}`)
  }
 })

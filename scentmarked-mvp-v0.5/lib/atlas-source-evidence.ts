@@ -14,7 +14,7 @@ export type AtlasSourceAssessment={
 
 // Prevent local/private network targets before a future automated research fetcher is added.
 // This check is only a first layer: any fetcher must also validate resolved IPs and redirects.
-function isPublicSourceHost(hostname:string):boolean{
+export function isPublicSourceHost(hostname:string):boolean{
  const host=hostname.toLowerCase().replace(/\.$/,'')
  if(!host||host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||host.endsWith('.internal'))return false
  if(!host.includes('.'))return false
@@ -40,4 +40,15 @@ export function assessAtlasSourceEvidence(candidate:PerfumeResearchCandidate,evi
  const timestamp=Date.parse(evidence.fetchedAt)
  if(!Number.isFinite(timestamp)||timestamp>Date.now()+60_000||timestamp<Date.now()-1000*60*60*24*365)reasons.push('Evidence timestamp is invalid')
  return {metadataConsistent:reasons.length===0,reasons,evidence}
+}
+
+/** Preflight policy only. Fetchers must additionally reject private DNS resolutions and validate every redirect hop. */
+export function assessAtlasFetchTarget(rawUrl:string):{allowed:boolean;reasons:string[]}{
+ const reasons:string[]=[]
+ let parsed:URL|null=null
+ try{parsed=new URL(rawUrl)}catch{}
+ if(!parsed||parsed.protocol!=='https:'||parsed.username||parsed.password||parsed.port)reasons.push('Fetch target must use HTTPS without credentials or custom ports')
+ if(parsed&&!isPublicSourceHost(parsed.hostname))reasons.push('Fetch target must use a public domain')
+ if(parsed&&(parsed.hostname.endsWith('.')||parsed.hash))reasons.push('Fetch target must not contain a trailing-dot host or fragment')
+ return {allowed:reasons.length===0,reasons}
 }
