@@ -1,5 +1,5 @@
 import type {AtlasResearchQueueStore} from './atlas-research-repository'
-import type {AtlasResearchStoredRow} from './atlas-research-storage'
+import type {AtlasResearchStoredRow} from './atlas-research-storage.ts'
 
 type QueryResult<T>={data:T|null;error:{message:string}|null}
 type SupabaseLike={
