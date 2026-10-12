@@ -29,7 +29,7 @@ export function validatePerfumeResearchCandidate(input: unknown): ResearchValida
 }
 
 export function perfumeResearchIdentity(brand:string,name:string):string {
- return [brand,name].map(s=>s.normalize('NFKC').trim().toLocaleLowerCase('en-US').replace(/\\s+/g,' ')).join('::')
+ return [brand,name].map(s=>s.normalize('NFKC').trim().toLocaleLowerCase('en-US').replace(/\s+/g,' ')).join('::')
 }
 
 export function hasResearchCatalogDuplicate(candidate:PerfumeResearchCandidate,existing:ReadonlyArray<{brand:string,name:string}>):boolean {
