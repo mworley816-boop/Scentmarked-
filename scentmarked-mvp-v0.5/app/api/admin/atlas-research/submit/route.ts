@@ -4,6 +4,7 @@ import {prepareAtlasResearchSubmission} from '@/lib/atlas-research-submission'
 import {validatePerfumeResearchCandidate,perfumeResearchIdentity} from '@/lib/atlas-research-intake'
 import {createAtlasResearchReviewRecord} from '@/lib/atlas-research-review'
 import {serializeAtlasResearchRow} from '@/lib/atlas-research-storage'
+import {assessAtlasSourceEvidence,type AtlasSourceEvidence} from '@/lib/atlas-source-evidence'
 
 export async function POST(request:Request){
  const s=await createClient()
@@ -20,6 +21,14 @@ export async function POST(request:Request){
  const validated=validatePerfumeResearchCandidate(candidate)
  if(!validated.valid||!validated.normalized)return NextResponse.json({error:'Invalid research candidate',details:validated.errors},{status:400})
  const normalized=validated.normalized
+ if(input.evidence!==undefined){
+  const evidence=input.evidence
+  if(!evidence||typeof evidence!=='object'||Array.isArray(evidence))return NextResponse.json({error:'Invalid source evidence'},{status:400})
+  const fields=evidence as Record<string,unknown>
+  if(!['manufacturerUrl','observedUrl','pageTitle','fetchedAt'].every(key=>typeof fields[key]==='string'))return NextResponse.json({error:'Incomplete source evidence'},{status:400})
+  const assessment=assessAtlasSourceEvidence(normalized,fields as AtlasSourceEvidence)
+  if(!assessment.verified)return NextResponse.json({error:'Inconsistent source evidence',details:assessment.reasons},{status:400})
+ }
  // Exhaustively scan queue and catalog in bounded pages; fail closed on errors.
  const existing:{brand:string;name:string}[]=[]
  const pageSize=500
