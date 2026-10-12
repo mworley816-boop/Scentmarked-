@@ -11,7 +11,7 @@ test('valid research candidate is normalized without publishing',()=>{
 })
 
 test('research candidates require an HTTPS manufacturer reference',()=>{
- for(const manufacturerUrl of ['http://example.com','javascript:alert(1)','https://user:pass@example.com','not a url']){
+ for(const manufacturerUrl of ['http://example.com','javascript:alert(1)','https://user:pass@example.com','https://example.com:8443/perfume','not a url']){
   assert.equal(validatePerfumeResearchCandidate({...candidate,manufacturerUrl}).valid,false)
  }
 })
