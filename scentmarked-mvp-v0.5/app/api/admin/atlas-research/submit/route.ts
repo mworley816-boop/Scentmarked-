@@ -1,4 +1,6 @@
 import {NextResponse} from 'next/server'
+import {buildAtlasNoteReviewProposal} from '@/lib/atlas-note-review-proposal'
+import {atlasNoteProposalToCandidate} from '@/lib/atlas-note-queue-adapter'
 import {createClient} from '@/lib/supabase/server'
 import {prepareAtlasResearchSubmission} from '@/lib/atlas-research-submission'
 import {validatePerfumeResearchCandidate,perfumeResearchIdentity} from '@/lib/atlas-research-intake'
@@ -16,8 +18,16 @@ export async function POST(request:Request){
  try{body=await request.json()}catch{return NextResponse.json({error:'Invalid JSON'},{status:400})}
  if(!body||typeof body!=='object'||Array.isArray(body))return NextResponse.json({error:'Invalid research submission'},{status:400})
  const input=body as Record<string,unknown>
- const candidate=input.candidate
+ let candidate=input.candidate
  if(!candidate||typeof candidate!=='object'||Array.isArray(candidate))return NextResponse.json({error:'Candidate is required'},{status:400})
+ if(input.sourceText!==undefined){
+  if(typeof input.sourceText!=='string'||typeof input.sourceUrl!=='string'||typeof input.capturedAt!=='string')return NextResponse.json({error:'Invalid source text evidence'},{status:400})
+  try{
+   const proposal=buildAtlasNoteReviewProposal(candidate,input.sourceText,input.sourceUrl,input.capturedAt)
+   candidate=atlasNoteProposalToCandidate(proposal)
+  }catch(error){return NextResponse.json({error:'Invalid note research proposal',details:error instanceof Error?error.message:'Unknown validation error'},{status:400})}
+ }
+
  const validated=validatePerfumeResearchCandidate(candidate)
  if(!validated.valid||!validated.normalized)return NextResponse.json({error:'Invalid research candidate',details:validated.errors},{status:400})
  const normalized=validated.normalized
