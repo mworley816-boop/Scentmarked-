@@ -1,0 +1,14 @@
+// Root-level Cloudflare configuration for Workers Builds executed from the repository root.
+// The application and its full Wrangler configuration live in scentmarked-mvp-v0.5/.
+// Use the project directory as Cloudflare's root directory for actual app builds.
+{
+  "name": "scentmarked",
+  "main": "scentmarked-mvp-v0.5/.open-next/worker.js",
+  "compatibility_date": "2026-09-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "scentmarked-mvp-v0.5/.open-next/assets",
+    "binding": "ASSETS"
+  },
+  "previews": {}
+}
