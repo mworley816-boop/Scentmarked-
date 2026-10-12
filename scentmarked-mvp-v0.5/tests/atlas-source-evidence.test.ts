@@ -58,3 +58,9 @@ test('resolved IP policy fails closed for private and unhandled addresses',()=>{
  }
  assert.equal(isAllowedAtlasResolvedIp('8.8.8.8'),true)
 })
+
+test('rejects observed manufacturer evidence from a different origin',()=>{
+ const result=assessAtlasSourceEvidence(candidate,{...evidence,observedUrl:'https://manufacturer.example:8443/perfume'})
+ assert.equal(result.metadataConsistent,false)
+ assert.ok(result.reasons.some(reason=>reason.includes('origin')))
+})

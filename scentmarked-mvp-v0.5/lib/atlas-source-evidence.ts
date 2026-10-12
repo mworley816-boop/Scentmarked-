@@ -36,6 +36,7 @@ export function assessAtlasSourceEvidence(candidate:PerfumeResearchCandidate,evi
  if(submitted&&!isPublicSourceHost(submitted.hostname))reasons.push('Submitted source host is not a public domain')
  if(observed&&!isPublicSourceHost(observed.hostname))reasons.push('Observed source host is not a public domain')
  if(submitted&&observed&&submitted.hostname.toLowerCase().replace(/\.$/,'')!==observed.hostname.toLowerCase().replace(/\.$/,''))reasons.push('Observed source host differs from submitted source')
+ if(submitted&&observed&&submitted.origin!==observed.origin)reasons.push('Observed source origin differs from submitted source')
  if(!evidence.pageTitle.trim())reasons.push('Page title is missing')
  const timestamp=Date.parse(evidence.fetchedAt)
  if(!Number.isFinite(timestamp)||timestamp>Date.now()+60_000||timestamp<Date.now()-1000*60*60*24*365)reasons.push('Evidence timestamp is invalid')
