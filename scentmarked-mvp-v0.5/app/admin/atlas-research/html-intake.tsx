@@ -35,14 +35,14 @@ export function AtlasHtmlIntake(){
    })
    const result=await response.json() as {error?:string;details?:unknown;status?:string}
    if(!response.ok){setMessage(result.error??'Submission failed');return}
-   setMessage('Submitted for review. Refresh the queue to see the new entry.')
+   setMessage('Submitted user-supplied HTML for review. Refresh the queue to see the new entry. Source ownership and HTTP response are not verified.')
    setHtml('');setPreview(null)
   }catch{setMessage('Network error. Try again.')}
   finally{setBusy(false)}
  }
  return <section aria-labelledby="atlas-html-intake-title">
   <h2 id="atlas-html-intake-title">Submit manufacturer HTML for review</h2>
-  <p>Paste HTML you have permission to use from a manufacturer page. This form does not retrieve websites or verify their ownership. Every submission requires review.</p>
+  <p>Paste HTML you have permission to use from a manufacturer page. This form does not retrieve websites or verify their ownership. The HTML is user-supplied, and the response status and content type are placeholders, not verified HTTP evidence. Every submission requires review.</p>
   <form onSubmit={submit} onChange={()=>setPreview(null)}>
    <label>Brand <input required maxLength={120} value={brand} onChange={e=>setBrand(e.target.value)} /></label>
    <label>Perfume name <input required maxLength={160} value={name} onChange={e=>setName(e.target.value)} /></label>
