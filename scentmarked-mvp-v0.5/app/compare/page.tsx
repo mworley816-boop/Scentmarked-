@@ -58,10 +58,10 @@ export default async function Compare({searchParams}:{searchParams:Promise<{a?:s
  perfumes=perfumes.map((p:any)=>({...p,name:publicText(p.name,120),slug:publicText(p.slug,200),image_url:safeUrl(p.image_url),concentration:publicText(p.concentration,80),brands:p.brands?{...p.brands,name:publicText(p.brands.name,120)}:p.brands,perfume_notes:(p.perfume_notes||[]).map((row:any)=>({...row,position:publicText(row.position,40),notes:row.notes?{...row.notes,name:publicText(row.notes.name,80)}:row.notes})).filter((row:any)=>row.notes?.name),perfume_accords:(p.perfume_accords||[]).map((row:any)=>({...row,source_type:publicText(row.source_type,40),accords:row.accords?{...row.accords,name:publicText(row.accords.name,80)}:row.accords})).filter((row:any)=>row.accords?.name)})).filter((p:any)=>p.name&&p.slug)
  if(pageBanner)pageBanner={...pageBanner,image_url:safeUrl(pageBanner.image_url),mobile_image_url:safeUrl(pageBanner.mobile_image_url),subtitle:publicText(pageBanner.subtitle,80),title:publicText(pageBanner.title,140),body:publicText(pageBanner.body,500),cta_url:safeCtaUrl(pageBanner.cta_url),cta_label:publicText(pageBanner.cta_label,80)}
  const canonicalById=new Map(perfumes.map((p:any)=>[p.id,p]));
- const aliasSlugMap=new Map<string,string>();
+ const aliasSlugMap=new Map<string,string|null>();
  const aliasesById=new Map<string,string[]>();
- for(const alias of aliases){const canonical:any=canonicalById.get(alias.perfume_id);if(!canonical)continue;if(typeof alias.alias_slug==='string')aliasSlugMap.set(alias.alias_slug,canonical.slug);if(typeof alias.alias==='string'){const names=aliasesById.get(canonical.id)||[];names.push(publicText(alias.alias,120));aliasesById.set(canonical.id,names)}}
- const resolveSlug=(slug:string)=>aliasSlugMap.get(slug)||slug;
+ for(const alias of aliases){const canonical:any=canonicalById.get(alias.perfume_id);if(!canonical)continue;if(typeof alias.alias_slug==='string'&&alias.alias_slug.trim()){const key=alias.alias_slug.trim();const previous=aliasSlugMap.get(key);if(previous===undefined)aliasSlugMap.set(key,canonical.slug);else if(previous!==canonical.slug)aliasSlugMap.set(key,null);}if(typeof alias.alias==='string'){const names=aliasesById.get(canonical.id)||[];names.push(publicText(alias.alias,120));aliasesById.set(canonical.id,names)}}
+ const resolveSlug=(slug:string)=>aliasSlugMap.has(slug)?aliasSlugMap.get(slug):slug;
  const requestedA=q.a?perfumes.find(p=>p.slug===resolveSlug(q.a!)):undefined;
  const requestedB=q.b?perfumes.find(p=>p.slug===resolveSlug(q.b!)):undefined;
  const a=requestedA;
