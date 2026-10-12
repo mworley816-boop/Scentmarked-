@@ -577,3 +577,9 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .admin-editor-jump a{display:inline-flex;align-items:center;min-height:42px;padding:9px 14px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--ink);text-decoration:none;font-size:13px;font-weight:600}
 .admin-editor-jump a:hover,.admin-editor-jump a:focus-visible{background:#f0e1cf;outline-offset:3px}
 .admin-editor [id="product-image"],.admin-editor [id="core-record"],.admin-editor [id="verified-notes"],.admin-editor [id="scent-accords"],.admin-editor [id="clone-relationships"],.admin-editor [id="affiliate-offers"],.admin-editor [id="source-records"]{scroll-margin-top:95px}
+
+/* Fragrance admin record completeness */
+.admin-completeness{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px;margin-top:12px}
+.admin-completeness a{display:flex;align-items:center;gap:7px;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-decoration:none;color:inherit;min-height:44px}
+.admin-completeness a small{color:var(--muted);margin-left:auto}
+.admin-completeness a:focus-visible{outline-offset:3px}
