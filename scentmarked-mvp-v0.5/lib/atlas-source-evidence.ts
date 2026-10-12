@@ -12,6 +12,16 @@ export type AtlasSourceAssessment={
  evidence:AtlasSourceEvidence
 }
 
+// Prevent local/private network targets before a future automated research fetcher is added.
+// This check is only a first layer: any fetcher must also validate resolved IPs and redirects.
+function isPublicSourceHost(hostname:string):boolean{
+ const host=hostname.toLowerCase().replace(/\.$/,'')
+ if(!host||host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||host.endsWith('.internal'))return false
+ if(!host.includes('.'))return false
+ if(host.startsWith('[')||/^\d+\.\d+\.\d+\.\d+$/.test(host))return false
+ return true
+}
+
 // Evidence validation does not prove that a website belongs to a manufacturer.
 // A reviewer must independently establish manufacturer ownership.
 export function assessAtlasSourceEvidence(candidate:PerfumeResearchCandidate,evidence:AtlasSourceEvidence):AtlasSourceAssessment{
@@ -23,7 +33,9 @@ export function assessAtlasSourceEvidence(candidate:PerfumeResearchCandidate,evi
  try{observed=new URL(evidence.observedUrl)}catch{}
  if(!submitted||submitted.protocol!=='https:'||submitted.username||submitted.password||submitted.port)reasons.push('Submitted source URL is not a safe HTTPS URL')
  if(!observed||observed.protocol!=='https:'||observed.username||observed.password||observed.port)reasons.push('Observed source URL is not a safe HTTPS URL')
- if(submitted&&observed&&submitted.hostname.toLowerCase()!==observed.hostname.toLowerCase())reasons.push('Observed source host differs from submitted source')
+ if(submitted&&!isPublicSourceHost(submitted.hostname))reasons.push('Submitted source host is not a public domain')
+ if(observed&&!isPublicSourceHost(observed.hostname))reasons.push('Observed source host is not a public domain')
+ if(submitted&&observed&&submitted.hostname.toLowerCase().replace(/\.$/,'')!==observed.hostname.toLowerCase().replace(/\.$/,''))reasons.push('Observed source host differs from submitted source')
  if(!evidence.pageTitle.trim())reasons.push('Page title is missing')
  const timestamp=Date.parse(evidence.fetchedAt)
  if(!Number.isFinite(timestamp)||timestamp>Date.now()+60_000||timestamp<Date.now()-1000*60*60*24*365)reasons.push('Evidence timestamp is invalid')
