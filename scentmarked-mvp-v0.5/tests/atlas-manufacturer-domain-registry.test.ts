@@ -16,3 +16,9 @@ test('rejects insecure and private targets even when registry lists them',()=>{
  assert.equal(assessAtlasManufacturerDomain({brand:'Example House',sourceUrl:'http://example.com/',registry}).allowed,false)
  assert.equal(assessAtlasManufacturerDomain({brand:'Example House',sourceUrl:'https://localhost/',registry:[{brand:'Example House',hostname:'localhost'}]}).allowed,false)
 })
+
+test('rejects malformed registry entries rather than trusting wildcard or URL forms',()=>{
+ for(const hostname of ['*.example.com','https://example.com','example.com/','example.com.','-example.com','example..com']){
+  assert.equal(assessAtlasManufacturerDomain({brand:'Example House',sourceUrl:'https://example.com/',registry:[{brand:'Example House',hostname}]}).allowed,false)
+ }
+})
