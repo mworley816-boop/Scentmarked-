@@ -1,4 +1,4 @@
-import {classifyPerfumeResearchCandidate,type PerfumeResearchCandidate,type ResearchReviewDecision} from './atlas-research-intake'
+import {classifyPerfumeResearchCandidate,type PerfumeResearchCandidate,type ResearchReviewDecision} from './atlas-research-intake.ts'
 
 export type AtlasResearchSubmission = {
  id:string
