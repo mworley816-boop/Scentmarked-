@@ -64,6 +64,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
    ms.total++;if(recent(x))ms.recent++;if(recent7(x))ms.recent7++;if(periodMatch(x))ms.period++
   }
  }
+ const attributed=affiliateAttribution(clicks,revenue)
  const merchantStats=[...merchantMap.values()].map(m=>({...m,offers:m.offers.size,revenue:attributed.merchants.get(m.name)})).sort((a,b)=>b.period-a.period||b.total-a.total||a.name.localeCompare(b.name))
  const perfumeStats=perfumes.map((p:any)=>({p,...(perfumeMap.get(String(p.id))||{total:0,recent:0,recent7:0,period:0}),revenue:attributed.perfumes.get(String(p.id))})).filter((x:any)=>x.total>0).sort((a:any,b:any)=>b.period-a.period||b.total-a.total).slice(0,25)
  const periodClicks=period==='7'?clicks.filter(recent7):period==='30'?clicks.filter(recent):clicks
@@ -73,7 +74,6 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
  const placementTotal=featured+more
  const featuredShare=placementTotal?Math.round(featured/placementTotal*100):0
  const moreShare=placementTotal?Math.round(more/placementTotal*100):0
- const attributed=affiliateAttribution(clicks,revenue)
 
  return <main><section className="admin-catalog">
   <p className="eyebrow">SCENTMARKED STUDIO</p>
