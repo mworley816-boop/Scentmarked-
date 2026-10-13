@@ -43,7 +43,10 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
  if(profile?.is_admin!==true)redirect('/discover')
 
  let transactions:any[]=[],campaigns:any[]=[],plans:any[]=[],subscriptions:any[]=[],affiliateClicks:any[]=[],affiliateOffers:any[]=[],perfumes:any[]=[],goalHistory:any[]=[],expenses:any[]=[],goalSettings:any=null,clickCount:number|null=null,sponsorImpressions:number|null=null,sponsorClicks:number|null=null,activeCampaignCount:number|null=null,totalCampaignCount:number|null=null,campaignsAvailable=true,plansAvailable=true,subscriptionsAvailable=true,affiliateContextAvailable=true,perfumeLookupAvailable=true,goalSettingsAvailable=true,goalHistoryAvailable=true,configured=true,revenueDataAvailable=true,expenseDataAvailable=true
- const service=createServiceClient()
+ let service:ReturnType<typeof createServiceClient>
+ try{service=createServiceClient()}catch{
+  return <main><section className="admin-catalog"><p className="eyebrow">SCENTMARKED STUDIO</p><div className="admin-heading"><div><h1 className="page-title">Revenue Center unavailable</h1><p>The secure Supabase service connection is not configured in this deployment. Configure SUPABASE_SERVICE_ROLE_KEY as a server-side Cloudflare secret, then redeploy. Do not add this key to public environment variables.</p></div><Link className="button ghost" href="/admin">Back to Studio</Link></div></section></main>
+ }
  try{
   transactions=await loadAll<any>((from,to)=>service.from('monetization_transactions').select('id,revenue_type,gross_cents,fee_cents,status,occurred_at,currency,source_name,external_id,affiliate_offer_id,affiliate_click_id,affiliate_merchant,affiliate_placement,perfume_id').order('occurred_at',{ascending:false}).order('id',{ascending:false}).range(from,to))
  }catch{configured=false;revenueDataAvailable=false}
