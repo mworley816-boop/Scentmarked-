@@ -1,6 +1,6 @@
 export type AffiliateImportRow={source_name:string;external_id:string;gross_cents:number;fee_cents:number;currency:string;status:'pending'|'confirmed'|'paid'|'refunded'|'void';occurred_at:string;affiliate_offer_id:number|null;affiliate_click_id:number|null;affiliate_merchant:string|null;affiliate_placement:string|null;perfume_id:string|null}
 const allowed=new Set(['pending','confirmed','paid','refunded','void'])
-const cents=(v:string)=>{const n=Number(v);return Number.isFinite(n)&&n>=0?Math.round(n*100):null}
+const cents=(v:string)=>{const raw=v.trim();if(!/^\d+(?:\.\d{1,2})?$/.test(raw))return null;const [whole,fraction='']=raw.split('.');const amount=Number(whole)*100+Number(fraction.padEnd(2,'0'));return Number.isSafeInteger(amount)?amount:null}
 const csvLine=(line:string)=>{const out:string[]=[],re=/(?:^|,)(?:"((?:[^"]|"")*)"|([^",]*))/g;let m;while((m=re.exec(line)))out.push((m[1]??m[2]??'').replace(/""/g,'"').trim());return out}
 export function parseAffiliateCommissionCsv(text:string,defaultSource='affiliate_import'){
  const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());if(lines.length<2)return {rows:[] as AffiliateImportRow[],errors:['CSV must include a header and at least one data row.']}
