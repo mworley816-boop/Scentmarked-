@@ -583,3 +583,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .admin-completeness a{display:flex;align-items:center;gap:7px;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-decoration:none;color:inherit;min-height:44px}
 .admin-completeness a small{color:var(--muted);margin-left:auto}
 .admin-completeness a:focus-visible{outline-offset:3px}
+
+
+/* Revenue Center: keep overview metrics and navigation readable on narrow screens. */
+.revenue-responsive{min-width:0;max-width:100%}
+.revenue-responsive .admin-stats{grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px}
+.revenue-responsive .admin-stats>span{min-width:0;overflow-wrap:anywhere}
+.revenue-responsive .admin-stats b{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.revenue-responsive .admin-filters{display:flex;flex-wrap:wrap;gap:8px}
+.revenue-responsive .admin-filters>a{max-width:100%;white-space:normal;text-align:center}
+@media(max-width:600px){.revenue-responsive .admin-stats{grid-template-columns:minmax(0,1fr)}.revenue-responsive .admin-filters>a{flex:1 1 100%;min-height:44px}}
