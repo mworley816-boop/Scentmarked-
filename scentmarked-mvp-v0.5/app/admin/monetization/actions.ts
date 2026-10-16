@@ -111,7 +111,10 @@ export async function importAffiliateCommissions(formData:FormData){
  const uniqueOfferIds=[...new Set(offerIds)],{data:offerRows}=uniqueOfferIds.length?await service.from('perfume_affiliate_offers').select('id,perfume_id,merchant_name').in('id',uniqueOfferIds):{data:[]}
  const enriched=enrichAffiliateRows(parsed.rows,clickRows||[],offerRows||[])
  const keys=enriched.map(x=>x.external_id),{data:existing}=await service.from('monetization_transactions').select('external_id').eq('source_name',source).in('external_id',keys)
- const existingIds=new Set((existing||[]).map((x:any)=>String(x.external_id))),fresh=enriched.filter(x=>!existingIds.has(x.external_id)),quality=affiliateImportQuality(fresh)
+ const existingIds=new Set((existing||[]).map((x:any)=>String(x.external_id)))
+ const seenIds=new Set(existingIds)
+ const fresh=enriched.filter(row=>{if(seenIds.has(row.external_id))return false;seenIds.add(row.external_id);return true})
+ const quality=affiliateImportQuality(fresh)
  const payload=fresh.map(row=>({...row,revenue_type:'affiliate'}))
  const {error}=payload.length?await service.from('monetization_transactions').insert(payload):{error:null}
  const duplicateCount=parsed.rows.length-fresh.length
