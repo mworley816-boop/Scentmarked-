@@ -105,6 +105,7 @@ export async function importAffiliateCommissions(formData:FormData){
  const parsed=parseAffiliateCommissionCsv(await file.text(),source)
  if(parsed.errors.length)redirect('/admin/monetization?error='+encodeURIComponent(parsed.errors.slice(0,3).join(' ')))
  if(!parsed.rows.length)redirect('/admin/monetization?error=No+valid+commission+rows+were+found')
+ if(parsed.rows.some(row=>row.source_name!==source))redirect('/admin/monetization?error='+encodeURIComponent('CSV source_name values must match the selected affiliate network. Import each network separately.'))
  const clickIds=[...new Set(parsed.rows.map(x=>x.affiliate_click_id).filter((x):x is number=>!!x))],offerIds=[...new Set(parsed.rows.map(x=>x.affiliate_offer_id).filter((x):x is number=>!!x))]
  const {data:clickRows}=clickIds.length?await service.from('affiliate_clicks').select('id,offer_id,perfume_id,placement').in('id',clickIds):{data:[]}
  for(const click of clickRows||[])if(click.offer_id)offerIds.push(Number(click.offer_id))
