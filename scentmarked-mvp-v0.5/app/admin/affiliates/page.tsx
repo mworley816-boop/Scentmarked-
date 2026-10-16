@@ -87,6 +87,9 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
   <p className="muted">Placement share describes where tracked outbound clicks occurred during the selected reporting period. It does not measure purchases or prove that placement caused the difference.</p>
 
   <h2>Revenue attribution</h2><p className="muted">Conversions and earnings come from imported commission records within the selected reporting period, based on transaction creation date. EPC is net commission divided by tracked clicks in that period; refunded and void transactions are excluded.</p><div className="admin-list">{[...attributed.placements.entries()].map(([name,m]:any)=><article key={name}><div><small>PLACEMENT</small><h2>{name.replaceAll('_',' ')}</h2><div className="admin-record-meta"><span>{m.clicks} clicks</span><span>{m.conversions} conversions</span><span>{(m.conversionRate*100).toFixed(2)}% conversion</span><span>{money(m.earningsCents)} earned</span><span>{money(m.epcCents)} EPC</span></div></div></article>)}</div>
+  <h2>Commission status breakdown</h2>
+  <div className="admin-stats"><span><b>{money(periodRevenue.filter((x:any)=>x.status==='pending').reduce((sum:number,x:any)=>sum+Math.max(0,Number(x.gross_cents||0)-Number(x.fee_cents||0)),0))}</b>Pending commissions</span><span><b>{money(periodRevenue.filter((x:any)=>x.status==='confirmed'||x.status==='paid').reduce((sum:number,x:any)=>sum+Math.max(0,Number(x.gross_cents||0)-Number(x.fee_cents||0)),0))}</b>Confirmed and paid commissions</span></div>
+  <p className="muted">Pending commissions are not guaranteed payouts. Confirmed and paid totals are grouped for reporting; confirmed does not necessarily mean cash received.</p>
   <h2>Last 7 days</h2>
   <div className="admin-stats">{daily.map((d:any)=><span key={d.key}><b>{d.count}</b>{d.label}</span>)}</div>
 
