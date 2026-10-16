@@ -200,12 +200,12 @@ export default async function MonetizationPage({searchParams}:{searchParams:Prom
    {!subscriptionsAvailable?<p className="form-error" role="alert">Manual access records could not be loaded.</p>:subscriptions.filter((x:any)=>x.provider==='manual'&&['trialing','active'].includes(x.status)).length===0?<p className="muted">No active manual premium grants. Use “Grant premium access” above to create a complimentary grant.</p>:<div className="admin-list">{subscriptions.filter((x:any)=>x.provider==='manual'&&['trialing','active'].includes(x.status)).map((x:any)=><article key={x.id}><div><b>Member {String(x.user_id).slice(0,8)}…</b><small>{x.status.toUpperCase()} · ends {x.current_period_end?new Date(x.current_period_end).toLocaleDateString():'No end date'}</small></div><form action={endManualMembership}><input type="hidden" name="id" value={x.id}/><button className="button ghost" aria-label={`End manual premium access for member ${String(x.user_id).slice(0,8)}`}>End access</button></form></article>)}</div>}
   </section>
   <h2>Sponsorship performance</h2>{(sponsorImpressions===null||sponsorClicks===null)&&<p className="form-error" role="alert">Some sponsorship event counts are unavailable. Metrics marked N/A should not be interpreted as zero activity.</p>}<div className="admin-stats"><span><b>{sponsorImpressions===null?'N/A':sponsorImpressions}</b>Impressions</span><span><b>{sponsorClicks===null?'N/A':sponsorClicks}</b>Clicks</span><span><b>{sponsorCtr===null?'N/A':(sponsorCtr*100).toFixed(2)+'%'}</b>CTR</span></div>
-  <h2>Sponsorship inventory</h2>
-  <form method="get" action="/admin/monetization" className="admin-filters" role="search" aria-label="Search sponsorship campaigns">
+  <h2 id="sponsorship-inventory">Sponsorship inventory</h2>
+  <form method="get" action="/admin/monetization#sponsorship-inventory" className="admin-filters" role="search" aria-label="Search sponsorship campaigns">
     <label>Search campaigns<input type="search" name="sponsorQuery" placeholder="Campaign or sponsor name" defaultValue={params.sponsorQuery||''}/></label>
     <label>Filter by status<select name="sponsorStatus" defaultValue={sponsorStatus}><option value="all">All statuses</option><option value="draft">Draft</option><option value="scheduled">Scheduled</option><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></label>
     <button className="button ghost" type="submit">Apply filters</button>
-    <Link href="/admin/monetization">Clear filters</Link>
+    <Link href="/admin/monetization#sponsorship-inventory">Clear filters</Link>
   </form>
   {!campaignsAvailable&&<p className="form-error" role="alert">Sponsorship inventory is temporarily unavailable. The list below may be incomplete.</p>}
   {campaignsAvailable&&<><p className="muted">{totalCampaignCount===null?'Campaign total unavailable.':totalCampaignCount>campaigns.length?`Showing latest ${campaigns.length} of ${totalCampaignCount} campaigns.`:`Showing all ${totalCampaignCount} campaign${totalCampaignCount===1?'':'s'}.`}</p>
