@@ -1,10 +1,11 @@
 export type AffiliateRevenueRow={status:string;gross_cents:number;fee_cents:number;affiliate_offer_id?:number|null;affiliate_merchant?:string|null;affiliate_placement?:string|null;perfume_id?:string|null}
 export type AffiliateClickRow={offer_id?:number|null;perfume_id?:string|null;placement?:string|null}
-const valid=(x:AffiliateRevenueRow)=>!['refunded','void'].includes(x.status)
+const valid=(x:AffiliateRevenueRow)=>['pending','confirmed','paid'].includes(x.status)
+const realized=(x:AffiliateRevenueRow)=>['confirmed','paid'].includes(x.status)
 const net=(x:AffiliateRevenueRow)=>Math.max(0,Number(x.gross_cents||0)-Number(x.fee_cents||0))
 export function affiliateAttribution(clicks:AffiliateClickRow[],revenue:AffiliateRevenueRow[]){
  const rows=revenue.filter(valid)
- const summarize=(clickCount:number,items:AffiliateRevenueRow[])=>{const conversions=items.length,earningsCents=items.reduce((s,x)=>s+net(x),0);return{clicks:clickCount,conversions,earningsCents,conversionRate:clickCount?conversions/clickCount:0,epcCents:clickCount?earningsCents/clickCount:0}}
+ const summarize=(clickCount:number,items:AffiliateRevenueRow[])=>{const conversions=items.length,earningsCents=items.reduce((s,x)=>s+net(x),0);const confirmedItems=items.filter(realized),confirmedEarningsCents=confirmedItems.reduce((s,x)=>s+net(x),0);return{clicks:clickCount,conversions,earningsCents,confirmedConversions:confirmedItems.length,confirmedEarningsCents,pendingEarningsCents:earningsCents-confirmedEarningsCents,conversionRate:clickCount?conversions/clickCount:0,epcCents:clickCount?earningsCents/clickCount:0}}
  const merchants=new Map<string,ReturnType<typeof summarize>>(),placements=new Map<string,ReturnType<typeof summarize>>(),perfumes=new Map<string,ReturnType<typeof summarize>>()
  const merchantKeys=new Set(rows.map(x=>x.affiliate_merchant).filter(Boolean) as string[])
  for(const key of merchantKeys){const offerIds=new Set(rows.filter(x=>x.affiliate_merchant===key).map(x=>x.affiliate_offer_id).filter(Boolean));merchants.set(key,summarize(clicks.filter(x=>x.offer_id&&offerIds.has(x.offer_id)).length,rows.filter(x=>x.affiliate_merchant===key)))}
