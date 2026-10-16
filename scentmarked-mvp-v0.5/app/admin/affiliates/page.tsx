@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { affiliateClickWithinPeriod, affiliateExportPeriod } from '@/lib/affiliate-export'
+import { affiliateClickWithinPeriod, affiliateExportPeriod, affiliateExportCutoff } from '@/lib/affiliate-export'
 import { affiliateAttribution } from '@/lib/affiliate-attribution'
 import { money } from '@/lib/monetization'
 import { createServiceClient } from '@/lib/supabase/service'
@@ -37,7 +37,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
   }
  }catch{}
 
- try{const service=createServiceClient();const r=await service.from('monetization_transactions').select('status,gross_cents,fee_cents,affiliate_offer_id,affiliate_merchant,affiliate_placement,perfume_id').eq('revenue_type','affiliate');if(!r.error)revenue=r.data||[]}catch{}
+ try{const service=createServiceClient();const r=await service.from('monetization_transactions').select('status,gross_cents,fee_cents,affiliate_offer_id,affiliate_merchant,affiliate_placement,perfume_id,created_at').eq('revenue_type','affiliate');if(!r.error)revenue=r.data||[]}catch{}
  const reportingNow=Date.now()
  const recent=(x:any)=>affiliateClickWithinPeriod(x.clicked_at,'30',reportingNow)
  const recent7=(x:any)=>affiliateClickWithinPeriod(x.clicked_at,'7',reportingNow)
@@ -64,7 +64,9 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
    ms.total++;if(recent(x))ms.recent++;if(recent7(x))ms.recent7++;if(periodMatch(x))ms.period++
   }
  }
- const attributed=affiliateAttribution(clicks,revenue)
+ const cutoff=affiliateExportCutoff(period,reportingNow)
+ const periodRevenue=cutoff?revenue.filter((x:any)=>typeof x.created_at==='string'&&x.created_at>=cutoff&&new Date(x.created_at).getTime()<=reportingNow):revenue
+ const attributed=affiliateAttribution(clicks.filter(periodMatch),periodRevenue)
  const merchantStats=[...merchantMap.values()].map(m=>({...m,offers:m.offers.size,revenue:attributed.merchants.get(m.name)})).sort((a,b)=>b.period-a.period||b.total-a.total||a.name.localeCompare(b.name))
  const perfumeStats=perfumes.map((p:any)=>({p,...(perfumeMap.get(String(p.id))||{total:0,recent:0,recent7:0,period:0}),revenue:attributed.perfumes.get(String(p.id))})).filter((x:any)=>x.total>0).sort((a:any,b:any)=>b.period-a.period||b.total-a.total).slice(0,25)
  const periodClicks=period==='7'?clicks.filter(recent7):period==='30'?clicks.filter(recent):clicks
@@ -84,7 +86,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
   <div className="admin-stats"><span><b>{featuredShare}%</b>Featured placement share</span><span><b>{moreShare}%</b>Additional retailer share</span></div>
   <p className="muted">Placement share describes where tracked outbound clicks occurred during the selected reporting period. It does not measure purchases or prove that placement caused the difference.</p>
 
-  <h2>Revenue attribution</h2><p className="muted">Conversions and earnings come from imported commission records. EPC is net commission divided by tracked clicks; refunded and void transactions are excluded.</p><div className="admin-list">{[...attributed.placements.entries()].map(([name,m]:any)=><article key={name}><div><small>PLACEMENT</small><h2>{name.replaceAll('_',' ')}</h2><div className="admin-record-meta"><span>{m.clicks} clicks</span><span>{m.conversions} conversions</span><span>{(m.conversionRate*100).toFixed(2)}% conversion</span><span>{money(m.earningsCents)} earned</span><span>{money(m.epcCents)} EPC</span></div></div></article>)}</div>
+  <h2>Revenue attribution</h2><p className="muted">Conversions and earnings come from imported commission records within the selected reporting period, based on transaction creation date. EPC is net commission divided by tracked clicks in that period; refunded and void transactions are excluded.</p><div className="admin-list">{[...attributed.placements.entries()].map(([name,m]:any)=><article key={name}><div><small>PLACEMENT</small><h2>{name.replaceAll('_',' ')}</h2><div className="admin-record-meta"><span>{m.clicks} clicks</span><span>{m.conversions} conversions</span><span>{(m.conversionRate*100).toFixed(2)}% conversion</span><span>{money(m.earningsCents)} earned</span><span>{money(m.epcCents)} EPC</span></div></div></article>)}</div>
   <h2>Last 7 days</h2>
   <div className="admin-stats">{daily.map((d:any)=><span key={d.key}><b>{d.count}</b>{d.label}</span>)}</div>
 
