@@ -7,3 +7,5 @@ test('affiliate CSV rejects duplicate external transactions within the file',()=
 test('affiliate CSV requires stable transaction fields',()=>{const r=parseAffiliateCommissionCsv('merchant,gross\nStore,5');assert.equal(r.rows.length,0);assert.match(r.errors[0],/external_id/)})
 
 test('affiliate import quality exposes incomplete attribution',()=>{const r=parseAffiliateCommissionCsv('external_id,gross,occurred_at,merchant,placement,offer_id,click_id,perfume_id\nA1,5,2026-10-05,Store,profile_featured,4,8,p1\nA2,6,2026-10-05,,,,,','network');const q=affiliateImportQuality(r.rows);assert.equal(q.total,2);assert.equal(q.fullyAttributed,1);assert.equal(q.unattributed,1);assert.equal(q.attributionRate,.5)})
+
+test('affiliate CSV distinguishes source and external ID when either contains the key delimiter',()=>{const r=parseAffiliateCommissionCsv('source_name,external_id,gross,occurred_at\nA::B,C,5,2026-10-05\nA,B::C,6,2026-10-05','network');assert.equal(r.errors.length,0);assert.equal(r.rows.length,2);assert.deepEqual(r.rows.map(x=>[x.source_name,x.external_id]),[['A::B','C'],['A','B::C']])})
