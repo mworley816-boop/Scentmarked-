@@ -19,3 +19,16 @@ export function affiliateImportQuality(rows:AffiliateImportRow[]){
  const total=rows.length,withClick=rows.filter(x=>x.affiliate_click_id).length,withOffer=rows.filter(x=>x.affiliate_offer_id).length,withMerchant=rows.filter(x=>x.affiliate_merchant).length,withPerfume=rows.filter(x=>x.perfume_id).length,fullyAttributed=rows.filter(x=>x.affiliate_click_id&&x.affiliate_offer_id&&x.affiliate_merchant&&x.perfume_id&&x.affiliate_placement).length
  return{total,withClick,withOffer,withMerchant,withPerfume,fullyAttributed,unattributed:total-fullyAttributed,attributionRate:total?fullyAttributed/total:0}
 }
+
+export function affiliateReconciliationSummary(rows:AffiliateImportRow[]){
+ const totals={pending:0,confirmed:0,paid:0,refunded:0,void:0}
+ const counts={pending:0,confirmed:0,paid:0,refunded:0,void:0}
+ const reviewRows:AffiliateImportRow[]=[]
+ for(const row of rows){
+  counts[row.status]++
+  const net=Math.max(0,row.gross_cents-row.fee_cents)
+  totals[row.status]+=net
+  if(!row.affiliate_click_id||!row.affiliate_offer_id||!row.affiliate_merchant||!row.affiliate_placement||!row.perfume_id)reviewRows.push(row)
+ }
+ return{counts,netCentsByStatus:totals,reviewCount:reviewRows.length,reviewExternalIds:reviewRows.map(row=>row.external_id)}
+}
