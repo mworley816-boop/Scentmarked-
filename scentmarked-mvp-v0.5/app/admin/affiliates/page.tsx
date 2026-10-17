@@ -37,7 +37,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
   }
  }catch{}
 
- try{const service=createServiceClient();const r=await service.from('monetization_transactions').select('status,gross_cents,fee_cents,affiliate_offer_id,affiliate_merchant,affiliate_placement,perfume_id,created_at').eq('revenue_type','affiliate');if(!r.error)revenue=r.data||[]}catch{}
+ try{const service=createServiceClient();const r=await service.from('monetization_transactions').select('status,gross_cents,fee_cents,affiliate_click_id,affiliate_offer_id,affiliate_merchant,affiliate_placement,perfume_id,created_at').eq('revenue_type','affiliate');if(!r.error)revenue=r.data||[]}catch{}
  const reportingNow=Date.now()
  const recent=(x:any)=>affiliateClickWithinPeriod(x.clicked_at,'30',reportingNow)
  const recent7=(x:any)=>affiliateClickWithinPeriod(x.clicked_at,'7',reportingNow)
@@ -66,6 +66,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
  }
  const cutoff=affiliateExportCutoff(period,reportingNow)
  const periodRevenue=cutoff?revenue.filter((x:any)=>typeof x.created_at==='string'&&x.created_at>=cutoff&&new Date(x.created_at).getTime()<=reportingNow):revenue
+ const attributionReview=periodRevenue.filter((x:any)=>!x.affiliate_click_id||!x.affiliate_offer_id||!x.affiliate_merchant||!x.affiliate_placement||!x.perfume_id)
  const attributed=affiliateAttribution(clicks.filter(periodMatch),periodRevenue)
  const merchantStats=[...merchantMap.values()].map(m=>({...m,offers:m.offers.size,revenue:attributed.merchants.get(m.name)})).sort((a,b)=>b.period-a.period||b.total-a.total||a.name.localeCompare(b.name))
  const perfumeStats=perfumes.map((p:any)=>({p,...(perfumeMap.get(String(p.id))||{total:0,recent:0,recent7:0,period:0}),revenue:attributed.perfumes.get(String(p.id))})).filter((x:any)=>x.total>0).sort((a:any,b:any)=>b.period-a.period||b.total-a.total).slice(0,25)
@@ -87,6 +88,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
   <p className="muted">Placement share describes where tracked outbound clicks occurred during the selected reporting period. It does not measure purchases or prove that placement caused the difference.</p>
 
   <h2>Revenue attribution</h2><p className="muted">Conversions and earnings come from imported commission records within the selected reporting period, based on transaction creation date. EPC is net commission divided by tracked clicks in that period; refunded and void transactions are excluded.</p><div className="admin-list">{[...attributed.placements.entries()].map(([name,m]:any)=><article key={name}><div><small>PLACEMENT</small><h2>{name.replaceAll('_',' ')}</h2><div className="admin-record-meta"><span>{m.clicks} clicks</span><span>{m.conversions} conversions</span><span>{(m.conversionRate*100).toFixed(2)}% conversion</span><span>{money(m.earningsCents)} earned</span><span>{money(m.epcCents)} EPC</span></div></div></article>)}</div>
+  <h2>Attribution review</h2><div className="admin-stats"><span><b>{attributionReview.length}</b>Commission records needing review</span><span><b>{periodRevenue.length}</b>Total commission records in period</span></div><p className="muted">A record needs review if its click, offer, merchant, placement, or perfume reference is missing. Review counts do not imply lost commission. These totals reflect imported records for the selected period.</p>
   <h2>Commission status breakdown</h2>
   <div className="admin-stats"><span><b>{money(periodRevenue.filter((x:any)=>x.status==='pending').reduce((sum:number,x:any)=>sum+Math.max(0,Number(x.gross_cents||0)-Number(x.fee_cents||0)),0))}</b>Pending commissions</span><span><b>{money(periodRevenue.filter((x:any)=>x.status==='confirmed'||x.status==='paid').reduce((sum:number,x:any)=>sum+Math.max(0,Number(x.gross_cents||0)-Number(x.fee_cents||0)),0))}</b>Confirmed and paid commissions</span></div>
   <p className="muted">Pending commissions are not guaranteed payouts. Confirmed and paid totals are grouped for reporting; confirmed does not necessarily mean cash received.</p>
