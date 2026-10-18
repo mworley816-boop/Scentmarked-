@@ -14,6 +14,12 @@ export default function ScentProfileForm({children,action}:Props){
   const numberOrNull=(name:string)=>{const raw=String(data.get(name)||'');return raw&&/^\d+$/.test(raw)?Number(raw):null}
   const budgetRaw=String(data.get('budget')||'0')
   const budget=/^\d+$/.test(budgetRaw)?Number(budgetRaw):0
+  if(data.get('marketingConsent')==='yes'&&data.get('marketingOptOut')==='yes'){
+   event.preventDefault()
+   setError('Choose either marketing email updates or unsubscribe, not both.')
+   requestAnimationFrame(()=>errorRef.current?.focus())
+   return
+  }
   const hasSignal=hasScentProfileRankingSignal({
    loved:[...data.getAll('families'),...data.getAll('lovedNotes')].map(String),
    avoided:data.getAll('avoidedNotes').map(String),
