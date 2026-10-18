@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const options=[['owned','Own It','✓'],['want','Want It','＋'],['tried','Tried It','◌']] as const
@@ -10,6 +10,8 @@ export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initi
  const [busy,setBusy]=useState<string|null>(null)
  const [message,setMessage]=useState('')
  const supabase=useMemo(()=>createClient(),[])
+ const activePerfume=useRef(perfumeId)
+ activePerfume.current=perfumeId
 
  // Reconcile the controls when client-side navigation changes the displayed perfume.
  useEffect(()=>{setSaved(initial);setBusy(null);setMessage('')},[perfumeId,initial.join('|')])
@@ -33,6 +35,7 @@ export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initi
    }
    // Verify the persisted state after the mutation, including concurrent changes.
    const {data:current,error:verifyError}=await supabase.from('collection_items').select('status').eq('user_id',user.id).eq('perfume_id',perfumeId)
+   if(activePerfume.current!==perfumeId)return
    if(verifyError){
     // The write succeeded; a follow-up read failure must not tell the member it failed.
     setSaved(previous=>existing?previous.filter(value=>value!==status):[...new Set([...previous,status])])
@@ -42,8 +45,8 @@ export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initi
    const currentStatuses=(current||[]).map(row=>row.status)
    setSaved(currentStatuses)
    setMessage(currentStatuses.includes(status)?`Marked as ${statusLabels[status]||status}.`:`Removed ${statusLabels[status]||'mark'}.`)
-  }catch{setMessage('Could not update your Marks. Please try again.')}
-  finally{setBusy(null)}
+  }catch{if(activePerfume.current===perfumeId)setMessage('Could not update your Marks. Please try again.')}
+  finally{if(activePerfume.current===perfumeId)setBusy(null)}
  }
  return <div><div className="mark-actions" aria-label="Mark this scent">{options.map(([value,label,icon])=><button type="button" disabled={busy!==null} aria-pressed={saved.includes(value)} className={saved.includes(value)?'mark active':'mark'} onClick={()=>toggle(value)} key={value}><span aria-hidden="true">{saved.includes(value)?'✓':icon}</span>{busy===value?'Saving…':label}</button>)}</div>{message&&<p className="muted" role={message.startsWith("Could not")?"alert":"status"}>{message}</p>}</div>
 }
