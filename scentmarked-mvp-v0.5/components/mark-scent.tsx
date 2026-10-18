@@ -30,7 +30,12 @@ export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initi
    }
    // Verify the persisted state after the mutation, including concurrent changes.
    const {data:current,error:verifyError}=await supabase.from('collection_items').select('status').eq('user_id',user.id).eq('perfume_id',perfumeId)
-   if(verifyError)throw verifyError
+   if(verifyError){
+    // The write succeeded; a follow-up read failure must not tell the member it failed.
+    setSaved(previous=>existing?previous.filter(value=>value!==status):[...new Set([...previous,status])])
+    setMessage('Your mark was saved, but its latest status could not be refreshed. Reload to verify.')
+    return
+   }
    const currentStatuses=(current||[]).map(row=>row.status)
    setSaved(currentStatuses)
    setMessage(currentStatuses.includes(status)?`Marked as ${statusLabels[status]||status}.`:`Removed ${statusLabels[status]||'mark'}.`)
