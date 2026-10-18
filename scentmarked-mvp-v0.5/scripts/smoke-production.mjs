@@ -5,8 +5,8 @@ const CHECKS = [
   { path: '/discover', contentType: 'text/html' },
   { path: '/compare', contentType: 'text/html' },
   { path: '/matches', contentType: 'text/html' },
-  { path: '/login', contentType: 'text/html' },
-  { path: '/onboarding', contentType: 'text/html' },
+  { path: '/login', contentType: 'text/html', requiredText: ['Sign In', 'Create Account'] },
+  { path: '/onboarding', contentType: 'text/html', requiredText: ['What smells like you?', 'Which scent families'] },
   { path: '/api/health', contentType: 'application/json', json: { status: 'ok', service: 'scentmarked' } },
   { path: '/robots.txt', contentType: 'text/plain' },
   { path: '/sitemap.xml', contentType: 'xml' },
@@ -108,7 +108,15 @@ async function checkPath(baseUrl, check) {
     }
   }
 
-  const ok = statusOk && contentTypeOk && payloadOk && !redirectedToAuth && sameOrigin && samePath
+  let pageContentOk = true
+  if (check.requiredText && statusOk && contentTypeOk) {
+    const html = await response.text()
+    const missing = check.requiredText.filter((marker) => !html.includes(marker))
+    pageContentOk = missing.length === 0
+    if (!pageContentOk) payloadDetail += ' (missing expected page content: ' + missing.join(', ') + ')'
+  }
+
+  const ok = statusOk && contentTypeOk && payloadOk && pageContentOk && !redirectedToAuth && sameOrigin && samePath
   const typeDetail = contentTypeOk ? '' : ` (expected content-type containing ${check.contentType}, got ${contentType || 'none'})`
   const redirectDetail = redirectedToAuth ? ' (unexpected authentication redirect)' : !sameOrigin ? ' (unexpected cross-origin redirect)' : !samePath ? ' (unexpected route redirect)' : ''
   console.log(`${ok ? 'PASS' : 'FAIL'} ${response.status} ${check.path} -> ${response.url}${typeDetail}${payloadDetail}${redirectDetail}`)
