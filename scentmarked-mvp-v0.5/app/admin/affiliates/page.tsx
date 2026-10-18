@@ -41,7 +41,7 @@ export default async function AffiliatePerformance({searchParams}:{searchParams:
   const service=createServiceClient()
   const pageSize=1000
   for(let from=0;;from+=pageSize){
-   const r=await service.from('monetization_transactions').select('status,gross_cents,fee_cents,affiliate_click_id,affiliate_offer_id,affiliate_merchant,affiliate_placement,perfume_id,created_at').eq('revenue_type','affiliate').order('created_at',{ascending:false}).range(from,from+pageSize-1)
+   const r=await service.from('monetization_transactions').select('status,gross_cents,fee_cents,affiliate_click_id,affiliate_offer_id,affiliate_merchant,affiliate_placement,perfume_id,created_at').eq('revenue_type','affiliate').order('created_at',{ascending:false}).order('id',{ascending:false}).range(from,from+pageSize-1)
    if(r.error)break
    const rows=r.data||[]
    revenue.push(...rows)
