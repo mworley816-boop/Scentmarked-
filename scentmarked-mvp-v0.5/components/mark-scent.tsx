@@ -17,7 +17,11 @@ export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initi
   try{
    const {data:{user},error:authError}=await supabase.auth.getUser()
    if(authError||!user){window.location.href=`/login?next=${encodeURIComponent(window.location.pathname+window.location.search)}`;return}
-   if(saved.includes(status)){
+   // Read the current database state before toggling to avoid stale UI state
+   // causing a second tab or device to delete or duplicate the wrong mark.
+   const {data:existing,error:readError}=await supabase.from('collection_items').select('status').eq('user_id',user.id).eq('perfume_id',perfumeId).eq('status',status).maybeSingle()
+   if(readError)throw readError
+   if(existing){
     const {error}=await supabase.from('collection_items').delete().eq('user_id',user.id).eq('perfume_id',perfumeId).eq('status',status)
     if(error)throw error
     setSaved(v=>v.filter(x=>x!==status));setMessage(`Removed ${statusLabels[status]||'mark'}.`)
