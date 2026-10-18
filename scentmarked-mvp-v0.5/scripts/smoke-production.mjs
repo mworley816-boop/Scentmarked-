@@ -112,6 +112,13 @@ async function checkPath(baseUrl, check) {
   }
 
   let pageContentOk = true
+  if (check.path === '/discover' && statusOk && contentTypeOk) {
+    const html = await response.text()
+    if (/The scent library is temporarily unavailable/i.test(html)) {
+      pageContentOk = false
+      payloadDetail += ' (catalog unavailable message displayed)'
+    }
+  }
   if (check.requiredText && statusOk && contentTypeOk) {
     const html = await response.text()
     const missing = check.requiredText.filter((marker) => !html.includes(marker))
