@@ -1,11 +1,11 @@
 const REQUEST_TIMEOUT_MS = 15000
 
 const CHECKS = [
-  { path: '/' },
-  { path: '/discover' },
-  { path: '/compare' },
-  { path: '/matches' },
-  { path: '/login' },
+  { path: '/', contentType: 'text/html' },
+  { path: '/discover', contentType: 'text/html' },
+  { path: '/compare', contentType: 'text/html' },
+  { path: '/matches', contentType: 'text/html' },
+  { path: '/login', contentType: 'text/html' },
   { path: '/api/health', contentType: 'application/json', json: { status: 'ok', service: 'scentmarked' } },
   { path: '/robots.txt', contentType: 'text/plain' },
   { path: '/sitemap.xml', contentType: 'xml' },
