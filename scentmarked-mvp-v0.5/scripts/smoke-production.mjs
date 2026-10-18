@@ -6,6 +6,7 @@ const CHECKS = [
   { path: '/compare', contentType: 'text/html' },
   { path: '/matches', contentType: 'text/html' },
   { path: '/login', contentType: 'text/html' },
+  { path: '/onboarding', contentType: 'text/html' },
   { path: '/api/health', contentType: 'application/json', json: { status: 'ok', service: 'scentmarked' } },
   { path: '/robots.txt', contentType: 'text/plain' },
   { path: '/sitemap.xml', contentType: 'xml' },
