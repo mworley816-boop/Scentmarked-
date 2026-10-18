@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, ReactNode, useRef, useState } from 'react'
+import { ChangeEvent, FormEvent, ReactNode, useRef, useState } from 'react'
 import { hasScentProfileRankingSignal } from '@/lib/scent-profile'
 
 type Props={children:ReactNode;action:(formData:FormData)=>void|Promise<void>}
@@ -33,7 +33,16 @@ export default function ScentProfileForm({children,action}:Props){
   if(!hasSignal){event.preventDefault();setError('Choose at least one recommendation preference before continuing.');requestAnimationFrame(()=>errorRef.current?.focus());return}
   setError('')
  }
- return <form action={action} className="quiz-form" onSubmit={submit}>
+ const handleChange=(event:ChangeEvent<HTMLFormElement>)=>{
+  const target=event.target
+  if(!(target instanceof HTMLInputElement)||!target.checked)return
+  if(target.name!=='marketingConsent'&&target.name!=='marketingOptOut')return
+  const opposite=target.name==='marketingConsent'?'marketingOptOut':'marketingConsent'
+  const other=event.currentTarget.elements.namedItem(opposite)
+  if(other instanceof HTMLInputElement)other.checked=false
+  setError('')
+ }
+ return <form action={action} className="quiz-form" onSubmit={submit} onChange={handleChange}>
   {error&&<div ref={errorRef} className="notice error" role="alert" tabIndex={-1}>{error}</div>}
   {children}
  </form>
