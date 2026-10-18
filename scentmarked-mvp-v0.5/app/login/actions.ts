@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { siteUrl } from '@/lib/site'
 import { safeAuthNext } from '@/lib/auth-redirect'
 import { cookies } from 'next/headers'
-import { applyOnboardingHandoff,decodeOnboardingHandoff,onboardingCookie } from '@/lib/onboarding-handoff'
+import { applyOnboardingHandoff,decodeOnboardingHandoff,onboardingCookie,parseOnboardingHandoff } from '@/lib/onboarding-handoff'
 
 
 function validEmail(email:string){return email.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
@@ -21,7 +21,8 @@ export async function login(formData:FormData){
   const supabase=await createClient()
   const {data,error}=await supabase.auth.signInWithPassword({email,password})
   if(error)redirect(loginUrl('error','invalid-credentials',next))
-  const jar=await cookies(),handoff=decodeOnboardingHandoff(jar.get(onboardingCookie)?.value)
+  const jar=await cookies(),cookieHandoff=decodeOnboardingHandoff(jar.get(onboardingCookie)?.value)
+  const handoff=cookieHandoff||parseOnboardingHandoff(data.user?.user_metadata?.onboarding_profile)
   if(handoff&&data.user){
    const applied=await applyOnboardingHandoff(supabase,data.user.id,handoff)
    if(applied){
