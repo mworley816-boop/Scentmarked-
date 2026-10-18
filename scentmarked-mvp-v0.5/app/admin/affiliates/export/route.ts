@@ -22,10 +22,10 @@ export async function GET(request:Request){
  }
  const offerIds=[...new Set(rows.map(x=>x.offer_id).filter(Boolean))]
  const perfumeIds=[...new Set(rows.map(x=>x.perfume_id).filter(Boolean))]
- const [{data:offers},{data:perfumes}]=await Promise.all([
-  offerIds.length?s.from('perfume_affiliate_offers').select('id,merchant_name,label').in('id',offerIds):Promise.resolve({data:[] as any[]}),
-  perfumeIds.length?s.from('perfumes').select('id,name,slug,brands(name)').in('id',perfumeIds):Promise.resolve({data:[] as any[]})
- ])
+ const loadOffers=async()=>{const all:any[]=[];for(let i=0;i<offerIds.length;i+=200){const result=await s.from('perfume_affiliate_offers').select('id,merchant_name,label').in('id',offerIds.slice(i,i+200));if(result.error)throw result.error;all.push(...(result.data||[]))}return all}
+ const loadPerfumes=async()=>{const all:any[]=[];for(let i=0;i<perfumeIds.length;i+=200){const result=await s.from('perfumes').select('id,name,slug,brands(name)').in('id',perfumeIds.slice(i,i+200));if(result.error)throw result.error;all.push(...(result.data||[]))}return all}
+ let offers:any[]=[],perfumes:any[]=[]
+ try{[offers,perfumes]=await Promise.all([loadOffers(),loadPerfumes()])}catch{return new Response('Could not load affiliate export details',{status:500})}
  const offerMap=new Map((offers||[]).map((x:any)=>[String(x.id),x]))
  const perfumeMap=new Map((perfumes||[]).map((x:any)=>[String(x.id),x]))
  const lines=[affiliateExportLine(['clicked_at','period','perfume','brand','slug','merchant','offer_label','placement','offer_id','perfume_id'])]
