@@ -1,3 +1,5 @@
+const REQUEST_TIMEOUT_MS = 15000
+
 const CHECKS = [
   { path: '/' },
   { path: '/discover' },
@@ -20,7 +22,7 @@ async function checkCatalogMinimum(baseUrl) {
     console.log('FAIL catalog minimum must be a positive integer')
     return false
   }
-  const response = await fetch(new URL('/discover', baseUrl), { redirect: 'follow' })
+  const response = await fetch(new URL('/discover', baseUrl), { redirect: 'follow', signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
   if (!response.ok) {
     console.log('FAIL catalog minimum: Discover returned ' + response.status)
     return false
@@ -41,7 +43,7 @@ async function checkCatalogMinimum(baseUrl) {
   // Verify that the last page is actually reachable and agrees with the first-page total.
   const pageSize = 24
   const lastPage = Math.ceil(count / pageSize)
-  const lastResponse = await fetch(new URL('/discover?page=' + lastPage, baseUrl), { redirect: 'follow' })
+  const lastResponse = await fetch(new URL('/discover?page=' + lastPage, baseUrl), { redirect: 'follow', signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
   if (!lastResponse.ok) {
     console.log('FAIL last catalog page: HTTP ' + lastResponse.status)
     return false
@@ -82,7 +84,7 @@ function resolveBaseUrl() {
 
 async function checkPath(baseUrl, check) {
   const url = new URL(check.path, baseUrl)
-  const response = await fetch(url, { redirect: 'follow' })
+  const response = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
   const statusOk = response.status >= 200 && response.status < 400
   const finalUrl = new URL(response.url)
   const redirectedToAuth = check.path !== '/login' && (/^\/(?:login|signup|sign-up)(?:\/|$)/.test(finalUrl.pathname) || finalUrl.pathname === '/auth')
