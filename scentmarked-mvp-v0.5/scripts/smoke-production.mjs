@@ -25,6 +25,11 @@ async function checkCatalogMinimum(baseUrl) {
     console.log('FAIL catalog minimum: Discover returned ' + response.status)
     return false
   }
+  const finalUrl = new URL(response.url)
+  if (finalUrl.origin !== baseUrl.origin || finalUrl.pathname !== '/discover') {
+    console.log('FAIL catalog minimum: Discover redirected to ' + response.url)
+    return false
+  }
   const html = await response.text()
   const match = html.match(/Showing\s+[\d,]+[–-][\d,]+\s+of\s+([\d,]+)\s+scents/i)
   const count = match ? Number(match[1].replaceAll(',', '')) : null
@@ -39,6 +44,11 @@ async function checkCatalogMinimum(baseUrl) {
   const lastResponse = await fetch(new URL('/discover?page=' + lastPage, baseUrl), { redirect: 'follow' })
   if (!lastResponse.ok) {
     console.log('FAIL last catalog page: HTTP ' + lastResponse.status)
+    return false
+  }
+  const lastUrl = new URL(lastResponse.url)
+  if (lastUrl.origin !== baseUrl.origin || lastUrl.pathname !== '/discover') {
+    console.log('FAIL last catalog page: Discover redirected to ' + lastResponse.url)
     return false
   }
   const lastHtml = await lastResponse.text()
