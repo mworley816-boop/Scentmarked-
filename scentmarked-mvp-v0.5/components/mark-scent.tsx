@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const options=[['owned','Own It','✓'],['want','Want It','＋'],['tried','Tried It','◌']] as const
@@ -10,6 +10,9 @@ export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initi
  const [busy,setBusy]=useState<string|null>(null)
  const [message,setMessage]=useState('')
  const supabase=useMemo(()=>createClient(),[])
+
+ // Reconcile the controls when client-side navigation changes the displayed perfume.
+ useEffect(()=>{setSaved(initial);setBusy(null);setMessage('')},[perfumeId,initial.join('|')])
 
  async function toggle(status:string){
   if(busy)return
