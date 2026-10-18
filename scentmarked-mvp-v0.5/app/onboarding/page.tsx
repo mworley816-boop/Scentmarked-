@@ -61,7 +61,8 @@ async function saveProfile(formData:FormData){
  const rawBudget=String(formData.get('budget')||'0')
  const budget=/^\d+$/.test(rawBudget)?Number(rawBudget):0
  const sweetness=trait(formData,'sweetness'),projection=trait(formData,'projection'),longevity=trait(formData,'longevity')
- const marketingConsent=formData.get('marketingConsent')==='yes'
+ const marketingOptOut=formData.get('marketingOptOut')==='yes'
+ const marketingConsent=!marketingOptOut&&formData.get('marketingConsent')==='yes'
  const hasRankingSignal=hasScentProfileRankingSignal({loved:resolvedLoved,avoided,favoriteIds,presentations:selectedPresentations,sweetness,projection,longevity,budget})
  if(!hasRankingSignal)redirect('/onboarding?error=choose-preference')
  if(!user){const jar=await cookies();jar.set(onboardingCookie,encodeOnboardingHandoff({loved:resolvedLoved,avoided,occasions:selectedOccasions,vibes:selectedVibes,presentations:selectedPresentations,favoriteIds,sweetness,projection,longevity,budget:Number.isSafeInteger(budget)&&budget>0?budget:null,marketingConsent}),{httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',path:'/',maxAge:86400});redirect('/login?signup=finish&next='+encodeURIComponent('/matches?profile=ready'))}
@@ -89,8 +90,9 @@ async function saveProfile(formData:FormData){
  const unchanged=!!lastRevision&&sameList(lastRevision.loved_notes,revision.loved_notes)&&sameList(lastRevision.avoided_notes,revision.avoided_notes)&&sameList(lastRevision.presentations,revision.presentations)&&sameList(lastRevision.favorite_perfume_ids,revision.favorite_perfume_ids)&&lastRevision.sweetness===revision.sweetness&&lastRevision.projection===revision.projection&&lastRevision.longevity===revision.longevity&&Number(lastRevision.max_price??0)===Number(revision.max_price??0)
  if(revisionLookupError)console.error('Taste revision lookup failed',revisionLookupError.message)
  else if(!unchanged){const {error:revisionError}=await s.from('taste_profile_revisions').insert(revision);if(revisionError)console.error('Taste revision snapshot failed',revisionError.message)}
- if(marketingConsent){
-  const {data:consentSaved,error:consentError}=await s.rpc('set_my_marketing_consent',{p_enabled:true})
+ // An unchecked opt-in alone is not a revocation; require an explicit opt-out.
+ if(marketingConsent||marketingOptOut){
+  const {data:consentSaved,error:consentError}=await s.rpc('set_my_marketing_consent',{p_enabled:marketingConsent})
   if(consentError||!consentSaved)redirect('/onboarding?error=consent-save-failed')
  }
  redirect('/matches?profile=ready')
@@ -157,7 +159,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
    <fieldset><legend>9. How much projection do you like?</legend><Radios name="projection" items={traitOptions.projection} selected={saved?.scent_projection}/></fieldset>
    <fieldset><legend>10. How long should your fragrance last?</legend><Radios name="longevity" items={traitOptions.longevity} selected={saved?.scent_longevity}/></fieldset>
    <fieldset><legend>11. What do you usually want to spend?</legend><Radios name="budget" items={budgets} selected={saved?.scent_max_price}/></fieldset>
-   <fieldset><legend>Stay in the scent loop?</legend><p>Optional. Get ScentMarked perfume finds, match updates and occasional news by email. You can unsubscribe anytime.</p><label className="quiz-check"><input type="checkbox" name="marketingConsent" value="yes"/><span>Yes, send me ScentMarked marketing emails.</span></label></fieldset>
+   <fieldset><legend>Stay in the scent loop?</legend><p>Optional. Get ScentMarked perfume finds, match updates and occasional news by email. You can unsubscribe anytime.</p><label className="quiz-check"><input type="checkbox" name="marketingConsent" value="yes"/><span>Yes, send me ScentMarked marketing emails.</span></label><label className="quiz-check"><input type="checkbox" name="marketingOptOut" value="yes"/><span>Unsubscribe me from ScentMarked marketing emails.</span></label></fieldset>
    <div className="quiz-actions"><ScentProfileSubmit completed={completed}/>{user?<Link href="/matches">{completed?'Cancel':'Skip for now'}</Link>:<Link href="/login">Already have an account? Sign in</Link>}</div>
   </ScentProfileForm>
  </section></main>
