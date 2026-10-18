@@ -17,7 +17,7 @@ async function loadMatchPerfumes(s:any){
  const rows:any[]=[]
  const batchSize=200
  for(let start=0;start<20000;start+=batchSize){
-  const result=await s.from('perfumes').select('id,name,slug,image_url,price_low,price_high,gender_marketing,brands(name),perfume_notes(position,notes(name)),perfume_accords(strength,source_type,accords(name)),ratings(sweetness,projection,longevity)').eq('status','published').order('name').order('id').range(start,start+batchSize-1)
+  const result=await s.from('perfumes').select('id,name,slug,image_url,price_low,price_high,gender_marketing,brands(name),perfume_notes(position,notes(name)),perfume_accords(strength,source_type,accords(name)),ratings(sweetness,projection,longevity)').eq('status','published').order('id').range(start,start+batchSize-1)
   if(result.error)return {data:null,error:result.error}
   const batch=result.data||[]
   rows.push(...batch)
