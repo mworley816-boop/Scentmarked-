@@ -74,6 +74,9 @@ async function checkPath(baseUrl, check) {
   const url = new URL(check.path, baseUrl)
   const response = await fetch(url, { redirect: 'follow' })
   const statusOk = response.status >= 200 && response.status < 400
+  const finalUrl = new URL(response.url)
+  const redirectedToAuth = check.path !== '/login' && (/^\/(?:login|signup|sign-up)(?:\/|$)/.test(finalUrl.pathname) || finalUrl.pathname === '/auth')
+  const sameOrigin = finalUrl.origin === baseUrl.origin
   const contentType = response.headers.get('content-type') || ''
   const contentTypeOk = !check.contentType || contentType.includes(check.contentType)
   let payloadOk = true
@@ -90,9 +93,10 @@ async function checkPath(baseUrl, check) {
     }
   }
 
-  const ok = statusOk && contentTypeOk && payloadOk
+  const ok = statusOk && contentTypeOk && payloadOk && !redirectedToAuth && sameOrigin
   const typeDetail = contentTypeOk ? '' : ` (expected content-type containing ${check.contentType}, got ${contentType || 'none'})`
-  console.log(`${ok ? 'PASS' : 'FAIL'} ${response.status} ${check.path} -> ${response.url}${typeDetail}${payloadDetail}`)
+  const redirectDetail = redirectedToAuth ? ' (unexpected authentication redirect)' : !sameOrigin ? ' (unexpected cross-origin redirect)' : ''
+  console.log(`${ok ? 'PASS' : 'FAIL'} ${response.status} ${check.path} -> ${response.url}${typeDetail}${payloadDetail}${redirectDetail}`)
   return ok
 }
 
