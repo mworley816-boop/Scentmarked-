@@ -62,7 +62,9 @@ async function saveProfile(formData:FormData){
  const budget=/^\d+$/.test(rawBudget)?Number(rawBudget):0
  const sweetness=trait(formData,'sweetness'),projection=trait(formData,'projection'),longevity=trait(formData,'longevity')
  const marketingOptOut=formData.get('marketingOptOut')==='yes'
- const marketingConsent=!marketingOptOut&&formData.get('marketingConsent')==='yes'
+ const marketingOptIn=formData.get('marketingConsent')==='yes'
+ if(marketingOptOut&&marketingOptIn)redirect('/onboarding?error=choose-email-preference')
+ const marketingConsent=marketingOptIn
  const hasRankingSignal=hasScentProfileRankingSignal({loved:resolvedLoved,avoided,favoriteIds,presentations:selectedPresentations,sweetness,projection,longevity,budget})
  if(!hasRankingSignal)redirect('/onboarding?error=choose-preference')
  if(!user){const jar=await cookies();jar.set(onboardingCookie,encodeOnboardingHandoff({loved:resolvedLoved,avoided,occasions:selectedOccasions,vibes:selectedVibes,presentations:selectedPresentations,favoriteIds,sweetness,projection,longevity,budget:Number.isSafeInteger(budget)&&budget>0?budget:null,marketingConsent}),{httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',path:'/',maxAge:86400});redirect('/login?signup=finish&next='+encodeURIComponent('/matches?profile=ready'))}
@@ -147,7 +149,7 @@ export default async function Onboarding({searchParams}:{searchParams:Promise<{e
   <h1>{completed?'Edit your scent profile':'What smells like you?'}</h1>
   <p className="quiz-intro">{completed?'Update any answers that have changed. Your saved recommendation signals will continue shaping your ScentMarked matches.':'Check the answers that fit you best. You can leave individual questions unanswered, but saving a completed Scent Profile requires at least one preference that can affect recommendations. “No preference” answers do not count as ranking signals. You can change these preferences later.'}</p>
   {loadError&&<div className="notice error" role="alert">Your saved scent profile could not be loaded. You can still choose new preferences, but saving will replace your previous questionnaire answers.</div>}
-  {p.error==='save-failed'&&<div className="notice error" role="alert">Your scent profile could not be saved. Your account is still available; please review your choices and try again.</div>}{p.error==='consent-save-failed'&&<div className="notice error" role="alert">Your scent profile was saved, but your email preference could not be updated. Please try saving again or manage marketing email from Account Settings.</div>}{p.error==='choose-preference'&&<div className="notice error" role="alert">Choose at least one recommendation preference before continuing. You can still leave any individual question unanswered.</div>}
+  {p.error==='save-failed'&&<div className="notice error" role="alert">Your scent profile could not be saved. Your account is still available; please review your choices and try again.</div>}{p.error==='consent-save-failed'&&<div className="notice error" role="alert">Your scent profile was saved, but your email preference could not be updated. Please try saving again or manage marketing email from Account Settings.</div>}{p.error==='choose-preference'&&<div className="notice error" role="alert">Choose at least one recommendation preference before continuing. You can still leave any individual question unanswered.</div>}{p.error==='choose-email-preference'&&<div className="notice error" role="alert">Choose either marketing email updates or unsubscribe, not both.</div>}
   <ScentProfileForm action={saveProfile}>
    <fieldset><legend>1. Which scent families are you drawn to?</legend><p>Choose as many as you like.</p><Checks name="families" items={families} selected={savedFamilies}/></fieldset>
    <NotePreferenceChecks items={notes} loved={savedNotes} avoided={saved?.scent_avoided_notes||[]}/>
