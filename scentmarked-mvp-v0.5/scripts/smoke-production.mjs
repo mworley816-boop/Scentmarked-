@@ -5,7 +5,8 @@ const CHECKS = [
   { path: '/discover', contentType: 'text/html' },
   { path: '/compare', contentType: 'text/html' },
   { path: '/matches', contentType: 'text/html' },
-  { path: '/login', contentType: 'text/html', requiredText: ['Sign In', 'Create Account'] },
+  { path: '/login', contentType: 'text/html', requiredText: ['Sign In', 'Start My Scent Profile'] },
+  { path: '/login?signup=finish', contentType: 'text/html', requiredText: ['Create Account &amp; See My Matches', 'name="email"', 'name="password"'] },
   { path: '/onboarding', contentType: 'text/html', requiredText: ['What smells like you?', 'Which scent families'] },
   { path: '/api/health', contentType: 'application/json', json: { status: 'ok', service: 'scentmarked' } },
   { path: '/robots.txt', contentType: 'text/plain' },
@@ -92,6 +93,8 @@ async function checkPath(baseUrl, check) {
   const sameOrigin = finalUrl.origin === baseUrl.origin
   const expectedPath = new URL(check.path, baseUrl).pathname
   const samePath = finalUrl.pathname.replace(/\/$/, '') === expectedPath.replace(/\/$/, '')
+  const expectedSearch = new URL(check.path, baseUrl).searchParams
+  const sameQuery = [...expectedSearch].every(([key, value]) => finalUrl.searchParams.get(key) === value)
   const contentType = response.headers.get('content-type') || ''
   const contentTypeOk = !check.contentType || contentType.includes(check.contentType)
   let payloadOk = true
@@ -116,9 +119,9 @@ async function checkPath(baseUrl, check) {
     if (!pageContentOk) payloadDetail += ' (missing expected page content: ' + missing.join(', ') + ')'
   }
 
-  const ok = statusOk && contentTypeOk && payloadOk && pageContentOk && !redirectedToAuth && sameOrigin && samePath
+  const ok = statusOk && contentTypeOk && payloadOk && pageContentOk && !redirectedToAuth && sameOrigin && samePath && sameQuery
   const typeDetail = contentTypeOk ? '' : ` (expected content-type containing ${check.contentType}, got ${contentType || 'none'})`
-  const redirectDetail = redirectedToAuth ? ' (unexpected authentication redirect)' : !sameOrigin ? ' (unexpected cross-origin redirect)' : !samePath ? ' (unexpected route redirect)' : ''
+  const redirectDetail = redirectedToAuth ? ' (unexpected authentication redirect)' : !sameOrigin ? ' (unexpected cross-origin redirect)' : !samePath ? ' (unexpected route redirect)' : !sameQuery ? ' (missing expected query parameters)' : ''
   console.log(`${ok ? 'PASS' : 'FAIL'} ${response.status} ${check.path} -> ${response.url}${typeDetail}${payloadDetail}${redirectDetail}`)
   return ok
 }
