@@ -262,3 +262,28 @@ test('learned patterns can reorder close matches but not overpower a clearly str
  assert.equal(rankMatchCandidates([strong,learned],12,{}, {},patterns).matches[0].id,'strong')
  assert.equal(learned.score,80)
 })
+
+test('short preference terms do not match inside unrelated note names',()=>{
+ const p=perfume({perfume_notes:[{position:'heart',notes:{name:'Caramel'}}]})
+ const prefs={love:['car'],avoid:['car'],sweetness:0,projection:0,longevity:0,maxPrice:0}
+ const candidate=buildMatchCandidate(p,undefined,new Map(),1,prefs)
+ assert.deepEqual(candidate.loved,[])
+ assert.deepEqual(candidate.avoided,[])
+ assert.equal(candidate.preferenceScore,0)
+ assert.equal(rankMatchCandidates([candidate]).eligibleMatchCount,1)
+})
+
+test('multiword preferences match complete fragrance terms',()=>{
+ const p=perfume({perfume_notes:[{position:'heart',notes:{name:'Dark Vanilla Absolute'}}]})
+ const prefs={love:['dark vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}
+ const candidate=buildMatchCandidate(p,undefined,new Map(),1,prefs)
+ assert.deepEqual(candidate.loved,['dark vanilla'])
+ assert.equal(candidate.preferenceScore,100)
+})
+
+test('feminine and masculine presentation preferences do not overlap',()=>{
+ const p=perfume({gender_marketing:'Women',perfume_notes:[{position:'base',notes:{name:'Vanilla'}}]})
+ const prefs={love:['vanilla'],avoid:[],sweetness:0,projection:0,longevity:0,maxPrice:0}
+ assert.equal(buildMatchCandidate(p,undefined,new Map(),1,{...prefs,presentations:['Masculine']}).presentationMatched,false)
+ assert.equal(buildMatchCandidate(p,undefined,new Map(),1,{...prefs,presentations:['Feminine']}).presentationMatched,true)
+})
