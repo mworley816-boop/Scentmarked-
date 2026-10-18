@@ -15,7 +15,8 @@ export async function GET(request:Request){
    if(!error){
     const cookieHandoff=decodeOnboardingHandoff(request.headers.get('cookie')?.split(';').map(x=>x.trim()).find(x=>x.startsWith(onboardingCookie+'='))?.slice(onboardingCookie.length+1));
     const metadataHandoff=parseOnboardingHandoff(data.user?.user_metadata?.onboarding_profile);
-    const handoff=cookieHandoff||metadataHandoff;
+    // Prefer preferences tied to the authenticated account over any stale shared-browser cookie.
+    const handoff=metadataHandoff||cookieHandoff;
     const applied=handoff&&data.user?await applyOnboardingHandoff(supabase,data.user.id,handoff):false;
     if(applied&&data.user?.user_metadata?.onboarding_profile){
      const metadata={...(data.user.user_metadata||{})};
