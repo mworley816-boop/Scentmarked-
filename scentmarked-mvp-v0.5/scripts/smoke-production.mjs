@@ -133,11 +133,26 @@ async function checkPath(baseUrl, check) {
   return ok
 }
 
+async function checkPrivateRoute(baseUrl, path) {
+  const url = new URL(path, baseUrl)
+  const response = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
+  const location = response.headers.get('location')
+  const destination = location ? new URL(location, url) : null
+  const expectedNext = path
+  const ok = response.status >= 300 && response.status < 400 &&
+    destination?.origin === baseUrl.origin &&
+    destination.pathname === '/login' &&
+    destination.searchParams.get('next') === expectedNext
+  console.log((ok ? 'PASS' : 'FAIL') + ' anonymous ' + path + ': HTTP ' + response.status +
+    ' -> ' + (destination?.toString() || 'no redirect'))
+  return ok
+}
+
 async function main() {
   const baseUrl = resolveBaseUrl()
   console.log(`Smoke testing ${baseUrl.origin}`)
 
-  const results = await Promise.all([...CHECKS.map((check) => checkPath(baseUrl, check)), checkCatalogMinimum(baseUrl)])
+  const results = await Promise.all([...CHECKS.map((check) => checkPath(baseUrl, check)), checkCatalogMinimum(baseUrl), checkPrivateRoute(baseUrl, '/collection'), checkPrivateRoute(baseUrl, '/account')])
   if (results.some((ok) => !ok)) {
     process.exitCode = 1
     return
