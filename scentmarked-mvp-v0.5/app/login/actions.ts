@@ -22,7 +22,8 @@ export async function login(formData:FormData){
   const {data,error}=await supabase.auth.signInWithPassword({email,password})
   if(error)redirect(loginUrl('error','invalid-credentials',next))
   const jar=await cookies(),cookieHandoff=decodeOnboardingHandoff(jar.get(onboardingCookie)?.value)
-  const handoff=cookieHandoff||parseOnboardingHandoff(data.user?.user_metadata?.onboarding_profile)
+  // Account metadata belongs to the authenticated user; a stale browser cookie may belong to someone else.
+  const handoff=parseOnboardingHandoff(data.user?.user_metadata?.onboarding_profile)||cookieHandoff
   if(handoff&&data.user){
    const applied=await applyOnboardingHandoff(supabase,data.user.id,handoff)
    if(applied){
