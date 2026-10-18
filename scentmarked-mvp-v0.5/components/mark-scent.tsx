@@ -21,6 +21,7 @@ export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initi
   setBusy(status);setMessage('')
   try{
    const {data:{user},error:authError}=await supabase.auth.getUser()
+   if(activePerfume.current!==perfumeId)return
    if(authError||!user){window.location.href=`/login?next=${encodeURIComponent(window.location.pathname+window.location.search)}`;return}
    // Read the current database state before toggling to avoid stale UI state
    // causing a second tab or device to delete or duplicate the wrong mark.
