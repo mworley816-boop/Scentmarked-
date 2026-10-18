@@ -24,12 +24,16 @@ export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initi
    if(existing){
     const {error}=await supabase.from('collection_items').delete().eq('user_id',user.id).eq('perfume_id',perfumeId).eq('status',status)
     if(error)throw error
-    setSaved(v=>v.filter(x=>x!==status));setMessage(`Removed ${statusLabels[status]||'mark'}.`)
    }else{
     const {error}=await supabase.from('collection_items').upsert({user_id:user.id,perfume_id:perfumeId,status},{onConflict:'user_id,perfume_id,status',ignoreDuplicates:true})
     if(error)throw error
-    setSaved(v=>v.includes(status)?v:[...v,status]);setMessage(`Marked as ${statusLabels[status]||status}.`)
    }
+   // Verify the persisted state after the mutation, including concurrent changes.
+   const {data:current,error:verifyError}=await supabase.from('collection_items').select('status').eq('user_id',user.id).eq('perfume_id',perfumeId)
+   if(verifyError)throw verifyError
+   const currentStatuses=(current||[]).map(row=>row.status)
+   setSaved(currentStatuses)
+   setMessage(currentStatuses.includes(status)?`Marked as ${statusLabels[status]||status}.`:`Removed ${statusLabels[status]||'mark'}.`)
   }catch{setMessage('Could not update your Marks. Please try again.')}
   finally{setBusy(null)}
  }
