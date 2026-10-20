@@ -7,6 +7,7 @@ const CHECKS = [
   { path: '/matches', contentType: 'text/html' },
   { path: '/login', contentType: 'text/html', requiredText: ['Sign In', 'Start My Scent Profile'] },
   { path: '/login?signup=finish', contentType: 'text/html', requiredText: ['Create Account &amp; See My Matches', 'name="email"', 'name="password"'] },
+  { path: '/reset-password', contentType: 'text/html' },
   { path: '/onboarding', contentType: 'text/html', requiredText: ['What smells like you?', 'Which scent families'] },
   { path: '/api/health', contentType: 'application/json', json: { status: 'ok', service: 'scentmarked' } },
   { path: '/robots.txt', contentType: 'text/plain' },
