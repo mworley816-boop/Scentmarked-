@@ -11,6 +11,9 @@ test('safeAuthNext keeps safe local destinations',()=>{
 test('safeAuthNext rejects external and protocol-relative destinations',()=>{
  assert.equal(safeAuthNext('https://example.com'),'/collection')
  assert.equal(safeAuthNext('//example.com/path'),'/collection')
+ assert.equal(safeAuthNext('/\\\\example.com/path'),'/collection')
+ assert.equal(safeAuthNext('/collection\\\\other'),'/collection')
+ assert.equal(safeAuthNext('/collection\nother'),'/collection')
  assert.equal(safeAuthNext('javascript:alert(1)'),'/collection')
 })
 
