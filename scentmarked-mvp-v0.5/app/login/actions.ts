@@ -24,7 +24,8 @@ export async function login(formData:FormData){
   const jar=await cookies(),cookieHandoff=decodeOnboardingHandoff(jar.get(onboardingCookie)?.value)
   // Only apply an anonymous browser handoff when the login explicitly completes onboarding.
   // Normal sign-ins must not overwrite existing preferences from a shared-browser cookie.
-  const handoff=parseOnboardingHandoff(data.user?.user_metadata?.onboarding_profile)||(next==='/matches?profile=ready'?cookieHandoff:null)
+  const completingOnboarding=next==='/matches?profile=ready'
+  const handoff=completingOnboarding?(parseOnboardingHandoff(data.user?.user_metadata?.onboarding_profile)||cookieHandoff):null
   if(handoff&&data.user){
    const applied=await applyOnboardingHandoff(supabase,data.user.id,handoff)
    if(applied){
