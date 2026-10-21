@@ -16,7 +16,9 @@ export async function GET(request:Request){
     const cookieHandoff=decodeOnboardingHandoff(request.headers.get('cookie')?.split(';').map(x=>x.trim()).find(x=>x.startsWith(onboardingCookie+'='))?.slice(onboardingCookie.length+1));
     const metadataHandoff=parseOnboardingHandoff(data.user?.user_metadata?.onboarding_profile);
     // Prefer preferences tied to the authenticated account over any stale shared-browser cookie.
-    const handoff=metadataHandoff||cookieHandoff;
+    const requestedPath=next.split(/[?#]/,1)[0];
+    // Password recovery must not alter saved scent preferences from a stale onboarding cookie.
+    const handoff=requestedPath==='/reset-password'?null:metadataHandoff||cookieHandoff;
     const applied=handoff&&data.user?await applyOnboardingHandoff(supabase,data.user.id,handoff):false;
     if(applied&&data.user?.user_metadata?.onboarding_profile){
      const metadata={...(data.user.user_metadata||{})};
@@ -24,7 +26,6 @@ export async function GET(request:Request){
      const {error:metadataError}=await supabase.auth.updateUser({data:metadata});
      if(metadataError)console.error('Could not clear temporary onboarding metadata',metadataError.message);
     }
-    const requestedPath=next.split(/[?#]/,1)[0];
     const destination=handoff&&requestedPath==='/matches'&&!applied?'/onboarding?error=save-failed':next;
     const response=NextResponse.redirect(new URL(destination,url.origin));
     if(applied)response.cookies.delete(onboardingCookie);
