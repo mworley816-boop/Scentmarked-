@@ -22,8 +22,9 @@ export async function login(formData:FormData){
   const {data,error}=await supabase.auth.signInWithPassword({email,password})
   if(error)redirect(loginUrl('error','invalid-credentials',next))
   const jar=await cookies(),cookieHandoff=decodeOnboardingHandoff(jar.get(onboardingCookie)?.value)
-  // Account metadata belongs to the authenticated user; a stale browser cookie may belong to someone else.
-  const handoff=parseOnboardingHandoff(data.user?.user_metadata?.onboarding_profile)||cookieHandoff
+  // Only apply an anonymous browser handoff when the login explicitly completes onboarding.
+  // Normal sign-ins must not overwrite existing preferences from a shared-browser cookie.
+  const handoff=parseOnboardingHandoff(data.user?.user_metadata?.onboarding_profile)||(next==='/matches?profile=ready'?cookieHandoff:null)
   if(handoff&&data.user){
    const applied=await applyOnboardingHandoff(supabase,data.user.id,handoff)
    if(applied){
