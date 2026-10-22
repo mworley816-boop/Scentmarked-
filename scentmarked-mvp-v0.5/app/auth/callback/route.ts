@@ -17,8 +17,10 @@ export async function GET(request:Request){
     const metadataHandoff=parseOnboardingHandoff(data.user?.user_metadata?.onboarding_profile);
     // Prefer preferences tied to the authenticated account over any stale shared-browser cookie.
     const requestedPath=next.split(/[?#]/,1)[0];
-    // Password recovery must not alter saved scent preferences from a stale onboarding cookie.
-    const handoff=requestedPath==='/reset-password'?null:metadataHandoff||cookieHandoff;
+    // Only the signup confirmation flow may apply onboarding preferences.
+    // Other callbacks, including password recovery, must leave the profile untouched.
+    const completingOnboarding=requestedPath==='/matches'&&new URL(next,url.origin).searchParams.get('profile')==='ready';
+    const handoff=completingOnboarding?(metadataHandoff||cookieHandoff):null;
     const applied=handoff&&data.user?await applyOnboardingHandoff(supabase,data.user.id,handoff):false;
     if(applied&&data.user?.user_metadata?.onboarding_profile){
      const metadata={...(data.user.user_metadata||{})};
