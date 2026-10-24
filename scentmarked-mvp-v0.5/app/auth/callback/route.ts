@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { safeAuthNext } from '@/lib/auth-redirect';
+import { isOnboardingCompletion } from '@/lib/onboarding-intent';
 import { applyOnboardingHandoff,decodeOnboardingHandoff,onboardingCookie,parseOnboardingHandoff } from '@/lib/onboarding-handoff';
 
 
@@ -19,7 +20,7 @@ export async function GET(request:Request){
     const requestedPath=next.split(/[?#]/,1)[0];
     // Only the signup confirmation flow may apply onboarding preferences.
     // Other callbacks, including password recovery, must leave the profile untouched.
-    const completingOnboarding=requestedPath==='/matches'&&new URL(next,url.origin).searchParams.get('profile')==='ready';
+    const completingOnboarding=isOnboardingCompletion(next);
     const handoff=completingOnboarding?(metadataHandoff||cookieHandoff):null;
     const applied=handoff&&data.user?await applyOnboardingHandoff(supabase,data.user.id,handoff):false;
     if(applied&&data.user?.user_metadata?.onboarding_profile){
