@@ -1,4 +1,4 @@
-import { safeAuthNext } from './auth-redirect'
+import { safeAuthNext } from './auth-redirect.ts'
 
 // Pending onboarding data must never be applied on unrelated account actions.
 export function isOnboardingCompletion(value:unknown){
