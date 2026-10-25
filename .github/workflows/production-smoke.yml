@@ -1,6 +1,9 @@
 name: Scentmarked Production Smoke
 
 on:
+  schedule:
+    # Daily UTC check of the deployed public site, in addition to manual runs.
+    - cron: '17 10 * * *'
   workflow_dispatch:
     inputs:
       site_url:
@@ -32,6 +35,6 @@ jobs:
           node-version: '22'
       - name: Check live site and published catalog count
         env:
-          NEXT_PUBLIC_SITE_URL: ${{ inputs.site_url }}
-          SCENTMARKED_MIN_PUBLISHED_PERFUMES: ${{ inputs.minimum_published }}
+          NEXT_PUBLIC_SITE_URL: ${{ inputs.site_url || 'https://scentmarked.m-worley816.workers.dev' }}
+          SCENTMARKED_MIN_PUBLISHED_PERFUMES: ${{ inputs.minimum_published || '674' }}
         run: node scripts/smoke-production.mjs
