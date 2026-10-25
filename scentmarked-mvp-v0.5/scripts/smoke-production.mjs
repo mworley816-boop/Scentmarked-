@@ -167,8 +167,23 @@ async function main() {
   const baseUrl = resolveBaseUrl()
   console.log(`Smoke testing ${baseUrl.origin}`)
 
-  const results = await Promise.all([...CHECKS.map((check) => checkPath(baseUrl, check)), checkCatalogMinimum(baseUrl), checkPrivateRoute(baseUrl, '/collection'), checkPrivateRoute(baseUrl, '/account')])
-  if (results.some((ok) => !ok)) {
+  const tasks = [
+    ...CHECKS.map((check) => ({ label: check.path, run: () => checkPath(baseUrl, check) })),
+    { label: 'catalog minimum and last page', run: () => checkCatalogMinimum(baseUrl) },
+    { label: 'anonymous /collection', run: () => checkPrivateRoute(baseUrl, '/collection') },
+    { label: 'anonymous /account', run: () => checkPrivateRoute(baseUrl, '/account') },
+  ]
+  // A timeout or network failure in one check must not hide the results of the others.
+  const results = await Promise.allSettled(tasks.map((task) => task.run()))
+  const failures = results.flatMap((result, index) => {
+    if (result.status === 'rejected') {
+      console.error('FAIL ' + tasks[index].label + ': ' + (result.reason instanceof Error ? result.reason.message : String(result.reason)))
+      return [tasks[index].label]
+    }
+    return result.value ? [] : [tasks[index].label]
+  })
+  if (failures.length > 0) {
+    console.error('Production smoke failures: ' + failures.join(', '))
     process.exitCode = 1
     return
   }
