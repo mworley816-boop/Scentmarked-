@@ -90,9 +90,9 @@ async function checkPath(baseUrl, check) {
   const response = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
   const statusOk = response.status >= 200 && response.status < 400
   const finalUrl = new URL(response.url)
-  const redirectedToAuth = check.path !== '/login' && (/^\/(?:login|signup|sign-up)(?:\/|$)/.test(finalUrl.pathname) || finalUrl.pathname === '/auth')
   const sameOrigin = finalUrl.origin === baseUrl.origin
   const expectedPath = new URL(check.path, baseUrl).pathname
+  const redirectedToAuth = expectedPath !== '/login' && (/^\/(?:login|signup|sign-up)(?:\/|$)/.test(finalUrl.pathname) || finalUrl.pathname === '/auth')
   const samePath = finalUrl.pathname.replace(/\/$/, '') === expectedPath.replace(/\/$/, '')
   const expectedSearch = new URL(check.path, baseUrl).searchParams
   const sameQuery = [...expectedSearch].every(([key, value]) => finalUrl.searchParams.get(key) === value)
