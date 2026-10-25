@@ -23,7 +23,17 @@ const statusMessages:Record<string,string>={
 }
 export default async function LoginPage({searchParams}:{searchParams:Promise<{error?:string,message?:string,next?:string,signup?:string}>}) {
  const p=await searchParams; const finishingSignup=p.signup==='finish'&&p.message!=='confirm-email'; const next=safeAuthNext(p.next); const error=p.error?errorMessages[p.error]:undefined; const message=p.message?statusMessages[p.message]:undefined
- const supabase=await createClient(); const {data:{user}}=await supabase.auth.getUser(); if(user)redirect(next)
+ // A stale or malformed session must not crash the sign-in page.
+ // Let the visitor submit credentials and establish a fresh session instead.
+ let user=null
+ try {
+  const supabase=await createClient()
+  const result=await supabase.auth.getUser()
+  if(!result.error)user=result.data.user
+ } catch(error) {
+  console.error('Login page session lookup failed',error)
+ }
+ if(user)redirect(next)
  return <main className="auth-page"><section className="auth-shell">
   <div className="auth-story"><p className="eyebrow">YOUR SCENTED JOURNEY</p><h1>More than scents.<br/>A more informed you.</h1><p>Create your Scentmarked account to collect fragrances, remember what you've tried, and keep your next discoveries close.</p><div className="auth-bottle">S</div><i>Know the notes.<br/>Find the match.</i></div>
   <div className="auth-panel"><a className="auth-logo" href="/">Scentmarked<small>KNOW THE NOTES. FIND THE MATCH.</small></a><h2>{finishingSignup?'Your scent profile is ready':'Welcome to Scentmarked'}</h2><p>{finishingSignup?'Create your free account to reveal your personalized matches and save your scent profile.':'Sign in or create your free account.'}</p>{error&&<div className="notice error" role="alert">{error}</div>}{message&&<div className="notice" role="status">{message}</div>}
