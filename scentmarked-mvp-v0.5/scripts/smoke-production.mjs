@@ -3,7 +3,7 @@ const REQUEST_TIMEOUT_MS = 15000
 const CHECKS = [
   { path: '/', contentType: 'text/html' },
   { path: '/discover', contentType: 'text/html' },
-  { path: '/compare', contentType: 'text/html' },
+  { path: '/compare', contentType: 'text/html', requiredText: ['Compare Scents', 'First fragrance', 'Second fragrance'] },
   { path: '/matches', contentType: 'text/html' },
   { path: '/login', contentType: 'text/html', requiredText: ['Sign In', 'Start My Scent Profile', 'Forgot password?'] },
   { path: '/login?signup=finish', contentType: 'text/html', requiredText: ['Create Account &amp; See My Matches', 'name="email"', 'name="password"'] },
