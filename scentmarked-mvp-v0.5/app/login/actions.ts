@@ -41,7 +41,7 @@ export async function login(formData:FormData){
    redirect('/onboarding?error=save-failed')
   }
  }catch(error:any){
-  if(error?.digest)throw error
+  if(error?.digest?.startsWith?.('NEXT_REDIRECT'))throw error
   redirect(loginUrl('error','signin-unavailable',next))
  }
  redirect(next)
