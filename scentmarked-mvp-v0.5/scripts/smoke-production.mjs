@@ -4,7 +4,7 @@ const CHECKS = [
   { path: '/', contentType: 'text/html' },
   { path: '/discover', contentType: 'text/html' },
   { path: '/compare', contentType: 'text/html', requiredText: ['Compare Scents', 'First fragrance', 'Second fragrance'] },
-  { path: '/matches', contentType: 'text/html' },
+  { path: '/matches', contentType: 'text/html', requiredText: ['Find Your Scent Match', 'Find My Matches'] },
   { path: '/login', contentType: 'text/html', requiredText: ['Sign In', 'Start My Scent Profile', 'Forgot password?'] },
   { path: '/login?signup=finish', contentType: 'text/html', requiredText: ['Create Account &amp; See My Matches', 'name="email"', 'name="password"'] },
   { path: '/reset-password', contentType: 'text/html', requiredText: ['Reset password', 'This recovery session is missing or has expired.', 'Request another link'] },
@@ -114,7 +114,7 @@ async function checkPath(baseUrl, check) {
 
   let pageContentOk = true
   // Read HTML once so multiple independent checks can inspect the same response.
-  const html = statusOk && contentTypeOk && (check.path === '/discover' || check.path === '/compare' || check.requiredText)
+  const html = statusOk && contentTypeOk && (check.path === '/discover' || check.path === '/compare' || check.path === '/matches' || check.requiredText)
     ? await response.text() : ''
   if (check.path === '/discover' && statusOk && contentTypeOk) {
     if (/The scent library is temporarily unavailable/i.test(html)) {
@@ -126,6 +126,10 @@ async function checkPath(baseUrl, check) {
       pageContentOk = false
       payloadDetail += ' (no nonempty catalog count displayed)'
     }
+  }
+  if (check.path === '/matches' && statusOk && contentTypeOk && /Matches are temporarily unavailable/i.test(html)) {
+    pageContentOk = false
+    payloadDetail += ' (match catalog unavailable)'
   }
   if (check.path === '/compare' && statusOk && contentTypeOk && /Comparison data is temporarily unavailable|More fragrances are needed to compare/i.test(html)) {
     pageContentOk = false
