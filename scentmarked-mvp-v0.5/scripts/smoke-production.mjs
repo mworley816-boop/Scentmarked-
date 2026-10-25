@@ -113,8 +113,10 @@ async function checkPath(baseUrl, check) {
   }
 
   let pageContentOk = true
+  // Read HTML once so multiple independent checks can inspect the same response.
+  const html = statusOk && contentTypeOk && (check.path === '/discover' || check.path === '/compare' || check.requiredText)
+    ? await response.text() : ''
   if (check.path === '/discover' && statusOk && contentTypeOk) {
-    const html = await response.text()
     if (/The scent library is temporarily unavailable/i.test(html)) {
       pageContentOk = false
       payloadDetail += ' (catalog unavailable message displayed)'
@@ -125,10 +127,13 @@ async function checkPath(baseUrl, check) {
       payloadDetail += ' (no nonempty catalog count displayed)'
     }
   }
+  if (check.path === '/compare' && statusOk && contentTypeOk && /Comparison data is temporarily unavailable|More fragrances are needed to compare/i.test(html)) {
+    pageContentOk = false
+    payloadDetail += ' (comparison catalog unavailable or too small)'
+  }
   if (check.requiredText && statusOk && contentTypeOk) {
-    const html = await response.text()
     const missing = check.requiredText.filter((marker) => !html.includes(marker))
-    pageContentOk = missing.length === 0
+    pageContentOk = pageContentOk && missing.length === 0
     if (!pageContentOk) payloadDetail += ' (missing expected page content: ' + missing.join(', ') + ')'
   }
 
