@@ -23,6 +23,7 @@ permissions:
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     defaults:
       run:
         working-directory: scentmarked-mvp-v0.5
@@ -37,4 +38,27 @@ jobs:
         env:
           NEXT_PUBLIC_SITE_URL: ${{ inputs.site_url || 'https://scentmarked.m-worley816.workers.dev' }}
           SCENTMARKED_MIN_PUBLISHED_PERFUMES: ${{ inputs.minimum_published || '674' }}
-        run: node scripts/smoke-production.mjs
+        run: |
+          set -o pipefail
+          node scripts/smoke-production.mjs 2>&1 | tee production-smoke.log
+      - name: Publish smoke test summary
+        if: always()
+        run: |
+          {
+            echo '## Scentmarked production smoke'
+            echo ''
+            echo 'Target: `${{ inputs.site_url || ''https://scentmarked.m-worley816.workers.dev'' }}`'
+            echo 'Minimum published perfumes: `${{ inputs.minimum_published || ''674'' }}`'
+            echo ''
+            echo '```text'
+            if [ -f production-smoke.log ]; then tail -n 90 production-smoke.log; else echo 'Smoke script did not start.'; fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload smoke test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scentmarked-production-smoke-log
+          path: scentmarked-mvp-v0.5/production-smoke.log
+          if-no-files-found: ignore
+          retention-days: 14
