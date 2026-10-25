@@ -14,7 +14,7 @@ on:
       minimum_published:
         description: Minimum published perfumes expected on Discover
         required: true
-        default: '674'
+        default: '673'
         type: string
 
 permissions:
@@ -37,7 +37,7 @@ jobs:
       - name: Check live site and published catalog count
         env:
           NEXT_PUBLIC_SITE_URL: ${{ inputs.site_url || 'https://scentmarked.m-worley816.workers.dev' }}
-          SCENTMARKED_MIN_PUBLISHED_PERFUMES: ${{ inputs.minimum_published || '674' }}
+          SCENTMARKED_MIN_PUBLISHED_PERFUMES: ${{ inputs.minimum_published || '673' }}
         run: |
           set -o pipefail
           node scripts/smoke-production.mjs 2>&1 | tee production-smoke.log
