@@ -43,12 +43,15 @@ jobs:
           node scripts/smoke-production.mjs 2>&1 | tee production-smoke.log
       - name: Publish smoke test summary
         if: always()
+        env:
+          SMOKE_SITE_URL: ${{ inputs.site_url || 'https://scentmarked.m-worley816.workers.dev' }}
+          SMOKE_MINIMUM: ${{ inputs.minimum_published || '674' }}
         run: |
           {
             echo '## Scentmarked production smoke'
             echo ''
-            echo 'Target: `${{ inputs.site_url || ''https://scentmarked.m-worley816.workers.dev'' }}`'
-            echo 'Minimum published perfumes: `${{ inputs.minimum_published || ''674'' }}`'
+            printf 'Target: `%s`\n' "$SMOKE_SITE_URL"
+            printf 'Minimum published perfumes: `%s`\n' "$SMOKE_MINIMUM"
             echo ''
             echo '```text'
             if [ -f production-smoke.log ]; then tail -n 90 production-smoke.log; else echo 'Smoke script did not start.'; fi
