@@ -122,7 +122,7 @@ async function checkPath(baseUrl, check) {
       payloadDetail += ' (catalog unavailable message displayed)'
     }
     // Even without an optional catalog minimum, an empty public library is a launch blocker.
-    if (!/Showing\\s+[\\d,]+[–-][\\d,]+\\s+of\\s+[1-9][\\d,]*\\s+scents/i.test(html)) {
+    if (!/Showing\s+[\d,]+[–-][\d,]+\s+of\s+[1-9][\d,]*\s+scents/i.test(html)) {
       pageContentOk = false
       payloadDetail += ' (no nonempty catalog count displayed)'
     }
