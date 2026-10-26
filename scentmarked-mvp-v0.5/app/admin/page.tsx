@@ -106,6 +106,7 @@ export default async function Admin({searchParams}:{searchParams:Promise<{q?:str
   <Link className="admin-workspace" href="/admin/relationships"><span>SCENT DATA</span><strong>Clone relationships</strong><small>Manage inspirations, alternatives and evidence</small><b>Manage relationships →</b></Link>
   <h2 id="admin-business" className="admin-section-heading">Business and community</h2>
   <Link className="admin-workspace" href="/admin/monetization"><span>BUSINESS</span><strong>Revenue center</strong><small>Affiliate revenue, sponsorships and memberships</small><b>Open revenue center →</b></Link>
+  <Link className="admin-workspace featured" href="/admin/retailer-offers"><span>RETAILER OFFERS</span><strong>Retailer offer approval</strong><small>Add product links as drafts, verify and approve for publication</small><b>Manage retailer offers →</b></Link>
   <Link className="admin-workspace" href="/admin/affiliates"><span>AFFILIATES</span><strong>Affiliate performance</strong><small>Retailer offers, clicks and traffic performance</small><b>View performance →</b></Link>
   <Link className="admin-workspace" href="/admin/crm"><span>MEMBERS</span><strong>Customers & members</strong><small>Contacts, profiles, tags and segments</small><b>Open CRM →</b></Link>
   <Link className="admin-workspace" href="/admin/email"><span>MARKETING</span><strong>Email campaigns</strong><small>Templates, scheduling and analytics</small><b>Open email →</b></Link>
