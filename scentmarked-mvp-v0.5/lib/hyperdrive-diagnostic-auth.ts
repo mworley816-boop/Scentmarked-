@@ -14,7 +14,7 @@ export async function authorizeHyperdriveDiagnostic(
   const key=await crypto.subtle.importKey('raw',encoder.encode(configuredSecret),
     {name:'HMAC',hash:'SHA-256'},false,['sign'])
   const [expected,actual]=await Promise.all([
-    crypto.subtle.sign('HMAC',key,encoder.encode('hyperdrive-diagnostic')),
+    crypto.subtle.sign('HMAC',key,encoder.encode(configuredSecret)),
     crypto.subtle.sign('HMAC',key,encoder.encode(supplied))
   ])
   const a=new Uint8Array(expected),b=new Uint8Array(actual)
