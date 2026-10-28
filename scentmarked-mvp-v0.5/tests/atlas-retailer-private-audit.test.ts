@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {recordPrivateRetailerAudit} from '../lib/atlas-retailer-private-audit'
+import {recordPrivateRetailerAudit} from '../lib/atlas-retailer-private-audit.ts'
 import type {AtlasRetailerCandidate} from '../lib/atlas-retailer-candidates'
 const candidate:AtlasRetailerCandidate={
  perfume_id:'7712723c-9121-437c-a2f3-d1ee2c37f524',
