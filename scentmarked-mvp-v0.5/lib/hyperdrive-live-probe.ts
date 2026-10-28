@@ -1,36 +1,32 @@
 import 'server-only'
 import {getCloudflareContext} from '@opennextjs/cloudflare'
-import {Client} from 'pg'
+import postgres from 'postgres'
 import {probeHyperdriveConnection, type HyperdriveProbeResult} from './hyperdrive-readonly-probe'
 
-type HyperdriveBinding={connectionString:string}
-type WorkerBindings={HYPERDRIVE?:HyperdriveBinding}
+type WorkerBindings={HYPERDRIVE?:{connectionString:string}}
 
-/**
- * A one-shot read-only probe. No public HTTP route calls this yet.
- * This runs only inside the Cloudflare Worker runtime, never at build time.
- * Hyperdrive manages the origin credentials; none are stored in source.
- */
+/** Read-only Cloudflare Hyperdrive probe; never logs connection details. */
 export async function probeLiveHyperdrive():Promise<HyperdriveProbeResult>{
-  let client:Client|undefined
+  let sql:ReturnType<typeof postgres>|undefined
   try{
     const context=await getCloudflareContext({async:true})
     const binding=(context.env as unknown as WorkerBindings).HYPERDRIVE
     if(!binding?.connectionString)return {ok:false,reason:'not_configured'}
-    client=new Client({
-      connectionString:binding.connectionString,
-      connectionTimeoutMillis:5000,
-      query_timeout:5000,
-      ssl:false
+    sql=postgres(binding.connectionString,{
+      max:1,
+      connect_timeout:5,
+      idle_timeout:5,
+      ssl:false,
+      prepare:false
     })
-    await client.connect()
-    return await probeHyperdriveConnection(async sql=>{
-      const result=await client!.query<{reachable:number}>(sql)
-      return {rows:result.rows}
+    return await probeHyperdriveConnection(async query=>{
+      if(!sql)throw new Error('Connection unavailable')
+      const rows=await sql.unsafe(query)
+      return {rows:rows.map(row=>({reachable:row.reachable}))}
     })
   }catch{
     return {ok:false,reason:'connection_failed'}
   }finally{
-    if(client)await client.end().catch(()=>undefined)
+    if(sql)await sql.end({timeout:1}).catch(()=>undefined)
   }
 }
