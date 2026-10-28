@@ -10,5 +10,11 @@
     "directory": "scentmarked-mvp-v0.5/.open-next/assets",
     "binding": "ASSETS"
   },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "12fd0f6d7e824d81a40a3f394c4383b4"
+    }
+  ],
   "previews": {}
 }
