@@ -59,7 +59,7 @@ async function setApproval(form: FormData) {
   redirect('/admin/retailer-offers?updated=1')
 }
 
-export default async function RetailerOffers({ searchParams }: { searchParams: Promise<{error?: string; saved?: string; updated?: string; view?: string}> }) {
+export default async function RetailerOffers({ searchParams }: { searchParams: Promise<{error?: string; saved?: string; updated?: string; view?: string; evidence?: string}> }) {
   const db = await requireAdmin()
   const params = await searchParams
   const [perfumeResult, offerResult] = await Promise.all([
@@ -77,6 +77,9 @@ export default async function RetailerOffers({ searchParams }: { searchParams: P
   }
   const view = params.view === 'published' ? 'published' : params.view === 'all' ? 'all' : 'pending'
   const visibleOffers = offers.filter((o: any) => view === 'all' || (view === 'published' ? o.is_active : !o.is_active))
+  const evidenceFilter = params.evidence === 'with' ? 'with' : params.evidence === 'missing' ? 'missing' : 'all'
+  const evidenceCount = (offer: any) => evidenceByOffer.has(offer.perfume_id + '|' + offer.affiliate_url)
+  const reviewOffers = visibleOffers.filter((offer: any) => evidenceFilter === 'all' || (evidenceFilter === 'with' ? evidenceCount(offer) : !evidenceCount(offer)))
   const pendingCount = offers.filter((o: any) => !o.is_active).length
   const names = new Map(perfumes.map((p: any) => [p.id, String(p.brands?.name || '') + ' — ' + p.name]))
   return <main className="admin-catalog">
@@ -101,10 +104,16 @@ export default async function RetailerOffers({ searchParams }: { searchParams: P
         <Link href="/admin/retailer-offers?view=all" aria-current={view === 'all' ? 'page' : undefined}>All offers ({offers.length})</Link>
         <Link href="/admin/atlas-retailer-intake">Import Atlas research</Link>
       </nav>
+      <nav aria-label="Research evidence filters" style={{display:'flex',gap:'0.75rem',flexWrap:'wrap',marginBottom:'1rem'}}>
+        <Link href={'/admin/retailer-offers?view=' + view + '&evidence=all'} aria-current={evidenceFilter === 'all' ? 'page' : undefined}>All research states</Link>
+        <Link href={'/admin/retailer-offers?view=' + view + '&evidence=with'} aria-current={evidenceFilter === 'with' ? 'page' : undefined}>With Atlas evidence</Link>
+        <Link href={'/admin/retailer-offers?view=' + view + '&evidence=missing'} aria-current={evidenceFilter === 'missing' ? 'page' : undefined}>Needs independent research</Link>
+      </nav>
+      <p className="muted">Atlas evidence means a source was recorded, not that the retailer, product identity or affiliate rights have been verified. All publication requires your manual review.</p>
       {offerResult.error && <p role="alert">Offers could not be loaded.</p>}
-      {!offerResult.error && visibleOffers.length === 0 && <p>No offers in this view. Choose another filter or add a verified draft above.</p>}
+      {!offerResult.error && reviewOffers.length === 0 && <p>No offers in this view. Choose another filter or add a verified draft above.</p>}
       {!evidence.available && <p role="status">Private research evidence is temporarily unavailable. Verify the retailer independently before publishing.</p>}
-      <div className="admin-list">{visibleOffers.map((o: any) => { const audit = evidenceByOffer.get(o.perfume_id + '|' + o.affiliate_url); return <article key={o.id}>
+      <div className="admin-list">{reviewOffers.map((o: any) => { const audit = evidenceByOffer.get(o.perfume_id + '|' + o.affiliate_url); return <article key={o.id}>
         <div><small>{o.is_active ? 'PUBLIC · APPROVED' : 'DRAFT · NOT PUBLIC'}</small>
           <h3>{names.get(o.perfume_id) || o.perfume_id}</h3><p>{o.merchant_name}{o.label ? ' · ' + o.label : ''}</p>
           <a href={o.affiliate_url} target="_blank" rel="noopener noreferrer">Inspect retailer product ↗</a>
