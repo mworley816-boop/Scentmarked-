@@ -42,14 +42,16 @@ export default async function AtlasRetailerIntake({searchParams}:{searchParams:P
  return <main className="container" style={{paddingBlock:'2rem'}}>
   <Link href="/admin/retailer-offers">← Retailer Offer Approval</Link>
   <h1>Atlas retailer candidate intake</h1>
-  <p>Paste one Atlas research candidate JSON object for manual import. This is an admin-only staging step, not an automated Atlas connection. Imported offers remain inactive until you approve them.</p>
+  <p>This legacy manual JSON importer saves an inactive offer but does not preserve its research evidence in the private Atlas audit. For an auditable draft, use the authenticated Atlas retailer intake workflow. All offers remain inactive until you approve them.</p>
   {params.saved&&<p role="status">Candidate saved as an inactive retailer offer. Review it in Retailer Offer Approval.</p>}
   {params.error&&<p role="alert">{({json:'Invalid JSON.',validation:'Missing or unsafe candidate fields.',match:'Perfume ID, brand, or name does not match a published catalog record.',duplicate:'That product URL is already recorded for this perfume.',save:'Could not save candidate.'} as Record<string,string>)[params.error]||'Could not import candidate.'}</p>}
+  <p><a href="https://github.com/mworley816-boop/Scentmarked-/actions/workflows/atlas-retailer-intake-e2e.yml" target="_blank" rel="noopener noreferrer">Open authenticated Atlas retailer draft intake ↗</a></p>
+  <h2>Legacy manual import (no private audit record)</h2>
   <form action={submitCandidate}>
    <label htmlFor="candidate">Atlas candidate JSON</label>
    <textarea id="candidate" name="candidate" required rows={15} maxLength={12000} style={{width:'100%'}} placeholder={'{"perfume_id":"...","merchant_name":"...","product_url":"https://...","source_url":"https://...","brand":"...","perfume_name":"...","evidence_note":"..."}'}/>
    <button type="submit" className="button">Validate and save inactive draft</button>
   </form>
-  <p className="muted">Before approving, independently verify the retailer listing, authenticity, stock, and any affiliate partnership. Evidence metadata is validated here but is not yet persisted in a separate research audit table.</p>
+  <p className="muted">Before approving, independently verify the retailer listing, authenticity, stock, and any affiliate partnership. This manual form does not write private audit evidence. Use the authenticated intake workflow for auditable drafts.</p>
  </main>
 }
