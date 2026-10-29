@@ -91,7 +91,7 @@ jobs:
             stage="$(node -e '
               const fs=require("node:fs");
               const allowed=new Set(["service_client","catalog_lookup","duplicate_check","private_audit","draft_insert"]);
-              try {const x=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(allowed.has(x.stage)?x.stage:"unknown")} catch {process.stdout.write("unknown")}
+              try {const x=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));const stage=allowed.has(x.stage)?x.stage:"unknown";const details=new Set(["binding_unavailable","connection_failed","insert_failed","unknown"]);const detail=stage==="private_audit"&&details.has(x.detail)?x.detail:"";process.stdout.write(stage+(detail?"/"+detail:""))} catch {process.stdout.write("unknown")}
             ' "$response")"
             echo "::error::Draft intake returned HTTP $status (stage: $stage). Response body withheld."
             exit 1
