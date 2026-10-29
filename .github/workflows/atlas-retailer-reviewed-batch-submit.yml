@@ -1,0 +1,89 @@
+name: Submit reviewed Atlas retailer batch as inactive drafts
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidates_json:
+        description: Reviewed JSON array of 1-10 candidates (no secrets)
+        required: true
+        type: string
+      confirm_reviewed:
+        description: I reviewed each retailer listing, catalog identity, source and affiliate rights
+        required: true
+        type: boolean
+        default: false
+      confirm_draft_only:
+        description: I authorize real database writes of inactive drafts and private audit records only
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atlas-reviewed-batch-intake
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    if: ${{ inputs.confirm_reviewed == true && inputs.confirm_draft_only == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Validate and submit approved draft candidates
+        env:
+          INTAKE_TOKEN: ${{ secrets.ATLAS_RETAILER_INTAKE_SECRET }}
+          CANDIDATES_JSON: ${{ inputs.candidates_json }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${#INTAKE_TOKEN}" -lt 32 ]; then
+            echo "::error::Intake credential missing or too short."
+            exit 1
+          fi
+          echo "::add-mask::$INTAKE_TOKEN"
+          node <<'NODE'
+          const fs=require('node:fs');
+          const raw=process.env.CANDIDATES_JSON||'';
+          if(raw.length>15000)throw Error('Batch too large');
+          let items;
+          try{items=JSON.parse(raw)}catch{throw Error('Invalid JSON array')}
+          if(!Array.isArray(items)||items.length<1||items.length>10)throw Error('Provide 1–10 candidates');
+          const keys=['perfume_id','brand','perfume_name','merchant_name','product_url','source_url','evidence_note'];
+          const seen=new Set();
+          for(let i=0;i<items.length;i++){
+            const x=items[i];
+            if(!x||typeof x!=='object'||Array.isArray(x))throw Error('Invalid candidate '+(i+1));
+            for(const k of keys)if(typeof x[k]!=='string'||!x[k].trim()||x[k].length>500)throw Error('Invalid field '+k+' at '+(i+1));
+            if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x.perfume_id))throw Error('Invalid ID at '+(i+1));
+            for(const k of ['product_url','source_url']){
+              let u;try{u=new URL(x[k])}catch{throw Error('Invalid URL at '+(i+1))}
+              if(u.protocol!=='https:'||u.username||u.password||u.port||!u.hostname.includes('.'))throw Error('Unsafe URL at '+(i+1));
+            }
+            const key=x.perfume_id.toLowerCase()+'|'+x.product_url;
+            if(seen.has(key))throw Error('Duplicate candidate at '+(i+1));
+            seen.add(key);
+          }
+          fs.writeFileSync('reviewed-batch.json',JSON.stringify(items),{mode:0o600});
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'### Reviewed batch intake\n\n'+items.length+' candidate(s) authorized for inactive drafts only.\n');
+          NODE
+          response="$(mktemp)"
+          payload="$(mktemp)"
+          trap 'rm -f "$response" "$payload" reviewed-batch.json' EXIT
+          count="$(node -p 'JSON.parse(require("node:fs").readFileSync("reviewed-batch.json","utf8")).length')"
+          for ((i=0;i<count;i++)); do
+            node -e 'const fs=require("node:fs");const items=JSON.parse(fs.readFileSync("reviewed-batch.json","utf8"));fs.writeFileSync(process.argv[2],JSON.stringify(items[Number(process.argv[1])]));' "$i" "$payload"
+            status="$(curl --silent --show-error --max-time 25 --connect-timeout 5 --output "$response" --write-out '%{http_code}' --request POST --header "Authorization: Bearer $INTAKE_TOKEN" --header 'Content-Type: application/json' --data-binary "@$payload" 'https://scentmarked.m-worley816.workers.dev/api/atlas/retailer-candidates')"
+            if [ "$status" != 201 ]; then
+              if [ "$status" = 409 ]; then
+                echo "Candidate $((i+1)) already exists; skipping duplicate." >> "$GITHUB_STEP_SUMMARY"
+                continue
+              fi
+              echo "::error::Candidate $((i+1)) failed with HTTP $status; remaining candidates not submitted. Earlier drafts may already exist."
+              exit 1
+            fi
+            node -e 'const fs=require("node:fs");const x=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));if(x.status!=="draft_created"||x.published!==false)process.exit(1)' "$response"
+            echo "Candidate $((i+1)): inactive draft created." >> "$GITHUB_STEP_SUMMARY"
+          done
+          echo 'Batch finished. Review all drafts in Scentmarked admin before any publication.' >> "$GITHUB_STEP_SUMMARY"
