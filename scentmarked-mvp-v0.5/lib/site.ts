@@ -1,4 +1,4 @@
-const FALLBACK_SITE_URL='https://scentmarked.m-worley816.workers.dev'
+const FALLBACK_SITE_URL='https://scentmarked.com'
 
 export function getSiteUrl(){
  const configured=(process.env.NEXT_PUBLIC_SITE_URL||'').trim()
