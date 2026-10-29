@@ -37,7 +37,8 @@ export async function POST(request:Request){
   if(matchError)return NextResponse.json({error:'Duplicate check failed',stage:'duplicate_check'},{status:503})
   if(matches?.length)return NextResponse.json({error:'Duplicate candidate'},{status:409})
   stage='private_audit'
-  if(!await recordPrivateRetailerEvidence(candidate))return NextResponse.json({error:'Private research audit unavailable; draft not created',stage:'private_audit'},{status:503})
+  const audit=await recordPrivateRetailerEvidence(candidate)
+  if(!audit.ok)return NextResponse.json({error:'Private research audit unavailable; draft not created',stage:'private_audit',detail:audit.reason},{status:503,headers:{'Cache-Control':'no-store'}})
   stage='draft_insert'
   const {error}=await db.from('perfume_affiliate_offers').insert(atlasCandidateToInactiveOffer(candidate))
   if(error)return NextResponse.json({error:'Unable to save inactive draft',stage:'draft_insert'},{status:503})
