@@ -44,7 +44,15 @@ async function setApproval(form: FormData) {
   const id = Number(form.get('id'))
   const approved = form.get('approved') === 'true'
   if (!Number.isSafeInteger(id) || id <= 0) redirect('/admin/retailer-offers?error=invalid')
-  const { error } = await db.from('perfume_affiliate_offers').update({ is_active: approved }).eq('id', id)
+  if (approved) {
+    const confirmations = ['identity_checked', 'retailer_checked', 'evidence_checked']
+    if (!confirmations.every(key => form.get(key) === 'on')) redirect('/admin/retailer-offers?error=review')
+    const {data:offer,error:lookupError} = await db.from('perfume_affiliate_offers').select('id,is_active,affiliate_url,perfume_id').eq('id',id).maybeSingle()
+    if (lookupError || !offer || offer.is_active || !validAffiliateUrl(offer.affiliate_url)) redirect('/admin/retailer-offers?error=review')
+    const {data:perfume} = await db.from('perfumes').select('id').eq('id',offer.perfume_id).eq('status','published').maybeSingle()
+    if (!perfume) redirect('/admin/retailer-offers?error=review')
+  }
+  const { error } = await db.from('perfume_affiliate_offers').update({ is_active: approved }).eq('id', id).eq('is_active', !approved)
   if (error) redirect('/admin/retailer-offers?error=save')
   revalidatePath('/admin/retailer-offers')
   revalidatePath('/perfume/[slug]', 'page')
@@ -74,7 +82,7 @@ export default async function RetailerOffers({ searchParams }: { searchParams: P
   return <main className="admin-catalog">
     <p className="eyebrow">SCENTMARKED STUDIO</p>
     <div className="admin-heading"><div><h1 className="page-title">Retailer Offer Approval</h1><p>Add verified product links as drafts, then approve them for public display. Atlas research should use the same approval process.</p></div><Link className="button ghost" href="/admin">Admin Studio</Link></div>
-    {params.error && <p role="alert">Could not save: {params.error === 'invalid' ? 'Check the perfume, retailer and secure product URL.' : params.error === 'perfume' ? 'Select a published perfume.' : 'Database rejected the change. Check admin permissions.'}</p>}
+    {params.error && <p role="alert">Could not save: {params.error === 'invalid' ? 'Check the perfume, retailer and secure product URL.' : params.error === 'perfume' ? 'Select a published perfume.' : params.error === 'review' ? 'Complete all three verification checks before publishing.' : 'Database rejected the change. Check admin permissions.'}</p>}
     {(params.saved || params.updated) && <p role="status">Offer saved successfully.</p>}
     <section><h2>Add a retailer offer (draft)</h2>
       <form action={saveOffer} className="admin-filters">
@@ -102,7 +110,7 @@ export default async function RetailerOffers({ searchParams }: { searchParams: P
           <a href={o.affiliate_url} target="_blank" rel="noopener noreferrer">Inspect retailer product ↗</a>
           {audit ? <div style={{marginTop:'0.75rem'}}><strong>Atlas research evidence · {audit.outcome}</strong><p>{audit.evidence_note}</p><p className="muted">Observed: {audit.observed_at}</p><a href={audit.source_url} target="_blank" rel="noopener noreferrer">Inspect research source ↗</a></div> : <p className="muted">No matching private Atlas evidence found. Verify independently before approving.</p>}
         </div>
-        <form action={setApproval}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="approved" value={String(!o.is_active)} /><button className="button ghost" type="submit">{o.is_active ? 'Deactivate' : 'Approve & publish'}</button></form>
+        <form action={setApproval} style={{display:'grid',gap:'0.5rem',maxWidth:'19rem'}}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="approved" value={String(!o.is_active)} />{!o.is_active && <fieldset style={{display:'grid',gap:'0.4rem'}}><legend>Required manual review</legend><label><input type="checkbox" name="identity_checked" required /> Perfume identity and bottle details match</label><label><input type="checkbox" name="retailer_checked" required /> Retailer product listing is legitimate</label><label><input type="checkbox" name="evidence_checked" required /> Source evidence and affiliate rights reviewed</label></fieldset>}<button className="button ghost" type="submit">{o.is_active ? 'Deactivate' : 'Confirm review & publish'}</button></form>
       </article> })}</div>
     </section>
   </main>
