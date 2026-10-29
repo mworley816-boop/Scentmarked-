@@ -87,7 +87,13 @@ jobs:
           ' "$payload"
           status="$(curl --silent --show-error --max-time 25 --connect-timeout 5 --output "$response" --write-out '%{http_code}' --request POST --header "Authorization: Bearer $INTAKE_TOKEN" --header 'Content-Type: application/json' --data-binary "@$payload" 'https://scentmarked.m-worley816.workers.dev/api/atlas/retailer-candidates')"
           if [ "$status" != 201 ]; then
-            echo "::error::Draft intake returned HTTP $status. Response withheld to avoid exposing candidate data."
+            # Only print allowlisted static failure stages, never raw response text.
+            stage="$(node -e '
+              const fs=require("node:fs");
+              const allowed=new Set(["service_client","catalog_lookup","duplicate_check","private_audit","draft_insert"]);
+              try {const x=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(allowed.has(x.stage)?x.stage:"unknown")} catch {process.stdout.write("unknown")}
+            ' "$response")"
+            echo "::error::Draft intake returned HTTP $status (stage: $stage). Response body withheld."
             exit 1
           fi
           node -e 'const fs=require("node:fs");const x=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));if(x.status!=="draft_created"||x.published!==false)process.exit(1)' "$response"
