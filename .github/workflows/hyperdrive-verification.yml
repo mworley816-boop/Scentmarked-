@@ -1,0 +1,35 @@
+name: Verify Scentmarked Hyperdrive (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify live read-only database diagnostic
+        env:
+          DIAGNOSTIC_TOKEN: ${{ secrets.ATLAS_RETAILER_INTAKE_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${#DIAGNOSTIC_TOKEN}" -lt 32 ]; then
+            echo "::error::GitHub Actions secret ATLAS_RETAILER_INTAKE_SECRET is missing or too short."
+            exit 1
+          fi
+          echo "::add-mask::$DIAGNOSTIC_TOKEN"
+          endpoint='https://scentmarked.m-worley816.workers.dev/api/atlas/hyperdrive-diagnostic'
+          body_file="$(mktemp)"
+          trap 'rm -f "$body_file"' EXIT
+          status="$(curl --silent --show-error --max-time 15 --connect-timeout 5 --output "$body_file" --write-out '%{http_code}' --request POST --header "Authorization: Bearer $DIAGNOSTIC_TOKEN" --header 'Accept: application/json' "$endpoint")"
+          if [ "$status" != 200 ]; then
+            echo "::error::Hyperdrive diagnostic returned HTTP $status. Response body withheld to avoid leaking details."
+            exit 1
+          fi
+          node -e "const fs=require('node:fs');const x=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));if(x.status!=='connected'||x.read_only!==true)process.exit(1)" "$body_file"
+          echo 'Hyperdrive read-only SELECT 1 succeeded.'
+          echo 'Hyperdrive read-only SELECT 1 succeeded.' >> "$GITHUB_STEP_SUMMARY"
