@@ -1,4 +1,5 @@
 import {NextResponse} from 'next/server'
+import {recordPrivateRetailerEvidence} from '@/lib/atlas-retailer-evidence-audit'
 import {createServiceClient} from '@/lib/supabase/service'
 import {validateAtlasRetailerCandidate,atlasCandidateToInactiveOffer} from '@/lib/atlas-retailer-candidates'
 
@@ -48,6 +49,7 @@ export async function POST(request:Request){
   const {data:matches,error:matchError}=await db.from('perfume_affiliate_offers').select('id').eq('perfume_id',candidate.perfume_id).eq('affiliate_url',candidate.product_url).limit(1)
   if(matchError)return NextResponse.json({error:'Duplicate check failed'},{status:503})
   if(matches?.length)return NextResponse.json({error:'Duplicate candidate'},{status:409})
+  if(!await recordPrivateRetailerEvidence(candidate))return NextResponse.json({error:'Private research audit unavailable; draft not created'},{status:503})
   const {error}=await db.from('perfume_affiliate_offers').insert(atlasCandidateToInactiveOffer(candidate))
   if(error)return NextResponse.json({error:'Unable to save inactive draft'},{status:503})
   return NextResponse.json({status:'draft_created',published:false},{status:201,headers:{'Cache-Control':'no-store'}})
