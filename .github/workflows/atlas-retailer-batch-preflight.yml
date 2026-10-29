@@ -69,13 +69,15 @@ jobs:
               '- [ ] Approve draft submission (not publication) separately',
               ''
             ])
-          ].join('\\n');
-          fs.writeFileSync('atlas-retailer-review-checklist.md',review+'\\n',{mode:0o600});
+          ].join('\n');
+          fs.writeFileSync('atlas-retailer-review-checklist.md',review+'\n',{mode:0o600});
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'### Candidate preflight complete\n\n'+output.length+' candidate(s) structurally validated. **No database writes, no retailer verification, no publication.** Download the artifact for review, including a per-candidate verification checklist.\n');
           NODE
       - name: Save prepared candidates for manual review
         uses: actions/upload-artifact@v4
         with:
           name: atlas-retailer-candidates-prepared
-          path: |\n            atlas-retailer-candidates-prepared.json\n            atlas-retailer-review-checklist.md
+          path: |
+            atlas-retailer-candidates-prepared.json
+            atlas-retailer-review-checklist.md
           retention-days: 7
