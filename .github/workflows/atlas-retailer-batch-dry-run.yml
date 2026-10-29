@@ -1,0 +1,48 @@
+name: Validate Atlas retailer batch (dry run)
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidates_json:
+        description: JSON array of 1-10 candidate records (no secrets)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Validate candidate payload without database access
+        env:
+          CANDIDATES_JSON: ${{ inputs.candidates_json }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const raw=process.env.CANDIDATES_JSON||'';
+          if(raw.length>15000)throw Error('Batch too large');
+          let items;
+          try{items=JSON.parse(raw)}catch{throw Error('Invalid JSON array')}
+          if(!Array.isArray(items)||items.length<1||items.length>10)throw Error('Provide 1–10 candidates');
+          const keys=['perfume_id','brand','perfume_name','merchant_name','product_url','source_url','evidence_note'];
+          const seen=new Set();
+          for(let i=0;i<items.length;i++){
+            const x=items[i];
+            if(!x||typeof x!=='object'||Array.isArray(x))throw Error('Invalid candidate '+(i+1));
+            for(const k of keys)if(typeof x[k]!=='string'||!x[k].trim()||x[k].length>500)throw Error('Invalid field '+k+' at '+(i+1));
+            if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x.perfume_id))throw Error('Invalid ID at '+(i+1));
+            for(const k of ['product_url','source_url']){
+              let u;try{u=new URL(x[k])}catch{throw Error('Invalid URL at '+(i+1))}
+              if(u.protocol!=='https:'||u.username||u.password||u.port||!u.hostname.includes('.'))throw Error('Unsafe URL at '+(i+1));
+            }
+            const key=x.perfume_id.toLowerCase()+'|'+x.product_url;
+            if(seen.has(key))throw Error('Duplicate candidate at '+(i+1));
+            seen.add(key);
+          }
+          console.log('Validated '+items.length+' candidate(s). No database or API writes performed.');
+          require('node:fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY,'### Atlas dry-run validation passed\n\n'+items.length+' candidate(s) checked. No API requests or database writes.\n');
+          NODE
