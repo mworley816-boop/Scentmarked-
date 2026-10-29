@@ -22,20 +22,25 @@ export async function POST(request:Request){
  const result=validateAtlasRetailerCandidate(input)
  if(!result.ok)return NextResponse.json({error:result.reason},{status:422})
  const candidate=result.candidate
+ let stage='service_client'
  try{
   const db=createServiceClient()
+  stage='catalog_lookup'
   const {data:perfume,error:lookupError}=await db.from('perfumes').select('id,name,brands(name)').eq('id',candidate.perfume_id).eq('status','published').maybeSingle()
-  if(lookupError)return NextResponse.json({error:'Catalog lookup failed'},{status:503})
+  if(lookupError)return NextResponse.json({error:'Catalog lookup failed',stage:'catalog_lookup'},{status:503})
   if(!perfume)return NextResponse.json({error:'Perfume not found'},{status:422})
   const brand=(perfume.brands as {name?:string}|null)?.name||''
   if(brand.trim().toLowerCase()!==candidate.brand.toLowerCase()||perfume.name.trim().toLowerCase()!==candidate.perfume_name.toLowerCase())
    return NextResponse.json({error:'Catalog identity mismatch'},{status:422})
+  stage='duplicate_check'
   const {data:matches,error:matchError}=await db.from('perfume_affiliate_offers').select('id').eq('perfume_id',candidate.perfume_id).eq('affiliate_url',candidate.product_url).limit(1)
-  if(matchError)return NextResponse.json({error:'Duplicate check failed'},{status:503})
+  if(matchError)return NextResponse.json({error:'Duplicate check failed',stage:'duplicate_check'},{status:503})
   if(matches?.length)return NextResponse.json({error:'Duplicate candidate'},{status:409})
-  if(!await recordPrivateRetailerEvidence(candidate))return NextResponse.json({error:'Private research audit unavailable; draft not created'},{status:503})
+  stage='private_audit'
+  if(!await recordPrivateRetailerEvidence(candidate))return NextResponse.json({error:'Private research audit unavailable; draft not created',stage:'private_audit'},{status:503})
+  stage='draft_insert'
   const {error}=await db.from('perfume_affiliate_offers').insert(atlasCandidateToInactiveOffer(candidate))
-  if(error)return NextResponse.json({error:'Unable to save inactive draft'},{status:503})
+  if(error)return NextResponse.json({error:'Unable to save inactive draft',stage:'draft_insert'},{status:503})
   return NextResponse.json({status:'draft_created',published:false},{status:201,headers:{'Cache-Control':'no-store'}})
- }catch{return NextResponse.json({error:'Intake unavailable'},{status:503})}
+ }catch{return NextResponse.json({error:'Intake unavailable',stage},{status:503,headers:{'Cache-Control':'no-store'}})}
 }
