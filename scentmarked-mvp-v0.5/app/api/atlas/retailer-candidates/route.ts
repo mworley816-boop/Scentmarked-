@@ -1,4 +1,5 @@
 import {NextResponse} from 'next/server'
+import {authorizeHyperdriveDiagnostic} from '@/lib/hyperdrive-diagnostic-auth'
 import {recordPrivateRetailerEvidence} from '@/lib/atlas-retailer-evidence-audit'
 import {createServiceClient} from '@/lib/supabase/service'
 import {validateAtlasRetailerCandidate,atlasCandidateToInactiveOffer} from '@/lib/atlas-retailer-candidates'
@@ -6,27 +7,10 @@ import {validateAtlasRetailerCandidate,atlasCandidateToInactiveOffer} from '@/li
 export const runtime='nodejs'
 export const dynamic='force-dynamic'
 
-async function authorized(request:Request){
- const secret=process.env.ATLAS_RETAILER_INTAKE_SECRET
- if(!secret || secret.length<32)return false
- const supplied=request.headers.get('authorization')?.replace(/^Bearer /i,'')||''
- if(supplied.length!==secret.length)return false
- const encoder=new TextEncoder()
- const key=await crypto.subtle.importKey('raw',encoder.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign'])
- const [expected,actual]=await Promise.all([
-  crypto.subtle.sign('HMAC',key,encoder.encode('atlas-retailer-intake')),
-  crypto.subtle.sign('HMAC',key,encoder.encode(supplied===' '?'-':supplied))
- ])
- const a=new Uint8Array(expected),b=new Uint8Array(actual)
- let diff=0
- for(let i=0;i<a.length;i++)diff|=a[i]^b[i]
- return diff===0
-}
-
 export async function POST(request:Request){
  if(!process.env.ATLAS_RETAILER_INTAKE_SECRET||process.env.ATLAS_RETAILER_INTAKE_SECRET.length<32)
   return NextResponse.json({error:'Atlas retailer intake is not configured'},{status:503})
- if(!await authorized(request))return NextResponse.json({error:'Unauthorized'},{status:401})
+ if(!await authorizeHyperdriveDiagnostic(request.headers.get('authorization'),process.env.ATLAS_RETAILER_INTAKE_SECRET))return NextResponse.json({error:'Unauthorized'},{status:401})
  const length=Number(request.headers.get('content-length')||0)
  if(length>12000)return NextResponse.json({error:'Payload too large'},{status:413})
  let input:unknown
