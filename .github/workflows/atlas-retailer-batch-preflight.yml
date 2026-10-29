@@ -50,11 +50,32 @@ jobs:
             output.push(Object.fromEntries(keys.map(key=>[key,item[key].trim()])));
           }
           fs.writeFileSync('atlas-retailer-candidates-prepared.json', JSON.stringify(output,null,2)+'\n',{mode:0o600});
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'### Candidate preflight complete\n\n'+output.length+' candidate(s) structurally validated. **No database writes, no retailer verification, no publication.** Download the artifact for review.\n');
+          const review = [
+            '# Atlas retailer candidate review',
+            '',
+            'Prepared candidates are unverified. Do not publish or submit without reviewing each product and source.',
+            '',
+            ...output.flatMap((item, i) => [
+              '## Candidate '+(i+1)+': '+item.brand+' — '+item.perfume_name,
+              '',
+              '- Merchant: '+item.merchant_name.replace(/[\r\n]/g,' '),
+              '- Perfume ID: '+item.perfume_id,
+              '- Product URL: '+item.product_url,
+              '- Research source: '+item.source_url,
+              '',
+              '- [ ] Confirm exact catalog identity, bottle size, and concentration',
+              '- [ ] Open product listing and independently verify retailer and product',
+              '- [ ] Check evidence source and any affiliate/link rights',
+              '- [ ] Approve draft submission (not publication) separately',
+              ''
+            ])
+          ].join('\\n');
+          fs.writeFileSync('atlas-retailer-review-checklist.md',review+'\\n',{mode:0o600});
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'### Candidate preflight complete\n\n'+output.length+' candidate(s) structurally validated. **No database writes, no retailer verification, no publication.** Download the artifact for review, including a per-candidate verification checklist.\n');
           NODE
       - name: Save prepared candidates for manual review
         uses: actions/upload-artifact@v4
         with:
           name: atlas-retailer-candidates-prepared
-          path: atlas-retailer-candidates-prepared.json
+          path: |\n            atlas-retailer-candidates-prepared.json\n            atlas-retailer-review-checklist.md
           retention-days: 7
