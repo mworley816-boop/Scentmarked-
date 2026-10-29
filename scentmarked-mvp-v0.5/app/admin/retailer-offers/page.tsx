@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { validAffiliateUrl } from '@/lib/affiliate-tracking'
+import { getRetailerAuditEvidence } from '@/lib/retailer-audit-review'
 
 export const metadata = { title: 'Retailer Offers | Scentmarked Studio', robots: { index: false, follow: false } }
 
@@ -59,6 +60,13 @@ export default async function RetailerOffers({ searchParams }: { searchParams: P
   ])
   const perfumes = perfumeResult.data || []
   const offers = offerResult.data || []
+  // Only read private research after the administrator session has been verified.
+  const evidence = await getRetailerAuditEvidence()
+  const evidenceByOffer = new Map<string, (typeof evidence.rows)[number]>()
+  for (const item of evidence.rows) {
+    const key = item.perfume_id + '|' + item.product_url
+    if (!evidenceByOffer.has(key)) evidenceByOffer.set(key, item)
+  }
   const view = params.view === 'published' ? 'published' : params.view === 'all' ? 'all' : 'pending'
   const visibleOffers = offers.filter((o: any) => view === 'all' || (view === 'published' ? o.is_active : !o.is_active))
   const pendingCount = offers.filter((o: any) => !o.is_active).length
@@ -87,13 +95,15 @@ export default async function RetailerOffers({ searchParams }: { searchParams: P
       </nav>
       {offerResult.error && <p role="alert">Offers could not be loaded.</p>}
       {!offerResult.error && visibleOffers.length === 0 && <p>No offers in this view. Choose another filter or add a verified draft above.</p>}
-      <div className="admin-list">{visibleOffers.map((o: any) => <article key={o.id}>
+      {!evidence.available && <p role="status">Private research evidence is temporarily unavailable. Verify the retailer independently before publishing.</p>}
+      <div className="admin-list">{visibleOffers.map((o: any) => { const audit = evidenceByOffer.get(o.perfume_id + '|' + o.affiliate_url); return <article key={o.id}>
         <div><small>{o.is_active ? 'PUBLIC · APPROVED' : 'DRAFT · NOT PUBLIC'}</small>
           <h3>{names.get(o.perfume_id) || o.perfume_id}</h3><p>{o.merchant_name}{o.label ? ' · ' + o.label : ''}</p>
           <a href={o.affiliate_url} target="_blank" rel="noopener noreferrer">Inspect retailer product ↗</a>
+          {audit ? <div style={{marginTop:'0.75rem'}}><strong>Atlas research evidence · {audit.outcome}</strong><p>{audit.evidence_note}</p><p className="muted">Observed: {audit.observed_at}</p><a href={audit.source_url} target="_blank" rel="noopener noreferrer">Inspect research source ↗</a></div> : <p className="muted">No matching private Atlas evidence found. Verify independently before approving.</p>}
         </div>
         <form action={setApproval}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="approved" value={String(!o.is_active)} /><button className="button ghost" type="submit">{o.is_active ? 'Deactivate' : 'Approve & publish'}</button></form>
-      </article>)}</div>
+      </article> })}</div>
     </section>
   </main>
 }
