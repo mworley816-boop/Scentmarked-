@@ -1,0 +1,94 @@
+name: Test Atlas retailer draft intake (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      perfume_id:
+        description: Published Scentmarked perfume UUID
+        required: true
+        type: string
+      brand:
+        description: Exact catalog brand
+        required: true
+        type: string
+      perfume_name:
+        description: Exact catalog perfume name
+        required: true
+        type: string
+      merchant_name:
+        description: Verified retailer name
+        required: true
+        type: string
+      product_url:
+        description: Verified public HTTPS retailer product URL
+        required: true
+        type: string
+      source_url:
+        description: Public HTTPS research evidence URL
+        required: true
+        type: string
+      evidence_note:
+        description: Evidence summary (do not include private information)
+        required: true
+        type: string
+      confirm_draft_only:
+        description: Confirm this creates a REAL unpublished draft and private audit record
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    if: ${{ inputs.confirm_draft_only == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Submit one verified candidate as unpublished draft
+        env:
+          INTAKE_TOKEN: ${{ secrets.ATLAS_RETAILER_INTAKE_SECRET }}
+          CANDIDATE_ID: ${{ inputs.perfume_id }}
+          CANDIDATE_BRAND: ${{ inputs.brand }}
+          CANDIDATE_NAME: ${{ inputs.perfume_name }}
+          CANDIDATE_MERCHANT: ${{ inputs.merchant_name }}
+          CANDIDATE_PRODUCT: ${{ inputs.product_url }}
+          CANDIDATE_SOURCE: ${{ inputs.source_url }}
+          CANDIDATE_NOTE: ${{ inputs.evidence_note }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${#INTAKE_TOKEN}" -lt 32 ]; then
+            echo "::error::Intake secret missing or too short."
+            exit 1
+          fi
+          echo "::add-mask::$INTAKE_TOKEN"
+          payload="$(mktemp)"
+          response="$(mktemp)"
+          trap 'rm -f "$payload" "$response"' EXIT
+          node -e '
+            const fs=require("node:fs");
+            const x={
+              perfume_id:process.env.CANDIDATE_ID,
+              brand:process.env.CANDIDATE_BRAND,
+              perfume_name:process.env.CANDIDATE_NAME,
+              merchant_name:process.env.CANDIDATE_MERCHANT,
+              product_url:process.env.CANDIDATE_PRODUCT,
+              source_url:process.env.CANDIDATE_SOURCE,
+              evidence_note:process.env.CANDIDATE_NOTE
+            };
+            if(!/^[0-9a-f-]{36}$/i.test(x.perfume_id))process.exit(2);
+            for(const k of ["product_url","source_url"]){
+              const u=new URL(x[k]);
+              if(u.protocol!=="https:"||u.username||u.password||u.port)process.exit(2);
+            }
+            fs.writeFileSync(process.argv[1],JSON.stringify(x));
+          ' "$payload"
+          status="$(curl --silent --show-error --max-time 25 --connect-timeout 5 --output "$response" --write-out '%{http_code}' --request POST --header "Authorization: Bearer $INTAKE_TOKEN" --header 'Content-Type: application/json' --data-binary "@$payload" 'https://scentmarked.m-worley816.workers.dev/api/atlas/retailer-candidates')"
+          if [ "$status" != 201 ]; then
+            echo "::error::Draft intake returned HTTP $status. Response withheld to avoid exposing candidate data."
+            exit 1
+          fi
+          node -e 'const fs=require("node:fs");const x=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));if(x.status!=="draft_created"||x.published!==false)process.exit(1)' "$response"
+          echo 'Authenticated submission accepted; inactive draft and private audit write reported successful. Verify the record in admin review.' >> "$GITHUB_STEP_SUMMARY"
