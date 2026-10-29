@@ -1,0 +1,60 @@
+name: Prepare Atlas retailer candidates (no database writes)
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidates_json:
+        description: JSON array of up to 20 retailer candidates; no secrets or private data
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Validate and prepare research candidates without submission
+        env:
+          CANDIDATES_JSON: ${{ inputs.candidates_json }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const raw = process.env.CANDIDATES_JSON || '';
+          if (raw.length > 30000) throw Error('Input exceeds 30,000 characters');
+          let items;
+          try { items = JSON.parse(raw); } catch { throw Error('Input must be valid JSON'); }
+          if (!Array.isArray(items) || items.length < 1 || items.length > 20) throw Error('Provide 1–20 candidates');
+          const keys = ['perfume_id','brand','perfume_name','merchant_name','product_url','source_url','evidence_note'];
+          const unique = new Set();
+          const output = [];
+          for (let i=0;i<items.length;i++) {
+            const item = items[i];
+            if (!item || typeof item !== 'object' || Array.isArray(item)) throw Error('Candidate '+(i+1)+' must be an object');
+            for (const key of keys) {
+              if (typeof item[key] !== 'string' || !item[key].trim() || item[key].length > 500) throw Error('Candidate '+(i+1)+' invalid '+key);
+            }
+            if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.perfume_id)) throw Error('Candidate '+(i+1)+' invalid perfume ID');
+            for (const key of ['product_url','source_url']) {
+              let url;
+              try { url = new URL(item[key]); } catch { throw Error('Candidate '+(i+1)+' invalid '+key); }
+              if (url.protocol !== 'https:' || url.username || url.password || url.port || !url.hostname.includes('.')) throw Error('Candidate '+(i+1)+' unsafe '+key);
+            }
+            const dedupeKey = item.perfume_id.toLowerCase()+'|'+item.product_url;
+            if (unique.has(dedupeKey)) throw Error('Duplicate perfume and product URL at candidate '+(i+1));
+            unique.add(dedupeKey);
+            output.push(Object.fromEntries(keys.map(key=>[key,item[key].trim()])));
+          }
+          fs.writeFileSync('atlas-retailer-candidates-prepared.json', JSON.stringify(output,null,2)+'\n',{mode:0o600});
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'### Candidate preflight complete\n\n'+output.length+' candidate(s) structurally validated. **No database writes, no retailer verification, no publication.** Download the artifact for review.\n');
+          NODE
+      - name: Save prepared candidates for manual review
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-retailer-candidates-prepared
+          path: atlas-retailer-candidates-prepared.json
+          retention-days: 7
