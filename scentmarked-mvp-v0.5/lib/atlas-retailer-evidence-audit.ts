@@ -24,7 +24,7 @@ export async function recordPrivateRetailerEvidence(candidate:AtlasRetailerCandi
    (perfume_id,brand,perfume_name,merchant_name,product_url,source_url,evidence_note,observed_at,outcome,published,requires_admin_approval)
    VALUES (${candidate.perfume_id},${candidate.brand},${candidate.perfume_name},
     ${candidate.merchant_name},${candidate.product_url},${candidate.source_url},
-    ${candidate.evidence_note},now(),'pending_review',false,true)`
+    ${candidate.evidence_note},now(),'draft_created',false,true)`
   return {ok:true}
  }catch{
   return {ok:false,reason:phase==='binding'?'binding_unavailable':phase==='connection'?'connection_failed':phase==='insert'?'insert_failed':'unknown'}
