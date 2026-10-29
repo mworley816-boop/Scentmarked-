@@ -1,0 +1,40 @@
+name: Verify Atlas retailer intake authentication (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check protected intake without creating any offers
+        env:
+          INTAKE_TOKEN: ${{ secrets.ATLAS_RETAILER_INTAKE_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${#INTAKE_TOKEN}" -lt 32 ]; then
+            echo "::error::ATLAS_RETAILER_INTAKE_SECRET is missing or too short."
+            exit 1
+          fi
+          echo "::add-mask::$INTAKE_TOKEN"
+          endpoint='https://scentmarked.m-worley816.workers.dev/api/atlas/retailer-candidates'
+          response="$(mktemp)"
+          trap 'rm -f "$response"' EXIT
+          # Invalid payload must be rejected after successful authentication.
+          status="$(curl --silent --show-error --max-time 15 --connect-timeout 5 --output "$response" --write-out '%{http_code}' --request POST --header "Authorization: Bearer $INTAKE_TOKEN" --header 'Content-Type: application/json' --data '{}' "$endpoint")"
+          if [ "$status" != 422 ]; then
+            echo "::error::Expected authenticated validation HTTP 422; received HTTP $status."
+            exit 1
+          fi
+          # Invalid token must be rejected before validation.
+          status="$(curl --silent --show-error --max-time 15 --connect-timeout 5 --output "$response" --write-out '%{http_code}' --request POST --header 'Authorization: Bearer invalid-token' --header 'Content-Type: application/json' --data '{}' "$endpoint")"
+          if [ "$status" != 401 ]; then
+            echo "::error::Expected unauthorized HTTP 401; received HTTP $status."
+            exit 1
+          fi
+          echo 'Authenticated intake validation passed (422); unauthorized access blocked (401). No drafts created.' >> "$GITHUB_STEP_SUMMARY"
