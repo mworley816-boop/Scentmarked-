@@ -47,6 +47,6 @@ export default function RecoveryClient(){
    window.location.replace('/login?message=password-updated')
   }catch{setError('Could not update the password. Request a new reset link and try again.');setBusy(false)}
  }
- if(!ready)return <>{error?<><p role="alert">{error}</p><a href="/login">Request another link</a></>:<p role="status">Verifying your recovery link…</>}</>
+ if(!ready)return <>{error?<><p role="alert">{error}</p><a href="/login">Request another link</a></>:<p role="status">Verifying your recovery link…</p>}</>
  return <form action={save} className="auth-card"><h2>Choose a new password</h2>{error&&<p role="alert">{error}</p>}<label>New password<input type="password" name="password" minLength={12} required autoComplete="new-password"/></label><label>Confirm password<input type="password" name="confirm" minLength={12} required autoComplete="new-password"/></label><button disabled={busy} type="submit">{busy?'Updating…':'Update Password'}</button></form>
 }
