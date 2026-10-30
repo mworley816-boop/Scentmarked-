@@ -55,7 +55,7 @@ export async function requestPasswordReset(formData:FormData){
  try{
   const supabase=await createClient()
   const origin=siteUrl
-  const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:`${origin}/auth/callback?next=${encodeURIComponent('/reset-password')}`})
+  const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:`${origin}/auth/recovery`})
   if(error)redirect(loginUrl('error','recovery-failed',next))
  }catch(error:any){
   if(error?.digest)throw error
