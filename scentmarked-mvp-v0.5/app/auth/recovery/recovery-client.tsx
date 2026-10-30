@@ -20,14 +20,11 @@ export default function RecoveryClient(){
     if(accessToken&&refreshToken){
      const {error}=await supabase.auth.setSession({access_token:accessToken,refresh_token:refreshToken})
      if(error)throw error
-    }else if(code){
-     const {error}=await supabase.auth.exchangeCodeForSession(code)
-     if(error)throw error
     }else{
-     // @supabase/ssr can consume and clear the recovery fragment while
-     // initializing its browser client, before this component reads the URL.
+     // createBrowserClient automatically exchanges PKCE codes from the URL.
+     // Do not exchange the same code again: the verifier is single-use.
      const {data:{session},error}=await supabase.auth.getSession()
-     if(error||!session)throw new Error('Missing recovery session')
+     if(error||!session)throw new Error(code?'Automatic recovery code exchange failed':'Missing recovery session')
     }
     const {data:{user},error:userError}=await supabase.auth.getUser()
     if(userError||!user)throw new Error('Recovery session could not be verified')
