@@ -23,7 +23,14 @@ export default function RecoveryClient(){
     }else if(code){
      const {error}=await supabase.auth.exchangeCodeForSession(code)
      if(error)throw error
-    }else throw new Error('Missing recovery credentials')
+    }else{
+     // @supabase/ssr can consume and clear the recovery fragment while
+     // initializing its browser client, before this component reads the URL.
+     const {data:{session},error}=await supabase.auth.getSession()
+     if(error||!session)throw new Error('Missing recovery session')
+    }
+    const {data:{user},error:userError}=await supabase.auth.getUser()
+    if(userError||!user)throw new Error('Recovery session could not be verified')
     window.history.replaceState(null,'','/auth/recovery')
     if(active)setReady(true)
    }catch{
