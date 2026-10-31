@@ -17,7 +17,12 @@ export function createAtlasPinnedNodeTransport():AtlasVettedTransport{
   let previous:string|undefined
   for(let redirects=0;redirects<=ATLAS_MAX_REDIRECTS;redirects++){
    const host=new URL(current).hostname
-   const addresses=await dnsLookup(host,{all:true,verbatim:true})
+   const remainingDns=ATLAS_FETCH_TIMEOUT_MS-(Date.now()-started)
+   if(remainingDns<=0)throw new Error('Atlas research deadline exceeded')
+   const addresses=await Promise.race([
+    dnsLookup(host,{all:true,verbatim:true}),
+    new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error('Atlas DNS deadline exceeded')),remainingDns))
+   ])
    const hop=assessAtlasResearchHop({
     previousUrl:previous,target:current,
     resolvedAddresses:addresses.map(({address,family})=>({address,family:family as 4|6})),
@@ -33,7 +38,8 @@ export function createAtlasPinnedNodeTransport():AtlasVettedTransport{
      lookup:(_hostname,_options,callback)=>callback(null,pinned,4),
      headers:{'accept':'text/html,application/xhtml+xml','user-agent':'ScentmarkedAtlasResearch/1.0'}
     },stream=>resolve({status:stream.statusCode??0,headers:stream.headers,stream}))
-    req.setTimeout(remaining,()=>req.destroy(new Error('Atlas research deadline exceeded')))
+    const deadline=setTimeout(()=>req.destroy(new Error('Atlas research deadline exceeded')),remaining)
+    req.once('close',()=>clearTimeout(deadline))
     req.on('error',reject)
     req.end()
    })
