@@ -26,3 +26,15 @@ Status: **Evidence collected; NOT APPROVED for automated retrieval.**
 - [ ] Test end-to-end extraction and review-only output without publishing.
 
 Do not copy domains from this note into the trusted registry without completing the checklist.
+
+## Terms and permissions check (2026-10-31)
+
+- https://myperfumes.ae/collections/arabiyat explicitly states Arabiyat is an in-house brand developed by My Perfumes. This strengthens manufacturer-domain identity evidence.
+- https://myperfumes.ae/pages/terms-conditions identifies My Perfumes Factory LLC as operator and requires users to comply with applicable copyright laws. It does **not** establish a permission grant for automated collection, republishing descriptions, or using product imagery.
+- https://myperfumes.ae/pages/legal asks users not to interfere with the site or other visitors.
+- A direct robots.txt inspection was inconclusive from the research environment; **do not interpret this as permission**.
+- Regional storefronts may have different legal operators and terms; do not treat subdomains as automatically approved.
+
+**Decision:** Keep `ATLAS_REVIEWED_MANUFACTURER_DOMAINS` empty for Arabiyat pending written permission or a documented authorized data feed and a verified robots/access policy. The dry-run workflow must continue to fail closed. Manual review and independently authored factual note summaries can continue without automated retrieval.
+
+**Suggested permission request:** Ask My Perfumes Factory LLC for permission to programmatically access a limited set of public product pages or an official product feed to extract factual note pyramids for Scentmarked, with source links, attribution, agreed rate limits, caching, and no image copying without separate permission.
