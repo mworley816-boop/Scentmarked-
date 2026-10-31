@@ -16,6 +16,6 @@ test('supports opening and drydown labels',()=>{
 })
 
 test('repeated note labels do not overwrite the first explicit pyramid',()=>{
- const result=extractAtlasNoteSections('Top Notes: Strawberry, Milk\\nHeart Notes: Caramel\\nBase Notes: Vanilla\\nTop Notes: Lemon, Apple\\nHeart Notes: Rose\\nBase Notes: Cedar')
+ const result=extractAtlasNoteSections('Top Notes: Strawberry, Milk\nHeart Notes: Caramel\nBase Notes: Vanilla\nTop Notes: Lemon, Apple\nHeart Notes: Rose\nBase Notes: Cedar')
  assert.deepEqual(result,{top:['Strawberry','Milk'],middle:['Caramel'],base:['Vanilla']})
 })
