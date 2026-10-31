@@ -4,6 +4,7 @@ import {createClient} from '@/lib/supabase/server'
 import {AtlasReviewActions} from './review-actions'
 import {AtlasBatchIntake} from './batch-intake'
 import {AtlasHtmlIntake} from './html-intake'
+import {AtlasSourceTextIntake} from './source-text-intake'
 
 export const metadata={title:'Atlas Research Queue',robots:{index:false,follow:false}}
 export const dynamic='force-dynamic'
@@ -32,8 +33,9 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
   <details className="atlas-research-intake" style={{marginBlock:'1.25rem',padding:'1rem',border:'1px solid var(--line)',borderRadius:'12px'}}>
    <summary style={{cursor:'pointer',fontWeight:700,minHeight:'44px'}}>Add research to the review queue</summary>
    <p>Optional intake tools. Submissions are held for review and never automatically published.</p>
-   <AtlasHtmlIntake />
-   <details style={{marginTop:'1.25rem'}}><summary style={{cursor:'pointer',fontWeight:600,minHeight:'44px'}}>Advanced: batch JSON intake</summary><AtlasBatchIntake /></details>
+   <AtlasSourceTextIntake />
+   <details style={{marginTop:'1.25rem'}}><summary style={{cursor:'pointer',fontWeight:600,minHeight:'44px'}}>Advanced: import saved manufacturer HTML</summary><AtlasHtmlIntake /></details>
+   <details style={{marginTop:'1.25rem'}}> <summary style={{cursor:'pointer',fontWeight:600,minHeight:'44px'}}>Advanced: batch JSON intake</summary><AtlasBatchIntake /></details>
   </details>
   {error?<p role="alert">Unable to load Atlas research queue. Check database access and try again.</p>:<>
    <p>{count??0} submission{count===1?'':'s'} in this view (showing up to 100)</p>
