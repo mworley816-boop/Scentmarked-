@@ -15,3 +15,8 @@ test('rejects oversized and invalid streams',async()=>{
  await assert.rejects(readAtlasBoundedHtml(null),/Missing/)
  await assert.rejects(readAtlasBoundedHtml(source([]),0),/Invalid/)
 })
+
+test('rejects malformed non-byte stream chunks',async()=>{
+ const malformed=new ReadableStream<Uint8Array>({start(controller){controller.enqueue('not bytes' as unknown as Uint8Array);controller.close()}})
+ await assert.rejects(readAtlasBoundedHtml(malformed),/Invalid research response chunk/)
+})

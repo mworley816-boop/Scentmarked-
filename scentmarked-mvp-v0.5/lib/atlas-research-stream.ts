@@ -16,6 +16,7 @@ export async function readAtlasBoundedHtml(
   while(true){
    const {done,value}=await reader.read()
    if(done)break
+   if(!(value instanceof Uint8Array))throw new Error('Invalid research response chunk')
    total+=value.byteLength
    if(total>maxBytes)throw new Error('Research response exceeds byte limit')
    chunks.push(value)
