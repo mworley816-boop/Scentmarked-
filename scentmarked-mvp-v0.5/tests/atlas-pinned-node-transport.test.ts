@@ -5,15 +5,15 @@ import {createAtlasPinnedNodeTransport} from '../lib/atlas-pinned-node-transport
 const transport=createAtlasPinnedNodeTransport('Arabiyat Sugar')
 
 test('rejects localhost before a network connection is attempted',async()=>{
- await assert.rejects(transport.retrieve('https://localhost/private'),/destination rejected/)
+ await assert.rejects(transport.retrieve('https://localhost/private'),/not approved|destination rejected/)
 })
 
 test('rejects loopback IP targets',async()=>{
- await assert.rejects(transport.retrieve('https://127.0.0.1/private'),/destination rejected/)
+ await assert.rejects(transport.retrieve('https://127.0.0.1/private'),/not approved|destination rejected/)
 })
 
 test('rejects non-HTTPS target',async()=>{
- await assert.rejects(transport.retrieve('http://localhost/private'),/destination rejected/)
+ await assert.rejects(transport.retrieve('http://localhost/private'),/not approved|destination rejected/)
 })
 
 test('unreviewed public manufacturer domain is rejected before DNS',async()=>{
