@@ -1,5 +1,6 @@
 import {lookup as dnsLookup} from 'node:dns/promises'
 import {assessAtlasFetchTarget,assessAtlasRedirectTarget} from './atlas-source-evidence.ts'
+import {assessAtlasAutomatedResearchSource} from './atlas-research-source-registry.ts'
 import {request as httpsRequest} from 'node:https'
 import {Readable} from 'node:stream'
 import {assessAtlasResearchHop} from './atlas-research-hop-policy.ts'
@@ -11,14 +12,16 @@ import type {AtlasVettedTransport} from './atlas-research-transport-contract.ts'
  * Each TLS connection uses a pinned, prevalidated DNS address while retaining
  * the original hostname for TLS certificate verification and SNI.
  */
-export function createAtlasPinnedNodeTransport():AtlasVettedTransport{
+export function createAtlasPinnedNodeTransport(brand:string):AtlasVettedTransport{
  return {retrieve:async(initialUrl)=>{
+  if(!assessAtlasAutomatedResearchSource(brand,initialUrl).allowed)throw new Error('Manufacturer domain not approved for automated retrieval')
   const started=Date.now()
   let current=initialUrl
   let previous:string|undefined
   for(let redirects=0;redirects<=ATLAS_MAX_REDIRECTS;redirects++){
    const preflight=previous?assessAtlasRedirectTarget(previous,current):assessAtlasFetchTarget(current)
    if(!preflight.allowed)throw new Error('Atlas network destination rejected: '+preflight.reasons.join('; '))
+   if(!assessAtlasAutomatedResearchSource(brand,current).allowed)throw new Error('Manufacturer domain not approved for automated retrieval')
    const host=new URL(current).hostname
    const remainingDns=ATLAS_FETCH_TIMEOUT_MS-(Date.now()-started)
    if(remainingDns<=0)throw new Error('Atlas research deadline exceeded')
