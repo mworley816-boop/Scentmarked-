@@ -1,4 +1,5 @@
 import {lookup as dnsLookup} from 'node:dns/promises'
+import {assessAtlasFetchTarget,assessAtlasRedirectTarget} from './atlas-source-evidence.ts'
 import {request as httpsRequest} from 'node:https'
 import {Readable} from 'node:stream'
 import {assessAtlasResearchHop} from './atlas-research-hop-policy.ts'
@@ -16,6 +17,8 @@ export function createAtlasPinnedNodeTransport():AtlasVettedTransport{
   let current=initialUrl
   let previous:string|undefined
   for(let redirects=0;redirects<=ATLAS_MAX_REDIRECTS;redirects++){
+   const preflight=previous?assessAtlasRedirectTarget(previous,current):assessAtlasFetchTarget(current)
+   if(!preflight.allowed)throw new Error('Atlas network destination rejected: '+preflight.reasons.join('; '))
    const host=new URL(current).hostname
    const remainingDns=ATLAS_FETCH_TIMEOUT_MS-(Date.now()-started)
    if(remainingDns<=0)throw new Error('Atlas research deadline exceeded')
