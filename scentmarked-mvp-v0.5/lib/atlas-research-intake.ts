@@ -1,3 +1,4 @@
+import {extractAtlasNoteSections} from './atlas-note-extraction.ts'
 export type PerfumeResearchCandidate = {
  brand: string
  name: string
@@ -49,4 +50,24 @@ export function classifyPerfumeResearchCandidate(
   return {decision:'duplicate',errors:['Matching brand and perfume name already exist in catalog'],candidate:validation.normalized}
  }
  return {decision:'needs_source_review',errors:[],candidate:validation.normalized}
+}
+
+/** Convert manually supplied factual note text to a validated review candidate.
+ * This function does not retrieve URLs, write to the catalog, or publish.
+ * The original labeled note sections must still be reviewed by an administrator.
+ */
+export function prepareAtlasOfflineFactsCandidate(input:{
+ brand:string;name:string;sourceUrl:string;sourceText:string
+}):ResearchValidation{
+ if(typeof input.sourceText!=='string'||input.sourceText.length>100_000){
+  return {valid:false,errors:['Source text must be at most 100000 characters'],normalized:null}
+ }
+ const sections=extractAtlasNoteSections(input.sourceText)
+ const sourceNotes=[...sections.top,...sections.middle,...sections.base]
+ if(!sourceNotes.length){
+  return {valid:false,errors:['No explicitly labeled fragrance notes found'],normalized:null}
+ }
+ return validatePerfumeResearchCandidate({
+  brand:input.brand,name:input.name,manufacturerUrl:input.sourceUrl,sourceNotes
+ })
 }
