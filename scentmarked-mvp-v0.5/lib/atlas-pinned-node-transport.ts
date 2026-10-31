@@ -32,7 +32,11 @@ export function createAtlasPinnedNodeTransport():AtlasVettedTransport{
     budget:{redirects,elapsedMs:Date.now()-started,receivedBytes:0}
    })
    if(!hop.allowed||!hop.targetUrl)throw new Error('Atlas network destination rejected: '+hop.reasons.join('; '))
-   const pinned=addresses[0].address
+   // Every DNS record was vetted by assessAtlasResearchHop above.
+   // Reject unsupported families rather than passing an IPv6 address as IPv4.
+   const chosen=addresses.find(record=>record.family===4)
+   if(!chosen)throw new Error('Atlas has no vetted IPv4 address')
+   const pinned=chosen.address
    const remaining=ATLAS_FETCH_TIMEOUT_MS-(Date.now()-started)
    if(remaining<=0)throw new Error('Atlas research deadline exceeded')
    const response=await new Promise<{status:number;headers:import('node:http').IncomingHttpHeaders;stream:import('node:http').IncomingMessage}>((resolve,reject)=>{
