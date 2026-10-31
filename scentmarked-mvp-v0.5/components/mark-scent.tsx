@@ -2,8 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-const options=[['owned','Own It','✓'],['want','Want It','＋'],['tried','Tried It','◌']] as const
-const statusLabels:Record<string,string>={owned:'Owned',want:'Want It',tried:'Tried It'}
+const options=[['owned','Own It','✓'],['want','Want It','＋'],['tried','Tried It','◌'],['favorite','Favorite','♡']] as const
+const statusLabels:Record<string,string>={owned:'Owned',want:'Want It',tried:'Tried It',favorite:'Favorite'}
 
 export default function MarkScent({perfumeId,initial=[]}:{perfumeId:string,initial?:string[]}){
  const [saved,setSaved]=useState<string[]>(initial)
