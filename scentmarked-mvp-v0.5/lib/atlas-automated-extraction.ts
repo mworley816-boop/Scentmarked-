@@ -9,7 +9,7 @@ export async function prepareAtlasAutomatedResearch(input:{candidate:PerfumeRese
  const html=await retrieveAtlasManufacturerHtml({brand:candidate.brand,url:candidate.manufacturerUrl},transport)
  const metadata=extractAtlasPageMetadata(html,candidate.manufacturerUrl)
  if(!metadata.title)throw new Error('Manufacturer page title missing')
- const visible=html.replace(/<(script|style|head)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,' ')
+ const visible=html.replace(/<(script|style|head|nav|footer)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,' ')
   .replace(/<\s*br\s*\/?\s*>|<\/?\s*(?:p|div|li|h[1-6])\b[^>]*>/gi,'\n')
   .replace(/<[^>]*>/g,' ').replace(/&amp;/gi,'&').replace(/&nbsp;/gi,' ')
  const proposal=buildAtlasNoteReviewProposal(candidate,visible,candidate.manufacturerUrl,new Date().toISOString())
