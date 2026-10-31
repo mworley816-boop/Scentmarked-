@@ -1,0 +1,51 @@
+name: Atlas manufacturer research dry run (review only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      brand:
+        description: Manufacturer brand name
+        required: true
+        type: string
+      perfume_name:
+        description: Exact perfume name
+        required: true
+        type: string
+      source_url:
+        description: HTTPS product page on a reviewed manufacturer domain
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atlas-manufacturer-research-dry-run
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies
+        working-directory: scentmarked-mvp-v0.5
+        run: npm ci --ignore-scripts
+      - name: Prepare read-only research draft
+        working-directory: scentmarked-mvp-v0.5
+        env:
+          ATLAS_BRAND: ${{ inputs.brand }}
+          ATLAS_PERFUME_NAME: ${{ inputs.perfume_name }}
+          ATLAS_SOURCE_URL: ${{ inputs.source_url }}
+        run: node --experimental-strip-types scripts/atlas-manufacturer-research-dry-run.ts
+      - name: Upload review-only draft
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-manufacturer-research-draft
+          path: scentmarked-mvp-v0.5/atlas-manufacturer-research-draft.json
+          retention-days: 7
