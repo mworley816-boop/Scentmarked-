@@ -1,7 +1,6 @@
 import {writeFileSync} from 'node:fs'
-import {randomUUID} from 'node:crypto'
 import {createAtlasPinnedNodeTransport} from '../lib/atlas-pinned-node-transport.ts'
-import {prepareAtlasAutomatedReview} from '../lib/atlas-automated-review-preparation.ts'
+import {prepareAtlasAutomatedResearch} from '../lib/atlas-automated-extraction.ts'
 import {assessAtlasAutomatedResearchSource} from '../lib/atlas-research-source-registry.ts'
 
 /** GitHub Actions dry run: produces an artifact only. No DB credentials or writes. */
@@ -14,15 +13,11 @@ async function main(){
  const source=assessAtlasAutomatedResearchSource(brand,manufacturerUrl)
  if(!source.allowed)throw Error('Manufacturer source is not reviewed: '+source.reasons.join('; '))
  const candidate={brand,name,manufacturerUrl,sourceNotes:[]}
- const result=await prepareAtlasAutomatedReview({
-  candidate,transport:createAtlasPinnedNodeTransport(brand),
-  existing:[], // This dry run MUST NOT be interpreted as a complete duplicate check.
-  id:randomUUID(),submittedAt:new Date().toISOString()
- })
+ const result=await prepareAtlasAutomatedResearch({candidate,transport:createAtlasPinnedNodeTransport(brand)})
  const output={
   warning:'UNVERIFIED DRAFT ONLY. Duplicate checks require the complete catalog and queue. Do not publish or auto-submit.',
   sourceUrl:manufacturerUrl,pageTitle:result.pageTitle,
-  reviewRecord:result.record
+  proposal:result.proposal
  }
  writeFileSync('atlas-manufacturer-research-draft.json',JSON.stringify(output,null,2)+'\n',{mode:0o600})
  console.log('Atlas manufacturer research draft prepared for offline human review; no database writes.')
