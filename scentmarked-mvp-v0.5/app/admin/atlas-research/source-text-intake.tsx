@@ -31,13 +31,13 @@ export function AtlasSourceTextIntake(){
   finally{setBusy(false)}
  }
  return <section aria-labelledby="atlas-text-intake-title">
-  <h2 id="atlas-text-intake-title">Extract notes from source text</h2>
-  <p>Paste text from a manufacturer page you are permitted to use. Include explicitly labeled Top, Heart/Middle and Base notes. Atlas extracts those notes into a review proposal; it does not fetch or verify the page, and nothing is published automatically.</p>
+  <h2 id="atlas-text-intake-title">Add fragrance notes for review</h2>
+  <p>Paste factual note text from a public source you have reviewed for access and reuse conditions. Include explicitly labeled Top, Heart/Middle and Base notes. Atlas extracts those notes into a review proposal; it does not fetch or verify the page, and nothing is published automatically.</p>
   <form onSubmit={submit}>
    <label>Brand<input required maxLength={120} value={brand} onChange={e=>setBrand(e.target.value)}/></label>
    <label>Perfume name<input required maxLength={180} value={name} onChange={e=>setName(e.target.value)}/></label>
-   <label>Manufacturer HTTPS URL<input required type="url" value={url} onChange={e=>setUrl(e.target.value)}/></label>
-   <label>Source text<textarea required rows={8} maxLength={1000000} value={sourceText} onChange={e=>setSourceText(e.target.value)} placeholder={'Top: strawberry, milk\nHeart: caramel, marshmallow\nBase: vanilla, musk'}/></label>
+   <label>Source HTTPS URL<input required type="url" value={url} onChange={e=>setUrl(e.target.value)}/></label>
+   <label>Source text<textarea required rows={8} maxLength={100000} value={sourceText} onChange={e=>setSourceText(e.target.value)} placeholder={'Top Notes: strawberry, milk\nHeart Notes: caramel, marshmallow\nBase Notes: vanilla, musk'}/></label>
    <button type="submit" disabled={busy||!sourceText.trim()}>{busy?'Extracting and submitting…':'Extract notes for review'}</button>
    {message&&<p role="status">{message}</p>}
   </form>
