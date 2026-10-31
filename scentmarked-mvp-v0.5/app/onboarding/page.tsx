@@ -52,7 +52,7 @@ async function saveProfile(formData:FormData){
  let favoriteIds:string[]=[]
  if(submittedFavoriteIds.length){
   const {data:publishedFavorites,error:favoriteError}=await s.from('perfumes').select('id').eq('status','published').in('id',submittedFavoriteIds)
-  if(favoriteError)redirect('/onboarding?error=save-failed')
+  if(favoriteError){console.error('Scent profile favorite validation failed',{code:favoriteError.code,message:favoriteError.message});redirect('/onboarding?error=save-failed')}
   const publishedSet=new Set((publishedFavorites||[]).map((row:any)=>String(row.id)))
   favoriteIds=submittedFavoriteIds.filter(id=>publishedSet.has(id))
  }
@@ -83,8 +83,13 @@ async function saveProfile(formData:FormData){
    scent_profile_completed_at:new Date().toISOString(),
    scent_favorite_perfume_ids:favoriteIds
   }).eq('id',user.id).select('id').maybeSingle()
+  if(error)console.error('Scent profile update failed',{code:error.code,message:error.message})
+  if(!error&&!data)console.error('Scent profile update returned no row for authenticated member')
   failed=!!error||!data
- }catch{failed=true}
+ }catch(error){
+  console.error('Scent profile update threw',error instanceof Error?error.message:'Unknown error')
+  failed=true
+ }
  if(failed)redirect('/onboarding?error=save-failed')
  const revision={user_id:user.id,loved_notes:resolvedLoved,avoided_notes:avoided,presentations:selectedPresentations,favorite_perfume_ids:favoriteIds,sweetness,projection,longevity,max_price:Number.isSafeInteger(budget)&&budget>0?budget:null}
  try{
