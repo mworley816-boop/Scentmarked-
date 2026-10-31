@@ -26,11 +26,15 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
   <Link href="/admin">← Admin Studio</Link>
   <h1>Atlas research review queue</h1>
   <p>Research is held for human verification. This page does not automatically publish perfumes.</p>
-  <AtlasBatchIntake />
-  <AtlasHtmlIntake />
   <nav aria-label="Research status filters" className="admin-filters">
    {statuses.map(item=><Link key={item} className="button ghost" aria-current={item===status?'page':undefined} href={item==='all'?'/admin/atlas-research':'/admin/atlas-research?status='+item}>{item.replaceAll('_',' ')}</Link>)}
   </nav>
+  <details className="atlas-research-intake" style={{marginBlock:'1.25rem',padding:'1rem',border:'1px solid var(--line)',borderRadius:'12px'}}>
+   <summary style={{cursor:'pointer',fontWeight:700,minHeight:'44px'}}>Add research to the review queue</summary>
+   <p>Optional intake tools. Submissions are held for review and never automatically published.</p>
+   <AtlasHtmlIntake />
+   <details style={{marginTop:'1.25rem'}}><summary style={{cursor:'pointer',fontWeight:600,minHeight:'44px'}}>Advanced: batch JSON intake</summary><AtlasBatchIntake /></details>
+  </details>
   {error?<p role="alert">Unable to load Atlas research queue. Check database access and try again.</p>:<>
    <p>{count??0} submission{count===1?'':'s'} in this view (showing up to 100)</p>
    {!data?.length?<p>No research submissions in this category yet.</p>:<div className="admin-list">{data.map(row=><article key={row.id}>
