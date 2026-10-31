@@ -15,7 +15,9 @@ export function extractAtlasNoteSections(text:string):AtlasNoteSections{
    const match=line.match(pattern)
    if(!match)continue
    const notes=match[1].split(/[,;•]/).map(s=>s.trim()).filter(s=>s.length>0&&s.length<=80).slice(0,20)
-   if(notes.length)result[key]=notes
+   // Preserve the first labeled section; repeated labels elsewhere on the page
+   // must not silently replace the primary product's notes.
+   if(notes.length&&!result[key].length)result[key]=notes
    break
   }
  }
