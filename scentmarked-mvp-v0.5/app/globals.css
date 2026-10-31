@@ -621,3 +621,21 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
  .collection-page .collection-bottle{height:180px}
  .collection-page .collection-card .mark-actions .mark{flex:1 1 120px}
 }
+
+/* My Collection: readable match history and compact section rhythm on tablets. */
+.collection-page .collection-history .collection-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.collection-page .collection-history .collection-card{min-width:0;padding:18px}
+.collection-page .match-history-results .result-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:8px 0 14px}
+.collection-page .match-history-results .text-link{display:block;white-space:normal;overflow-wrap:break-word;line-height:1.45;min-height:30px}
+.collection-page .collection-history .collection-card>p{line-height:1.55;overflow-wrap:break-word}
+.collection-page .collection-history .collection-card>.button{display:inline-flex;align-items:center;justify-content:center;min-height:44px}
+.collection-page .collection-recent,.collection-page .collection-history,.collection-page .collection-comparisons,.collection-page .collection-feedback{margin-block:clamp(24px,4vw,48px)}
+.collection-page .collection-recent .section-head,.collection-page .collection-history .section-head,.collection-page .collection-comparisons .section-head,.collection-page .collection-feedback .section-head{margin-bottom:14px}
+@media(min-width:700px) and (max-width:1100px){
+ .collection-page .collection-history .collection-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+ .collection-page .collection-history .collection-grid{grid-template-columns:minmax(0,1fr)}
+ .collection-page .collection-history .collection-card{padding:16px}
+ .collection-page .collection-recent,.collection-page .collection-history,.collection-page .collection-comparisons,.collection-page .collection-feedback{margin-block:24px}
+}
