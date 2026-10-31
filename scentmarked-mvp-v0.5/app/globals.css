@@ -639,3 +639,22 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
  .collection-page .collection-history .collection-card{padding:16px}
  .collection-page .collection-recent,.collection-page .collection-history,.collection-page .collection-comparisons,.collection-page .collection-feedback{margin-block:24px}
 }
+
+/* Atlas research: keep intake readable and contained on tablet and mobile. */
+.atlas-research-intake{max-width:100%;min-width:0;box-sizing:border-box}
+.atlas-research-intake section{min-width:0;max-width:100%;margin:16px 0;padding:0}
+.atlas-research-intake form{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;max-width:760px}
+.atlas-research-intake form>label{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;min-width:0;font-size:13px;font-weight:600}
+.atlas-research-intake input,.atlas-research-intake textarea{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--paper);color:var(--ink);font:inherit}
+.atlas-research-intake textarea{min-height:150px;resize:vertical;line-height:1.45}
+.atlas-research-intake input[type="file"]{padding:10px;min-height:44px}
+.atlas-research-intake button{justify-self:start;min-height:44px;max-width:100%;white-space:normal}
+.atlas-research-intake button:disabled{opacity:.6}
+.atlas-research-intake summary{padding:10px 0;line-height:1.4}
+.atlas-research-intake p,.atlas-research-intake li{overflow-wrap:anywhere;line-height:1.5}
+.atlas-research-intake>details{border-top:1px solid var(--line);padding-top:12px}
+@media(max-width:700px){
+ .atlas-research-intake{padding:12px!important}
+ .atlas-research-intake form{gap:12px}
+ .atlas-research-intake button{width:100%;justify-self:stretch}
+}
