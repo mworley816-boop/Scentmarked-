@@ -8,6 +8,7 @@ const CHECKS = [
   { path: '/login', contentType: 'text/html', requiredText: ['Sign In', 'Start My Scent Profile', 'Forgot password?'] },
   { path: '/login?signup=finish', contentType: 'text/html', requiredText: ['Create Account &amp; See My Matches', 'name="email"', 'name="password"'] },
   { path: '/reset-password', contentType: 'text/html', requiredText: ['Reset password', 'This recovery session is missing or has expired.', 'Request another link'] },
+  { path: '/auth/recovery', contentType: 'text/html', requiredText: ['Verify password recovery'] },
   { path: '/onboarding', contentType: 'text/html', requiredText: ['What smells like you?', 'Which scent families'] },
   { path: '/api/health', contentType: 'application/json', json: { status: 'ok', service: 'scentmarked' } },
   { path: '/robots.txt', contentType: 'text/plain' },

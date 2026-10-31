@@ -9,7 +9,7 @@ on:
       site_url:
         description: HTTPS origin of the deployed Scentmarked site
         required: true
-        default: https://scentmarked.m-worley816.workers.dev
+        default: https://scentmarked.com
         type: string
       minimum_published:
         description: Minimum published perfumes expected on Discover
@@ -36,7 +36,7 @@ jobs:
           node-version: '22'
       - name: Check live site and published catalog count
         env:
-          NEXT_PUBLIC_SITE_URL: ${{ inputs.site_url || 'https://scentmarked.m-worley816.workers.dev' }}
+          NEXT_PUBLIC_SITE_URL: ${{ inputs.site_url || 'https://scentmarked.com' }}
           SCENTMARKED_MIN_PUBLISHED_PERFUMES: ${{ inputs.minimum_published || '673' }}
         run: |
           set -o pipefail
@@ -44,8 +44,8 @@ jobs:
       - name: Publish smoke test summary
         if: always()
         env:
-          SMOKE_SITE_URL: ${{ inputs.site_url || 'https://scentmarked.m-worley816.workers.dev' }}
-          SMOKE_MINIMUM: ${{ inputs.minimum_published || '674' }}
+          SMOKE_SITE_URL: ${{ inputs.site_url || 'https://scentmarked.com' }}
+          SMOKE_MINIMUM: ${{ inputs.minimum_published || '673' }}
         run: |
           {
             echo '## Scentmarked production smoke'
