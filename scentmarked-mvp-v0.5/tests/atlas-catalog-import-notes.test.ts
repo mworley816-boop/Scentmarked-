@@ -1,6 +1,6 @@
 import {strict as assert} from 'node:assert'
 import {test} from 'node:test'
-import {parseAtlasImportNotes} from '../lib/atlas-catalog-import-notes'
+import {parseAtlasImportNotes} from '../lib/atlas-catalog-import-notes.ts'
 
 test('preserves positions and note names',()=>{
  assert.deepEqual(parseAtlasImportNotes(['Top: Strawberry','Heart: Caramel','Base: Vanilla']),[
