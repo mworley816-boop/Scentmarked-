@@ -38,11 +38,11 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
    <details style={{marginTop:'1.25rem'}}> <summary style={{cursor:'pointer',fontWeight:600,minHeight:'44px'}}>Advanced: batch JSON intake</summary><AtlasBatchIntake /></details>
   </details>
   {error?<p role="alert">Unable to load Atlas research queue. Check database access and try again.</p>:<>
-   <p>{count??0} submission{count===1?'':'s'} in this view (showing up to 100)</p>
+   <p><strong>{count??0}</strong> submission{count===1?'':'s'} in this view (showing up to 100). Select a perfume below to inspect its evidence and approve or reject.</p>
    {!data?.length?<p>No research submissions in this category yet.</p>:<div className="admin-list">{data.map(row=><article key={row.id}>
     <div><small>{row.brand}</small><h2>{row.perfume_name}</h2><p>Status: {row.status.replaceAll('_',' ')} · Submitted: {new Date(row.submitted_at).toLocaleDateString('en-US',{timeZone:'UTC'})}</p>
     <p>Original decision: {row.decision.replaceAll('_',' ')}</p>
-    <p>Notes: {Array.isArray(row.source_notes)?row.source_notes.join(', '):'Unavailable'}</p>
+    <details><summary style={{cursor:'pointer',minHeight:'44px'}}>View extracted notes and source evidence</summary>\n     <p>Notes: {Array.isArray(row.source_notes)?row.source_notes.join(', '):'Unavailable'}</p>\n     <p><a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a></p>\n    </details>
     {row.review_note&&<p>Review: {row.review_note}</p>}
     <a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a>
     {(row.status==='needs_source_review'||row.status==='duplicate')&&<AtlasReviewActions id={row.id} decision={row.decision} />}
