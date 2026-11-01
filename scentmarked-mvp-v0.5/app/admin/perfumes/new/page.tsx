@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import {prepareAtlasApprovedCatalogDraft} from '@/lib/atlas-approved-catalog-draft'
 import {parseAtlasImportNotes} from '@/lib/atlas-catalog-import-notes'
 import {atlasImportKey} from '@/lib/atlas-import-idempotency'
+import {createServiceClient} from '@/lib/supabase/service'
 
 export const metadata={title:'Add Fragrance',robots:{index:false,follow:false}}
 
@@ -41,6 +42,35 @@ async function add(formData:FormData){
   if(!merchant_name||!affiliate_url)redirect('/admin/perfumes/new?error='+encodeURIComponent('Enter both a merchant name and affiliate URL, or leave both blank.'))
   try{const u=new URL(affiliate_url);if(!['http:','https:'].includes(u.protocol))throw new Error()}catch{redirect('/admin/perfumes/new?error='+encodeURIComponent('Enter a valid retailer URL before creating the fragrance.'))}
   if(offer_price!==null&&(!Number.isFinite(offer_price)||offer_price<0))redirect('/admin/perfumes/new?error='+encodeURIComponent('Enter a valid retailer price before creating the fragrance.'))
+ }
+ if(atlasResearchId){
+  if(merchant_name||affiliate_url){
+   redirect('/admin/perfumes/new?error='+encodeURIComponent('Create the Atlas draft first, then add retailer offers from its edit page.'))
+  }
+  // requireAdmin() already checked the authenticated user's current admin role.
+  // Never expose the service credential to the browser or invoke this RPC without that check.
+  let service:ReturnType<typeof createServiceClient>
+  try{service=createServiceClient()}catch{
+   redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas atomic import is not configured on this server. No draft was created.'))
+  }
+  const yearRaw=String(formData.get('release_year')||'').trim()
+  const year=yearRaw?Number(yearRaw):null
+  if(year!==null&&(!Number.isInteger(year)||year<1800||year>2100)){
+   redirect('/admin/perfumes/new?error='+encodeURIComponent('Invalid release year.'))
+  }
+  const {data:importedId,error:importError}=await service.rpc('import_approved_atlas_catalog_draft',{
+   p_research_id:atlasResearchId,
+   p_description:String(formData.get('description')||'').trim()||null,
+   p_concentration:String(formData.get('concentration')||'').trim()||null,
+   p_release_year:year,
+   p_country:String(formData.get('country')||'').trim()||null
+  })
+  if(importError||!importedId){
+   redirect('/admin/perfumes/new?error='+encodeURIComponent('Atomic Atlas import failed; no partial draft was created. '+(importError?.message||'Unknown error')))
+  }
+  // Retailer offers are separate optional additions, not part of the atomic import.
+  // Add them later from the editor to avoid suggesting they were committed atomically.
+  redirect('/admin/perfumes/'+importedId+'/edit?saved=created')
  }
  const brandSlug=slug(brand)
  if(!brandSlug||!slug(name))redirect('/admin/perfumes/new?error='+encodeURIComponent('Use a valid brand and fragrance name.'))
@@ -105,5 +135,5 @@ export default async function New({searchParams}:{searchParams:Promise<{error?:s
   const {data,error}=await db.from('atlas_research_queue').select('id,brand,perfume_name,manufacturer_url,source_notes,status,reviewed_by,reviewed_at,review_note').eq('id',p.atlasResearchId).maybeSingle()
   if(!error&&data){try{atlasDraft=prepareAtlasApprovedCatalogDraft(data)}catch{}}
  }
- return <main><section className="admin-editor"><p className="eyebrow">ADMIN · NEW FRAGRANCE</p><h1 className="page-title">Add a fragrance</h1><p className="lede">Create the core record, optionally add its first retailer, then continue directly into notes, accords and source verification.</p>{p.atlasResearchId&&!atlasDraft&&<div className="notice error">Atlas research was not approved or could not be verified. Nothing was prefilled.</div>}{atlasDraft&&<div className="notice"><strong>Approved Atlas research loaded.</strong> Review the details before saving. This form creates an unpublished draft and imports labeled Top, Heart, and Base notes. Review the notes and source before publishing. <a href={atlasDraft.sourceUrl} target="_blank" rel="noopener noreferrer">Inspect source</a><p>Extracted notes: {atlasDraft.sourceNotes.join(', ')}</p></div>}{p.error&&<div className="notice error">{p.error}</div>}<form action={add} className="form">{atlasDraft&&<input type="hidden" name="atlasResearchId" value={atlasDraft.researchId}/>}<label>Brand<input name="brand" required autoComplete="off" defaultValue={atlasDraft?.brand??""}/></label><label>Fragrance name<input name="name" required autoComplete="off" defaultValue={atlasDraft?.name??""}/></label><label>Concentration<input name="concentration" placeholder="Eau de Parfum"/></label><label>Release year<input name="release_year" type="number" min="1800" max="2100"/></label><label>Country<input name="country" placeholder="United Arab Emirates"/></label><label>Description<textarea name="description" rows={5}/></label><label>Status<select name="status" defaultValue="draft"><option value="draft">Draft</option>{!atlasDraft&&<option value="published">Published</option>}</select></label><section className="admin-panel"><h2>First retailer <span>optional</span></h2><p className="muted">Add an affiliate retailer now, or leave this section blank and add retailers later from the edit page.</p><label>Merchant<input name="merchant_name" placeholder="Retailer name"/></label><label>Affiliate URL<input name="affiliate_url" type="url" placeholder="https://…"/></label><label>Price <span>optional</span><input name="offer_price" type="number" min="0" step="0.01"/></label><label>Currency<input name="currency" maxLength={3} defaultValue="USD"/></label><label>Offer label <span>optional</span><input name="offer_label" placeholder="Best price, Free shipping…"/></label><p className="muted">The first retailer is created at priority 10, so it becomes the featured retailer unless you reorder offers later.</p></section><div className="rating-actions"><button className="button">Create &amp; Enrich</button><a className="button ghost" href="/admin">Cancel</a></div></form></section></main>
+ return <main><section className="admin-editor"><p className="eyebrow">ADMIN · NEW FRAGRANCE</p><h1 className="page-title">Add a fragrance</h1><p className="lede">Create the core record, optionally add its first retailer, then continue directly into notes, accords and source verification.</p>{p.atlasResearchId&&!atlasDraft&&<div className="notice error">Atlas research was not approved or could not be verified. Nothing was prefilled.</div>}{atlasDraft&&<div className="notice"><strong>Approved Atlas research loaded.</strong> Review the details before saving. This form creates an unpublished draft and imports labeled Top, Heart, and Base notes. Review the notes and source before publishing. <a href={atlasDraft.sourceUrl} target="_blank" rel="noopener noreferrer">Inspect source</a><p>Extracted notes: {atlasDraft.sourceNotes.join(', ')}</p></div>}{p.error&&<div className="notice error">{p.error}</div>}<form action={add} className="form">{atlasDraft&&<input type="hidden" name="atlasResearchId" value={atlasDraft.researchId}/>}<label>Brand<input name="brand" required autoComplete="off" defaultValue={atlasDraft?.brand??""}/></label><label>Fragrance name<input name="name" required autoComplete="off" defaultValue={atlasDraft?.name??""}/></label><label>Concentration<input name="concentration" placeholder="Eau de Parfum"/></label><label>Release year<input name="release_year" type="number" min="1800" max="2100"/></label><label>Country<input name="country" placeholder="United Arab Emirates"/></label><label>Description<textarea name="description" rows={5}/></label><label>Status<select name="status" defaultValue="draft"><option value="draft">Draft</option>{!atlasDraft&&<option value="published">Published</option>}</select></label>{!atlasDraft&&<section className="admin-panel"><h2>First retailer <span>optional</span></h2><p className="muted">Add an affiliate retailer now, or leave this section blank and add retailers later from the edit page.</p><label>Merchant<input name="merchant_name" placeholder="Retailer name"/></label><label>Affiliate URL<input name="affiliate_url" type="url" placeholder="https://…"/></label><label>Price <span>optional</span><input name="offer_price" type="number" min="0" step="0.01"/></label><label>Currency<input name="currency" maxLength={3} defaultValue="USD"/></label><label>Offer label <span>optional</span><input name="offer_label" placeholder="Best price, Free shipping…"/></label><p className="muted">The first retailer is created at priority 10, so it becomes the featured retailer unless you reorder offers later.</p></section>}<div className="rating-actions"><button className="button">Create &amp; Enrich</button><a className="button ghost" href="/admin">Cancel</a></div></form></section></main>
 }
