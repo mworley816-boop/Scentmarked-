@@ -18,12 +18,20 @@ async function add(formData:FormData){
  'use server'
  const s=await requireAdmin(),brand=String(formData.get('brand')||'').trim(),name=String(formData.get('name')||'').trim()
  const atlasResearchId=String(formData.get('atlasResearchId')||'').trim()
+ let atlasApprovedNotes:string[]|null=null
  if(atlasResearchId){
   const {data,error}=await s.from('atlas_research_queue').select('id,brand,perfume_name,manufacturer_url,source_notes,status,reviewed_by,reviewed_at,review_note').eq('id',atlasResearchId).maybeSingle()
   if(error||!data)redirect('/admin/perfumes/new?error='+encodeURIComponent('Approved Atlas research unavailable'))
   let verified=false
-  try{const draft=prepareAtlasApprovedCatalogDraft(data);verified=draft.brand===brand&&draft.name===name}catch{verified=false}
+  try{const draft=prepareAtlasApprovedCatalogDraft(data);verified=draft.brand===brand&&draft.name===name;atlasApprovedNotes=verified?draft.sourceNotes:null}catch{verified=false}
   if(!verified)redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas research approval or identity could not be verified'))
+ }
+ if(atlasApprovedNotes){
+  for(const entry of atlasApprovedNotes){
+   const match=entry.match(/^(Top|Heart|Base):\s*(.+)$/i)
+   if(!match||!match[2].trim()||!slug(match[2].trim()))
+    redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas research contains unsupported note labels. Review the research before creating a draft.'))
+  }
  }
  if(!brand||!name)redirect('/admin/perfumes/new?error='+encodeURIComponent('Brand and fragrance name are required.'))
  const brandSlug=slug(brand)
