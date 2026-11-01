@@ -43,7 +43,9 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
    {!data?.length?<p>No research submissions in this category yet.</p>:<div className="admin-list">{data.map(row=><article key={row.id}>
     <div><small>{row.brand}</small><h2>{row.perfume_name}</h2><p>Status: {row.status.replaceAll('_',' ')} · Submitted: {new Date(row.submitted_at).toLocaleDateString('en-US',{timeZone:'UTC'})}</p>
     <p>Original decision: {row.decision.replaceAll('_',' ')}</p>
-    <details><summary style={{cursor:'pointer',minHeight:'44px'}}>View extracted notes and source evidence</summary>\n     <p>Notes: {Array.isArray(row.source_notes)?row.source_notes.join(', '):'Unavailable'}</p>\n     <p><a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a></p>\n    </details>
+    <details><summary style={{cursor:'pointer',minHeight:'44px'}}>View extracted notes and source evidence</summary>
+     <p>Notes: {Array.isArray(row.source_notes)?row.source_notes.join(', '):'Unavailable'}</p>\n     <p><a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a></p>
+    </details>
     {row.review_note&&<p>Review: {row.review_note}</p>}
     {row.status==='approved'&&<details style={{marginBlock:'0.75rem'}}><summary style={{cursor:'pointer',minHeight:'44px',fontWeight:600}}>Preview catalog handoff draft</summary>
      {(()=>{try{
