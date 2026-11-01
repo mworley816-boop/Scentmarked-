@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import {prepareAtlasApprovedCatalogDraft} from '@/lib/atlas-approved-catalog-draft'
 import {parseAtlasImportNotes} from '@/lib/atlas-catalog-import-notes'
 import {atlasImportKey} from '@/lib/atlas-import-idempotency'
+import {createServiceClient} from '@/lib/supabase/service'
 
 export const metadata={title:'Add Fragrance',robots:{index:false,follow:false}}
 
@@ -41,6 +42,32 @@ async function add(formData:FormData){
   if(!merchant_name||!affiliate_url)redirect('/admin/perfumes/new?error='+encodeURIComponent('Enter both a merchant name and affiliate URL, or leave both blank.'))
   try{const u=new URL(affiliate_url);if(!['http:','https:'].includes(u.protocol))throw new Error()}catch{redirect('/admin/perfumes/new?error='+encodeURIComponent('Enter a valid retailer URL before creating the fragrance.'))}
   if(offer_price!==null&&(!Number.isFinite(offer_price)||offer_price<0))redirect('/admin/perfumes/new?error='+encodeURIComponent('Enter a valid retailer price before creating the fragrance.'))
+ }
+ if(atlasResearchId){
+  // requireAdmin() already checked the authenticated user's current admin role.
+  // Never expose the service credential to the browser or invoke this RPC without that check.
+  let service:ReturnType<typeof createServiceClient>
+  try{service=createServiceClient()}catch{
+   redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas atomic import is not configured on this server. No draft was created.'))
+  }
+  const yearRaw=String(formData.get('release_year')||'').trim()
+  const year=yearRaw?Number(yearRaw):null
+  if(year!==null&&(!Number.isInteger(year)||year<1800||year>2100)){
+   redirect('/admin/perfumes/new?error='+encodeURIComponent('Invalid release year.'))
+  }
+  const {data:importedId,error:importError}=await service.rpc('import_approved_atlas_catalog_draft',{
+   p_research_id:atlasResearchId,
+   p_description:String(formData.get('description')||'').trim()||null,
+   p_concentration:String(formData.get('concentration')||'').trim()||null,
+   p_release_year:year,
+   p_country:String(formData.get('country')||'').trim()||null
+  })
+  if(importError||!importedId){
+   redirect('/admin/perfumes/new?error='+encodeURIComponent('Atomic Atlas import failed; no partial draft was created. '+(importError?.message||'Unknown error')))
+  }
+  // Retailer offers are separate optional additions, not part of the atomic import.
+  // Add them later from the editor to avoid suggesting they were committed atomically.
+  redirect('/admin/perfumes/'+importedId+'/edit?saved=created')
  }
  const brandSlug=slug(brand)
  if(!brandSlug||!slug(name))redirect('/admin/perfumes/new?error='+encodeURIComponent('Use a valid brand and fragrance name.'))
