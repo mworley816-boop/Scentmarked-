@@ -21,7 +21,9 @@ async function add(formData:FormData){
  if(atlasResearchId){
   const {data,error}=await s.from('atlas_research_queue').select('id,brand,perfume_name,manufacturer_url,source_notes,status,reviewed_by,reviewed_at,review_note').eq('id',atlasResearchId).maybeSingle()
   if(error||!data)redirect('/admin/perfumes/new?error='+encodeURIComponent('Approved Atlas research unavailable'))
-  try{const draft=prepareAtlasApprovedCatalogDraft(data);if(draft.brand!==brand||draft.name!==name)throw new Error('Research identity changed')}catch{redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas research approval or identity could not be verified'))}
+  let verified=false
+  try{const draft=prepareAtlasApprovedCatalogDraft(data);verified=draft.brand===brand&&draft.name===name}catch{verified=false}
+  if(!verified)redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas research approval or identity could not be verified'))
  }
  if(!brand||!name)redirect('/admin/perfumes/new?error='+encodeURIComponent('Brand and fragrance name are required.'))
  const brandSlug=slug(brand)
