@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import {prepareAtlasApprovedCatalogDraft} from '@/lib/atlas-approved-catalog-draft'
 import {parseAtlasImportNotes} from '@/lib/atlas-catalog-import-notes'
+import {atlasImportKey} from '@/lib/atlas-import-idempotency'
 
 export const metadata={title:'Add Fragrance',robots:{index:false,follow:false}}
 
@@ -18,7 +19,9 @@ const slug=(x:string)=>x.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-
 async function add(formData:FormData){
  'use server'
  const s=await requireAdmin(),brand=String(formData.get('brand')||'').trim(),name=String(formData.get('name')||'').trim()
- const atlasResearchId=String(formData.get('atlasResearchId')||'').trim()
+ const rawAtlasResearchId=String(formData.get('atlasResearchId')||'').trim()
+ let atlasResearchId=''
+ if(rawAtlasResearchId){try{atlasResearchId=atlasImportKey(rawAtlasResearchId)}catch{redirect('/admin/perfumes/new?error='+encodeURIComponent('Invalid Atlas research identifier'))}}
  let atlasApprovedNotes:string[]|null=null
  if(atlasResearchId){
   const {data,error}=await s.from('atlas_research_queue').select('id,brand,perfume_name,manufacturer_url,source_notes,status,reviewed_by,reviewed_at,review_note').eq('id',atlasResearchId).maybeSingle()
