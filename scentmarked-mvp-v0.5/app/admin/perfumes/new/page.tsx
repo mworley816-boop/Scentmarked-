@@ -16,7 +16,13 @@ const slug=(x:string)=>x.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-
 
 async function add(formData:FormData){
  'use server'
- const s=await requireAdmin(),brand=String(formData.get('brand')||'').trim(),name=String(formData.get('name')||'').trim()\n const atlasResearchId=String(formData.get('atlasResearchId')||'').trim()\n if(atlasResearchId){\n  const {data,error}=await s.from('atlas_research_queue').select('id,brand,perfume_name,manufacturer_url,source_notes,status,reviewed_by,reviewed_at,review_note').eq('id',atlasResearchId).maybeSingle()\n  if(error||!data)redirect('/admin/perfumes/new?error='+encodeURIComponent('Approved Atlas research unavailable'))\n  try{const draft=prepareAtlasApprovedCatalogDraft(data);if(draft.brand!==brand||draft.name!==name)throw new Error('Research identity changed')}catch{redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas research approval or identity could not be verified'))}\n }
+ const s=await requireAdmin(),brand=String(formData.get('brand')||'').trim(),name=String(formData.get('name')||'').trim()
+ const atlasResearchId=String(formData.get('atlasResearchId')||'').trim()
+ if(atlasResearchId){
+  const {data,error}=await s.from('atlas_research_queue').select('id,brand,perfume_name,manufacturer_url,source_notes,status,reviewed_by,reviewed_at,review_note').eq('id',atlasResearchId).maybeSingle()
+  if(error||!data)redirect('/admin/perfumes/new?error='+encodeURIComponent('Approved Atlas research unavailable'))
+  try{const draft=prepareAtlasApprovedCatalogDraft(data);if(draft.brand!==brand||draft.name!==name)throw new Error('Research identity changed')}catch{redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas research approval or identity could not be verified'))}
+ }
  if(!brand||!name)redirect('/admin/perfumes/new?error='+encodeURIComponent('Brand and fragrance name are required.'))
  const brandSlug=slug(brand)
  if(!brandSlug||!slug(name))redirect('/admin/perfumes/new?error='+encodeURIComponent('Use a valid brand and fragrance name.'))
