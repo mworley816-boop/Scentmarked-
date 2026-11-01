@@ -72,6 +72,20 @@ async function add(formData:FormData){
    if(linkError)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but some Atlas notes could not be linked'))
   }
  }
+ if(atlasResearchId){
+  const {data:approved,error:sourceLookupError}=await s.from('atlas_research_queue').select('id,brand,perfume_name,manufacturer_url,source_notes,status,reviewed_by,reviewed_at,review_note').eq('id',atlasResearchId).maybeSingle()
+  if(sourceLookupError||!approved)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas source could not be retrieved'))
+  let sourceUrl:string|null=null
+  try{sourceUrl=prepareAtlasApprovedCatalogDraft(approved).sourceUrl}catch{sourceUrl=null}
+  if(!sourceUrl)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas source approval was invalidated'))
+  const {error:sourceError}=await s.from('perfume_sources').upsert({
+   perfume_id:result.data.id,source_name:'Atlas approved manufacturer research',
+   source_url:sourceUrl,source_type:'official',
+   fields_verified:['fragrance notes'],is_primary:false,
+   checked_at:new Date().toISOString()
+  },{onConflict:'perfume_id,source_url'})
+  if(sourceError)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created with notes, but source provenance could not be saved: '+sourceError.message))
+ }
  const merchant_name=String(formData.get('merchant_name')||'').trim(),affiliate_url=String(formData.get('affiliate_url')||'').trim(),offer_label=String(formData.get('offer_label')||'').trim(),rawPrice=String(formData.get('offer_price')||'').trim(),offer_price=rawPrice===''?null:Number(rawPrice),currency=String(formData.get('currency')||'USD').trim().toUpperCase()
  if(merchant_name||affiliate_url){
   if(!merchant_name||!affiliate_url)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('The fragrance was created. Add both a merchant name and affiliate URL to create the retailer offer.'))
