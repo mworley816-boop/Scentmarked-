@@ -43,8 +43,9 @@ async function add(formData:FormData){
  if(atlasResearchId){
   const {data:approved,error:approvedError}=await s.from('atlas_research_queue').select('id,brand,perfume_name,manufacturer_url,source_notes,status,reviewed_by,reviewed_at,review_note').eq('id',atlasResearchId).maybeSingle()
   if(approvedError||!approved)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas notes could not be loaded'))
-  let notes:string[]=[]
-  try{notes=prepareAtlasApprovedCatalogDraft(approved).sourceNotes}catch{redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas note approval is no longer valid'))}
+  let notes:string[]|null=null
+  try{notes=prepareAtlasApprovedCatalogDraft(approved).sourceNotes}catch{notes=null}
+  if(!notes)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas note approval is no longer valid'))
   for(const entry of notes){
    const match=entry.match(/^(Top|Heart|Base):\s*(.+)$/i)
    if(!match)continue
