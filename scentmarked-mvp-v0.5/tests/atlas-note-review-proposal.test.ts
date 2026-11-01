@@ -15,3 +15,8 @@ test('rejects missing notes and mismatched evidence',()=>{
  assert.throws(()=>buildAtlasNoteReviewProposal(candidate,'Top Notes: Pear','https://example.com/other',now),/does not match/)
  assert.throws(()=>buildAtlasNoteReviewProposal(candidate,'Top Notes: Pear','https://example.com/rose','invalid'),/timestamp/)
 })
+
+test('server rejects source text exceeding the form limit',()=>{
+ const text='Top Notes: Pear\n'+'x'.repeat(100001)
+ assert.throws(()=>buildAtlasNoteReviewProposal(candidate,text,'https://example.com/rose',new Date().toISOString()),/100000 character limit/)
+})
