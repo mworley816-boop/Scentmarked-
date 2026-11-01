@@ -47,8 +47,8 @@ begin
   or v_research.manufacturer_url ~ '^https://[^/]*:[0-9]+(/|$)' then
   raise exception 'Invalid manufacturer source URL';
  end if;
- v_brand_slug := pg_catalog.trim(both '-' from pg_catalog.regexp_replace(pg_catalog.lower(v_research.brand),'[^a-z0-9]+','-','g'));
- v_perfume_slug := pg_catalog.trim(both '-' from pg_catalog.regexp_replace(pg_catalog.lower(v_research.brand||' '||v_research.perfume_name),'[^a-z0-9]+','-','g'));
+ v_brand_slug := pg_catalog.btrim(pg_catalog.regexp_replace(pg_catalog.lower(v_research.brand),'[^a-z0-9]+','-','g'),'-');
+ v_perfume_slug := pg_catalog.btrim(pg_catalog.regexp_replace(pg_catalog.lower(v_research.brand||' '||v_research.perfume_name),'[^a-z0-9]+','-','g'),'-');
  if v_brand_slug='' or v_perfume_slug='' then raise exception 'Invalid fragrance identity'; end if;
  insert into public.brands(name,slug) values(v_research.brand,v_brand_slug)
  on conflict (slug) do nothing;
@@ -58,7 +58,7 @@ begin
  end if;
  while exists(select 1 from public.perfumes where slug=v_perfume_slug) loop
   v_ordinal:=v_ordinal+1;
-  v_perfume_slug:=pg_catalog.trim(both '-' from pg_catalog.regexp_replace(pg_catalog.lower(v_research.brand||' '||v_research.perfume_name),'[^a-z0-9]+','-','g'))||'-'||v_ordinal::text;
+  v_perfume_slug:=pg_catalog.btrim(pg_catalog.regexp_replace(pg_catalog.lower(v_research.brand||' '||v_research.perfume_name),'[^a-z0-9]+','-','g'),'-')||'-'||v_ordinal::text;
  end loop;
  insert into public.perfumes(brand_id,name,slug,status,description,concentration,release_year,country)
  values(v_brand_id,v_research.perfume_name,v_perfume_slug,'draft',p_description,p_concentration,p_release_year,p_country)
@@ -73,7 +73,7 @@ begin
   end if;
   if v_position||'|'||pg_catalog.lower(v_note_name)=any(v_seen) then continue; end if;
   v_seen:=pg_catalog.array_append(v_seen,v_position||'|'||pg_catalog.lower(v_note_name));
-  v_note_slug:=pg_catalog.trim(both '-' from pg_catalog.regexp_replace(pg_catalog.lower(v_note_name),'[^a-z0-9]+','-','g'));
+  v_note_slug:=pg_catalog.btrim(pg_catalog.regexp_replace(pg_catalog.lower(v_note_name),'[^a-z0-9]+','-','g'),'-');
   if v_note_slug='' then raise exception 'Invalid Atlas note slug'; end if;
   insert into public.notes(name,slug) values(v_note_name,v_note_slug) on conflict (slug) do nothing;
   select id into v_note_id from public.notes where slug=v_note_slug;
