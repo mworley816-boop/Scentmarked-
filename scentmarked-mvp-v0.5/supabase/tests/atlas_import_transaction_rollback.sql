@@ -9,6 +9,7 @@ declare
  v_first uuid;
  v_second uuid;
  v_count integer;
+ v_bad_id text := 'atlas-invalid-' || substr(md5(random()::text),1,16);
 begin
  insert into public.atlas_research_queue
  (id,brand,perfume_name,manufacturer_url,source_notes,decision,status,reviewed_at,reviewed_by,review_note)
@@ -41,6 +42,26 @@ begin
   if sqlerrm='Revoked approval was incorrectly accepted' then raise; end if;
   if sqlerrm<>'Atlas research is not approved for import' then raise; end if;
  end;
+ -- Invalid notes must abort the import atomically: no draft, ledger or brand survives.
+ insert into public.atlas_research_queue
+ (id,brand,perfume_name,manufacturer_url,source_notes,decision,status,reviewed_at,reviewed_by,review_note)
+ values
+ (v_bad_id,'Atlas Invalid Test','Invalid ' || v_bad_id,'https://example.org/invalid',
+  '["Top: Vanilla","Unsupported: Invalid"]'::jsonb,
+  'needs_source_review','approved',now(),'integration-test','Approved for negative test');
+ begin
+  perform public.import_approved_atlas_catalog_draft(v_bad_id);
+  raise exception 'Invalid note label was incorrectly accepted';
+ exception when others then
+  if sqlerrm='Invalid note label was incorrectly accepted' then raise; end if;
+  if sqlerrm<>'Unsupported Atlas note label' then raise; end if;
+ end;
+ select count(*) into v_count from public.atlas_catalog_imports where research_id=v_bad_id;
+ if v_count<>0 then raise exception 'Invalid import created a ledger entry'; end if;
+ select count(*) into v_count from public.perfumes where name='Invalid ' || v_bad_id;
+ if v_count<>0 then raise exception 'Invalid import created a draft'; end if;
+ select count(*) into v_count from public.brands where name='Atlas Invalid Test';
+ if v_count<>0 then raise exception 'Invalid import created a brand'; end if;
 end
 $test$;
 rollback;
