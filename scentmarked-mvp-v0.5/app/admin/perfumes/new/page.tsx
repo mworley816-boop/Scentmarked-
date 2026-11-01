@@ -33,6 +33,12 @@ async function add(formData:FormData){
   if(!valid)redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas research contains invalid note labels. Review the research before creating a draft.'))
  }
  if(!brand||!name)redirect('/admin/perfumes/new?error='+encodeURIComponent('Brand and fragrance name are required.'))
+ const merchant_name=String(formData.get('merchant_name')||'').trim(),affiliate_url=String(formData.get('affiliate_url')||'').trim(),offer_label=String(formData.get('offer_label')||'').trim(),rawPrice=String(formData.get('offer_price')||'').trim(),offer_price=rawPrice===''?null:Number(rawPrice),currency=String(formData.get('currency')||'USD').trim().toUpperCase()
+ if(merchant_name||affiliate_url){
+  if(!merchant_name||!affiliate_url)redirect('/admin/perfumes/new?error='+encodeURIComponent('Enter both a merchant name and affiliate URL, or leave both blank.'))
+  try{const u=new URL(affiliate_url);if(!['http:','https:'].includes(u.protocol))throw new Error()}catch{redirect('/admin/perfumes/new?error='+encodeURIComponent('Enter a valid retailer URL before creating the fragrance.'))}
+  if(offer_price!==null&&(!Number.isFinite(offer_price)||offer_price<0))redirect('/admin/perfumes/new?error='+encodeURIComponent('Enter a valid retailer price before creating the fragrance.'))
+ }
  const brandSlug=slug(brand)
  if(!brandSlug||!slug(name))redirect('/admin/perfumes/new?error='+encodeURIComponent('Use a valid brand and fragrance name.'))
  let brandId:string
@@ -81,11 +87,8 @@ async function add(formData:FormData){
   },{onConflict:'perfume_id,source_url'})
   if(sourceError)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created with notes, but source provenance could not be saved: '+sourceError.message))
  }
- const merchant_name=String(formData.get('merchant_name')||'').trim(),affiliate_url=String(formData.get('affiliate_url')||'').trim(),offer_label=String(formData.get('offer_label')||'').trim(),rawPrice=String(formData.get('offer_price')||'').trim(),offer_price=rawPrice===''?null:Number(rawPrice),currency=String(formData.get('currency')||'USD').trim().toUpperCase()
+
  if(merchant_name||affiliate_url){
-  if(!merchant_name||!affiliate_url)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('The fragrance was created. Add both a merchant name and affiliate URL to create the retailer offer.'))
-  try{const u=new URL(affiliate_url);if(!['http:','https:'].includes(u.protocol))throw new Error()}catch{redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('The fragrance was created, but the affiliate URL was invalid. Add the retailer from this edit page.'))}
-  if(offer_price!==null&&(!Number.isFinite(offer_price)||offer_price<0))redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('The fragrance was created, but the retailer price was invalid. Add the retailer from this edit page.'))
   const offer=await s.from('perfume_affiliate_offers').insert({perfume_id:result.data.id,merchant_name,affiliate_url,price:offer_price,currency:currency||'USD',label:offer_label||null,is_active:true,priority:10})
   if(offer.error)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('The fragrance was created, but the retailer offer could not be saved: '+offer.error.message))
  }
