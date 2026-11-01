@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import {prepareAtlasApprovedCatalogDraft} from '@/lib/atlas-approved-catalog-draft'
+import {parseAtlasImportNotes} from '@/lib/atlas-catalog-import-notes'
 
 export const metadata={title:'Add Fragrance',robots:{index:false,follow:false}}
 
@@ -27,11 +28,9 @@ async function add(formData:FormData){
   if(!verified)redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas research approval or identity could not be verified'))
  }
  if(atlasApprovedNotes){
-  for(const entry of atlasApprovedNotes){
-   const match=entry.match(/^(Top|Heart|Base):\s*(.+)$/i)
-   if(!match||!match[2].trim()||!slug(match[2].trim()))
-    redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas research contains unsupported note labels. Review the research before creating a draft.'))
-  }
+  let valid=false
+  try{parseAtlasImportNotes(atlasApprovedNotes);valid=true}catch{valid=false}
+  if(!valid)redirect('/admin/perfumes/new?error='+encodeURIComponent('Atlas research contains invalid note labels. Review the research before creating a draft.'))
  }
  if(!brand||!name)redirect('/admin/perfumes/new?error='+encodeURIComponent('Brand and fragrance name are required.'))
  const brandSlug=slug(brand)
@@ -54,12 +53,7 @@ async function add(formData:FormData){
   let notes:string[]|null=null
   try{notes=prepareAtlasApprovedCatalogDraft(approved).sourceNotes}catch{notes=null}
   if(!notes)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas note approval is no longer valid'))
-  for(const entry of notes){
-   const match=entry.match(/^(Top|Heart|Base):\s*(.+)$/i)
-   if(!match)continue
-   const position=match[1].toLowerCase()
-   const noteName=match[2].trim()
-   if(!noteName)continue
+  for(const {position,name:noteName} of parseAtlasImportNotes(notes)){
    const existing=await s.from('notes').select('id').ilike('name',noteName).limit(1).maybeSingle()
    if(existing.error)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas note lookup failed'))
    let noteId=existing.data?.id
