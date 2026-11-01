@@ -44,6 +44,9 @@ async function add(formData:FormData){
   if(offer_price!==null&&(!Number.isFinite(offer_price)||offer_price<0))redirect('/admin/perfumes/new?error='+encodeURIComponent('Enter a valid retailer price before creating the fragrance.'))
  }
  if(atlasResearchId){
+  if(merchant_name||affiliate_url){
+   redirect('/admin/perfumes/new?error='+encodeURIComponent('Create the Atlas draft first, then add retailer offers from its edit page.'))
+  }
   // requireAdmin() already checked the authenticated user's current admin role.
   // Never expose the service credential to the browser or invoke this RPC without that check.
   let service:ReturnType<typeof createServiceClient>
