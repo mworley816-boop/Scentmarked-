@@ -19,7 +19,7 @@ export function buildAtlasNoteReviewProposal(
  if(sourceUrl!==checked.normalized.manufacturerUrl)throw new Error('Source URL does not match candidate')
  const timestamp=Date.parse(capturedAt)
  if(!Number.isFinite(timestamp)||timestamp>Date.now()+60_000||timestamp<Date.now()-365*24*60*60*1000)throw new Error('Invalid capture timestamp')
- if(sourceText.length>1_000_000)throw new Error('Research text exceeds limit')
+ if(sourceText.length>100_000)throw new Error('Research text exceeds 100000 character limit')
  const notes=extractAtlasNoteSections(sourceText)
  if(!notes.top.length&&!notes.middle.length&&!notes.base.length)throw new Error('No explicitly labeled notes found')
  return {candidate:checked.normalized,notes,evidence:{sourceUrl,capturedAt},status:'needs_source_review'}
