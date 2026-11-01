@@ -44,7 +44,8 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
     <div><small>{row.brand}</small><h2>{row.perfume_name}</h2><p>Status: {row.status.replaceAll('_',' ')} · Submitted: {new Date(row.submitted_at).toLocaleDateString('en-US',{timeZone:'UTC'})}</p>
     <p>Original decision: {row.decision.replaceAll('_',' ')}</p>
     <details><summary style={{cursor:'pointer',minHeight:'44px'}}>View extracted notes and source evidence</summary>
-     <p>Notes: {Array.isArray(row.source_notes)?row.source_notes.join(', '):'Unavailable'}</p>\n     <p><a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a></p>
+     <p>Notes: {Array.isArray(row.source_notes)?row.source_notes.join(', '):'Unavailable'}</p>
+     <p><a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a></p>
     </details>
     {row.review_note&&<p>Review: {row.review_note}</p>}
     {row.status==='approved'&&<details style={{marginBlock:'0.75rem'}}><summary style={{cursor:'pointer',minHeight:'44px',fontWeight:600}}>Preview catalog handoff draft</summary>
@@ -53,7 +54,6 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
       return <div><p><strong>{draft.brand} — {draft.name}</strong></p><p>Source notes: {draft.sourceNotes.join(', ')}</p><p>Review verification: {draft.review.verificationNote}</p><p><strong>Draft only.</strong> A separate catalog approval and duplicate recheck are required before publishing.</p><Link href={'/admin/perfumes/new?atlasResearchId='+encodeURIComponent(draft.researchId)}>Open catalog editor with this approved research</Link></div>
      }catch{return <p role="alert">This approval is missing information required for catalog handoff. Review the source record before proceeding.</p>}})()}
     </details>}
-    <a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a>
     {(row.status==='needs_source_review'||row.status==='duplicate')&&<AtlasReviewActions id={row.id} decision={row.decision} />}
     </div>
    </article>)}</div>}
