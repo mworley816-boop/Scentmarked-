@@ -5,6 +5,7 @@ import {AtlasReviewActions} from './review-actions'
 import {AtlasBatchIntake} from './batch-intake'
 import {AtlasHtmlIntake} from './html-intake'
 import {AtlasSourceTextIntake} from './source-text-intake'
+import {prepareAtlasApprovedCatalogDraft} from '@/lib/atlas-approved-catalog-draft'
 
 export const metadata={title:'Atlas Research Queue',robots:{index:false,follow:false}}
 export const dynamic='force-dynamic'
@@ -44,6 +45,12 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
     <p>Original decision: {row.decision.replaceAll('_',' ')}</p>
     <details><summary style={{cursor:'pointer',minHeight:'44px'}}>View extracted notes and source evidence</summary>\n     <p>Notes: {Array.isArray(row.source_notes)?row.source_notes.join(', '):'Unavailable'}</p>\n     <p><a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a></p>\n    </details>
     {row.review_note&&<p>Review: {row.review_note}</p>}
+    {row.status==='approved'&&<details style={{marginBlock:'0.75rem'}}><summary style={{cursor:'pointer',minHeight:'44px',fontWeight:600}}>Preview catalog handoff draft</summary>
+     {(()=>{try{
+      const draft=prepareAtlasApprovedCatalogDraft(row)
+      return <div><p><strong>{draft.brand} — {draft.name}</strong></p><p>Source notes: {draft.sourceNotes.join(', ')}</p><p>Review verification: {draft.review.verificationNote}</p><p><strong>Draft only.</strong> A separate catalog approval and duplicate recheck are required before publishing.</p></div>
+     }catch{return <p role="alert">This approval is missing information required for catalog handoff. Review the source record before proceeding.</p>}})()}
+    </details>}
     <a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a>
     {(row.status==='needs_source_review'||row.status==='duplicate')&&<AtlasReviewActions id={row.id} decision={row.decision} />}
     </div>
