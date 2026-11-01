@@ -29,8 +29,6 @@ begin
   raise exception 'Invalid Atlas research ID';
  end if;
  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('atlas-catalog:'||p_research_id,0));
- select perfume_id into v_existing from public.atlas_catalog_imports where research_id=p_research_id;
- if v_existing is not null then return v_existing; end if;
  select * into v_research from public.atlas_research_queue where id=p_research_id for update;
  if not found or v_research.status <> 'approved' or v_research.reviewed_by is null
   or pg_catalog.btrim(v_research.reviewed_by)='' or v_research.reviewed_at is null
@@ -38,6 +36,10 @@ begin
   or v_research.decision='duplicate' then
   raise exception 'Atlas research is not approved for import';
  end if;
+ -- A retry must still have valid approval. Do not return a previously
+ -- imported draft when its Atlas research approval has been revoked.
+ select perfume_id into v_existing from public.atlas_catalog_imports where research_id=p_research_id;
+ if v_existing is not null then return v_existing; end if;
  if pg_catalog.jsonb_typeof(v_research.source_notes)<>'array'
   or pg_catalog.jsonb_array_length(v_research.source_notes) not between 1 and 100 then
   raise exception 'Invalid Atlas research notes';
