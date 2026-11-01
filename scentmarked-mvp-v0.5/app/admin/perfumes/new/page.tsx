@@ -81,7 +81,8 @@ async function add(formData:FormData){
   const {error:sourceError}=await s.from('perfume_sources').upsert({
    perfume_id:result.data.id,source_name:'Atlas approved manufacturer research',
    source_url:sourceUrl,source_type:'official',
-   fields_verified:['fragrance notes'],is_primary:false,
+   // Atlas approval records reviewed research, not independent catalog field verification.
+   fields_verified:[],is_primary:false,
    checked_at:new Date().toISOString()
   },{onConflict:'perfume_id,source_url'})
   if(sourceError)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created with notes, but source provenance could not be saved: '+sourceError.message))
