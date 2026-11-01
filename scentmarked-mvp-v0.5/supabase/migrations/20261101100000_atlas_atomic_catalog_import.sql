@@ -40,8 +40,10 @@ begin
  -- imported draft when its Atlas research approval has been revoked.
  select perfume_id into v_existing from public.atlas_catalog_imports where research_id=p_research_id;
  if v_existing is not null then return v_existing; end if;
- if pg_catalog.jsonb_typeof(v_research.source_notes)<>'array'
-  or pg_catalog.jsonb_array_length(v_research.source_notes) not between 1 and 100 then
+ if pg_catalog.jsonb_typeof(v_research.source_notes) is distinct from 'array' then
+  raise exception 'Invalid Atlas research notes';
+ end if;
+ if pg_catalog.jsonb_array_length(v_research.source_notes) not between 1 and 100 then
   raise exception 'Invalid Atlas research notes';
  end if;
  if v_research.manufacturer_url !~ '^https://[^[:space:]]+$'
