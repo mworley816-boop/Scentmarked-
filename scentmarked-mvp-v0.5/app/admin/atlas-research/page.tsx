@@ -48,7 +48,7 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
     {row.status==='approved'&&<details style={{marginBlock:'0.75rem'}}><summary style={{cursor:'pointer',minHeight:'44px',fontWeight:600}}>Preview catalog handoff draft</summary>
      {(()=>{try{
       const draft=prepareAtlasApprovedCatalogDraft(row)
-      return <div><p><strong>{draft.brand} — {draft.name}</strong></p><p>Source notes: {draft.sourceNotes.join(', ')}</p><p>Review verification: {draft.review.verificationNote}</p><p><strong>Draft only.</strong> A separate catalog approval and duplicate recheck are required before publishing.</p></div>
+      return <div><p><strong>{draft.brand} — {draft.name}</strong></p><p>Source notes: {draft.sourceNotes.join(', ')}</p><p>Review verification: {draft.review.verificationNote}</p><p><strong>Draft only.</strong> A separate catalog approval and duplicate recheck are required before publishing.</p><Link href={'/admin/perfumes/new?atlasResearchId='+encodeURIComponent(draft.researchId)}>Open catalog editor with this approved research</Link></div>
      }catch{return <p role="alert">This approval is missing information required for catalog handoff. Review the source record before proceeding.</p>}})()}
     </details>}
     <a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a>
