@@ -19,7 +19,16 @@ export async function POST(request:Request){
   const {data,error}=await service.rpc('import_approved_atlas_catalog_draft',{p_research_id:id})
   if(error){
    console.error('Atlas catalog draft import failed',{code:error.code})
-   return NextResponse.json({error:'Import could not be completed. Verify approval, source evidence, and duplicate status.'},{status:409})
+   const safeMessages:Record<string,string>={
+    'Atlas research is not approved for import':'This research is not currently approved for import. Review its approval status and verification note.',
+    'Fragrance already exists in catalog':'A fragrance with this brand and name already exists. Review the existing catalog entry before importing.',
+    'Invalid manufacturer source URL':'The manufacturer source must be a valid HTTPS URL. Correct the research source before importing.',
+    'Invalid Atlas research notes':'Atlas research must include between 1 and 100 valid fragrance notes.',
+    'Unsupported Atlas note label':'Research notes must use Top, Heart, or Base labels.',
+    'Invalid Atlas note name':'One or more fragrance note names are invalid.'
+   }
+   const message=safeMessages[error.message]||'Import could not be completed. Verify approval, source evidence, and duplicate status.'
+   return NextResponse.json({error:message},{status:409})
   }
   if(typeof data!=='string')return NextResponse.json({error:'Unexpected import response'},{status:500})
   return NextResponse.json({perfumeId:data,status:'draft'})
