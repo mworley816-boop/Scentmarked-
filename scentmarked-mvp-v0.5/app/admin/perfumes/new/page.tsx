@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import {prepareAtlasApprovedCatalogDraft} from '@/lib/atlas-approved-catalog-draft'
+import {parseAtlasImportNotes} from '@/lib/atlas-catalog-import-notes'
 import {atlasImportKey} from '@/lib/atlas-import-idempotency'
 import {createServiceClient} from '@/lib/supabase/service'
 
