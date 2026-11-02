@@ -25,6 +25,10 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
  let query=s.from('atlas_research_queue').select('id,brand,perfume_name,manufacturer_url,source_notes,decision,status,submitted_at,reviewed_at,reviewed_by,review_note',{count:'exact'}).order('submitted_at',{ascending:false}).limit(100)
  if(status!=='all')query=query.eq('status',status)
  const {data,error,count}=await query
+ const ids=(data??[]).map(row=>row.id)
+ const {data:imports}=ids.length?await s.from('atlas_catalog_imports').select('research_id,perfume_id').in('research_id',ids):{data:[]}
+ const importedByResearch=new Map((imports??[]).map(item=>[item.research_id,item.perfume_id]))
+
  return <main className="container" style={{paddingBlock:'2rem'}}>
   <Link href="/admin">← Admin Studio</Link>
   <h1>Atlas research review queue</h1>
@@ -49,7 +53,7 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
      <p><a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a></p>
     </details>
     {row.review_note&&<p>Review: {row.review_note}</p>}
-    {row.status==='approved'&&<AtlasImportDraftAction id={row.id} />}
+    {importedByResearch.has(row.id)?<p role="status"><strong>Already imported as a catalog draft.</strong> <Link href={'/admin/perfumes/'+encodeURIComponent(importedByResearch.get(row.id)! )+'/edit'}>Review imported perfume</Link>. Check for an existing published fragrance before publishing.</p>:row.status==='approved'&&<AtlasImportDraftAction id={row.id} />}
     {row.status==='approved'&&<details style={{marginBlock:'0.75rem'}}><summary style={{cursor:'pointer',minHeight:'44px',fontWeight:600}}>Preview catalog handoff draft</summary>
      {(()=>{try{
       const draft=prepareAtlasApprovedCatalogDraft(row)
