@@ -1,0 +1,44 @@
+name: Atlas approval gate SQL integration
+
+on:
+  pull_request:
+    paths:
+      - 'scentmarked-mvp-v0.5/supabase/tests/atlas_import_approval_gate.sql'
+      - '.github/workflows/atlas-import-approval-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  approval-gate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: localtest
+          POSTGRES_DB: atlas_gate
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d atlas_gate"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:localtest@127.0.0.1:5432/atlas_gate
+      ATLAS_DISPOSABLE_DB: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify local-only database
+        run: bash scentmarked-mvp-v0.5/supabase/tests/guard_disposable_database.sh
+      - name: Bootstrap Atlas import schema
+        run: |
+          set -euo pipefail
+          base=scentmarked-mvp-v0.5/supabase
+          for sql in tests/core_baseline_auth_stub.sql baseline/001_public_schema.sql baseline/002_indexes.sql tests/atlas_import_postgres_stub.sql migrations/20261101090000_atlas_catalog_import_ledger.sql migrations/20261101100000_atlas_atomic_catalog_import.sql; do
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f "$base/$sql"
+          done
+      - name: Run negative approval gate cases
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/tests/atlas_import_approval_gate.sql
