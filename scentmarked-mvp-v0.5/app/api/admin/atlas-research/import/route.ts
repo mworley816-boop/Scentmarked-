@@ -31,7 +31,20 @@ export async function POST(request:Request){
    return NextResponse.json({error:message},{status:409})
   }
   if(typeof data!=='string')return NextResponse.json({error:'Unexpected import response'},{status:500})
-  return NextResponse.json({perfumeId:data,status:'draft'})
+  const {data:record,error:recordError}=await service.from('perfumes').select('id,status,name').eq('id',data).maybeSingle()
+  if(recordError||!record||record.status!=='draft'){
+   console.error('Atlas imported draft verification failed',{code:recordError?.code})
+   return NextResponse.json({error:'Import response could not be verified. Check the catalog before retrying.'},{status:500})
+  }
+  const [{count:noteCount,error:noteError},{count:sourceCount,error:sourceError}]=await Promise.all([
+   service.from('perfume_notes').select('perfume_id',{count:'exact',head:true}).eq('perfume_id',data),
+   service.from('perfume_sources').select('perfume_id',{count:'exact',head:true}).eq('perfume_id',data)
+  ])
+  if(noteError||sourceError||!noteCount||!sourceCount){
+   console.error('Atlas import provenance verification failed',{noteCode:noteError?.code,sourceCode:sourceError?.code})
+   return NextResponse.json({error:'Draft was imported, but its notes or source could not be verified. Inspect the catalog before retrying.',perfumeId:data},{status:500})
+  }
+  return NextResponse.json({perfumeId:data,status:'draft',name:record.name,noteCount,sourceCount})
  }catch{
   return NextResponse.json({error:'Catalog import service unavailable'},{status:503})
  }
