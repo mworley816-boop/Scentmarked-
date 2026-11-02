@@ -1,0 +1,45 @@
+name: Core schema baseline smoke test
+
+on:
+  pull_request:
+    paths:
+      - 'scentmarked-mvp-v0.5/supabase/baseline/**'
+      - 'scentmarked-mvp-v0.5/supabase/tests/core_baseline_auth_stub.sql'
+      - '.github/workflows/core-baseline-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: localtest
+          POSTGRES_DB: atlas_smoke
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d atlas_smoke"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:localtest@127.0.0.1:5432/atlas_smoke
+      ATLAS_DISPOSABLE_DB: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify disposable database target
+        run: bash scentmarked-mvp-v0.5/supabase/tests/guard_disposable_database.sh
+      - name: Create minimal Auth dependency stub
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/tests/core_baseline_auth_stub.sql
+      - name: Replay recovered core schema
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/baseline/001_public_schema.sql
+      - name: Replay recovered indexes
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/baseline/002_indexes.sql
+      - name: Verify core schema exists
+        run: |
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF to_regclass('public.perfumes') IS NULL OR to_regclass('public.perfume_notes') IS NULL THEN RAISE EXCEPTION 'Missing core perfume tables'; END IF; END \$\$;"
