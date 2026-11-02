@@ -42,4 +42,4 @@ jobs:
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/baseline/002_indexes.sql
       - name: Verify core schema exists
         run: |
-          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atc "select case when to_regclass('public.perfumes') is not null and to_regclass('public.perfume_notes') is not null then 'ok' else (1/0)::text end" | grep -qx ok
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF to_regclass('public.perfumes') IS NULL OR to_regclass('public.perfume_notes') IS NULL THEN RAISE EXCEPTION 'Missing core perfume tables'; END IF; END \$\$;"
