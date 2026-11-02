@@ -1,0 +1,56 @@
+name: Atlas concurrent import integration
+on:
+  pull_request:
+    paths:
+      - 'scentmarked-mvp-v0.5/supabase/tests/atlas_concurrency_seed.sql'
+      - '.github/workflows/atlas-concurrent-import.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  concurrency:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: localtest
+          POSTGRES_DB: atlas_concurrent
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d atlas_concurrent"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:localtest@127.0.0.1:5432/atlas_concurrent
+      ATLAS_DISPOSABLE_DB: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify local database
+        run: bash scentmarked-mvp-v0.5/supabase/tests/guard_disposable_database.sh
+      - name: Bootstrap
+        run: |
+          set -euo pipefail
+          base=scentmarked-mvp-v0.5/supabase
+          for sql in tests/core_baseline_auth_stub.sql baseline/001_public_schema.sql baseline/002_indexes.sql tests/atlas_import_postgres_stub.sql migrations/20261101090000_atlas_catalog_import_ledger.sql migrations/20261101100000_atlas_atomic_catalog_import.sql tests/atlas_concurrency_seed.sql; do
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f "$base/$sql"
+          done
+      - name: Run simultaneous import requests and assert idempotency
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          for n in 1 2; do
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atc "select public.import_approved_atlas_catalog_draft('atlas-concurrency-ci')" > "$tmp/$n" &
+            pids[$n]=$!
+          done
+          wait "${pids[1]}"
+          wait "${pids[2]}"
+          first="$(tr -d '[:space:]' < "$tmp/1")"
+          second="$(tr -d '[:space:]' < "$tmp/2")"
+          test -n "$first"
+          test "$first" = "$second"
+          test "$(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atc "select count(*) from public.atlas_catalog_imports where research_id='atlas-concurrency-ci'")" = 1
+          test "$(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -Atc "select count(*) from public.perfumes where name='Concurrency CI'")" = 1
