@@ -1,0 +1,47 @@
+name: Atlas duplicate guard SQL
+on:
+  pull_request:
+    paths:
+      - 'scentmarked-mvp-v0.5/supabase/migrations/20261102170000_atlas_import_duplicate_guard_corrected.sql'
+      - '.github/workflows/atlas-duplicate-guard-sql.yml'
+  workflow_dispatch:
+jobs:
+  validate-sql:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: atlas_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: atlas_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bootstrap disposable schema
+        run: |
+          psql -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/baseline/001_public_schema.sql
+          psql -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/baseline/002_indexes.sql
+          psql -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/tests/atlas_import_postgres_stub.sql
+          psql -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/migrations/20261101090000_atlas_catalog_import_ledger.sql
+      - name: Apply corrected import SQL and verify name guard
+        run: |
+          psql -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/migrations/20261102170000_atlas_import_duplicate_guard_corrected.sql
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          DECLARE body text;
+          BEGIN
+            SELECT pg_get_functiondef('public.import_approved_atlas_catalog_draft(text,text,text,integer,text)'::regprocedure) INTO body;
+            IF position('case when pg_catalog.right' in lower(body)) = 0 THEN
+              RAISE EXCEPTION 'Normalized duplicate guard not installed';
+            END IF;
+          END $$;
+          SQL
