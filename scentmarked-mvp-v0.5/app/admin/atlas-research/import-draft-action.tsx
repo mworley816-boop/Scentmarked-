@@ -19,7 +19,7 @@ export function AtlasImportDraftAction({id}:{id:string}){
  }
  return <div style={{marginBlock:'0.75rem'}}>
   <button type="button" disabled={busy||!!perfumeId} onClick={importDraft}>{busy?'Importing…':perfumeId?'Draft created':'Create unpublished catalog draft'}</button>
-  {perfumeId&&<p role="status">Draft created: {perfumeId}. <Link href={'/admin/perfumes/'+encodeURIComponent(perfumeId)}>Review catalog entry</Link></p>}
+  {perfumeId&&<p role="status">Draft created: {perfumeId}. <Link href={'/admin/perfumes/'+encodeURIComponent(perfumeId)+'/edit'}>Review catalog entry</Link></p>}
   {error&&<p role="alert">{error}</p>}
  </div>
 }
