@@ -1,0 +1,20 @@
+name: Atlas database target safety guard
+
+on:
+  pull_request:
+    paths:
+      - 'scentmarked-mvp-v0.5/supabase/tests/guard_disposable_database.sh'
+      - 'scentmarked-mvp-v0.5/supabase/tests/test_disposable_database_guard.sh'
+      - '.github/workflows/atlas-database-guard.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exercise local-only database guard without database access
+        run: bash scentmarked-mvp-v0.5/supabase/tests/test_disposable_database_guard.sh
