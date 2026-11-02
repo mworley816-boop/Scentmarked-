@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import {prepareAtlasApprovedCatalogDraft} from '@/lib/atlas-approved-catalog-draft'
-import {parseAtlasImportNotes} from '@/lib/atlas-catalog-import-notes'
 import {atlasImportKey} from '@/lib/atlas-import-idempotency'
 import {createServiceClient} from '@/lib/supabase/service'
 
@@ -86,41 +85,6 @@ async function add(formData:FormData){
  while(true){const check=await s.from('perfumes').select('id').eq('slug',perfumeSlug).maybeSingle();if(!check.data)break;perfumeSlug=baseSlug+'-'+n++}
  const result=await s.from('perfumes').insert({brand_id:brandId,name,slug:perfumeSlug,description:String(formData.get('description')||'').trim()||null,concentration:String(formData.get('concentration')||'').trim()||null,release_year:Number(formData.get('release_year'))||null,country:String(formData.get('country')||'').trim()||null,status:atlasResearchId?'draft':String(formData.get('status')||'draft')}).select('id').single()
  if(result.error)redirect('/admin/perfumes/new?error='+encodeURIComponent(result.error.message))
- if(atlasResearchId){
-  const {data:approved,error:approvedError}=await s.from('atlas_research_queue').select('id,brand,perfume_name,manufacturer_url,source_notes,status,reviewed_by,reviewed_at,review_note').eq('id',atlasResearchId).maybeSingle()
-  if(approvedError||!approved)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas notes could not be loaded'))
-  let notes:string[]|null=null
-  try{notes=prepareAtlasApprovedCatalogDraft(approved).sourceNotes}catch{notes=null}
-  if(!notes)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas note approval is no longer valid'))
-  for(const {position,name:noteName} of parseAtlasImportNotes(notes)){
-   const existing=await s.from('notes').select('id').ilike('name',noteName).limit(1).maybeSingle()
-   if(existing.error)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas note lookup failed'))
-   let noteId=existing.data?.id
-   if(!noteId){
-    const made=await s.from('notes').insert({name:noteName,slug:slug(noteName)}).select('id').single()
-    if(made.error)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas note creation failed'))
-    noteId=made.data.id
-   }
-   const {error:linkError}=await s.from('perfume_notes').upsert({perfume_id:result.data.id,note_id:noteId,position},{onConflict:'perfume_id,note_id,position'})
-   if(linkError)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but some Atlas notes could not be linked'))
-  }
- }
- if(atlasResearchId){
-  const {data:approved,error:sourceLookupError}=await s.from('atlas_research_queue').select('id,brand,perfume_name,manufacturer_url,source_notes,status,reviewed_by,reviewed_at,review_note').eq('id',atlasResearchId).maybeSingle()
-  if(sourceLookupError||!approved)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas source could not be retrieved'))
-  let sourceUrl:string|null=null
-  try{sourceUrl=prepareAtlasApprovedCatalogDraft(approved).sourceUrl}catch{sourceUrl=null}
-  if(!sourceUrl)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created, but Atlas source approval was invalidated'))
-  const {error:sourceError}=await s.from('perfume_sources').upsert({
-   perfume_id:result.data.id,source_name:'Atlas approved manufacturer research',
-   source_url:sourceUrl,source_type:'official',
-   // Atlas approval records reviewed research, not independent catalog field verification.
-   fields_verified:[],is_primary:false,
-   checked_at:new Date().toISOString()
-  },{onConflict:'perfume_id,source_url'})
-  if(sourceError)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('Draft created with notes, but source provenance could not be saved: '+sourceError.message))
- }
-
  if(merchant_name||affiliate_url){
   const offer=await s.from('perfume_affiliate_offers').insert({perfume_id:result.data.id,merchant_name,affiliate_url,price:offer_price,currency:currency||'USD',label:offer_label||null,is_active:true,priority:10})
   if(offer.error)redirect('/admin/perfumes/'+result.data.id+'/edit?error='+encodeURIComponent('The fragrance was created, but the retailer offer could not be saved: '+offer.error.message))
