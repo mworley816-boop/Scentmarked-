@@ -2,6 +2,7 @@ import Link from 'next/link'
 import {redirect} from 'next/navigation'
 import {createClient} from '@/lib/supabase/server'
 import {AtlasReviewActions} from './review-actions'
+import {AtlasImportDraftAction} from './import-draft-action'
 import {AtlasBatchIntake} from './batch-intake'
 import {AtlasHtmlIntake} from './html-intake'
 import {AtlasSourceTextIntake} from './source-text-intake'
@@ -48,6 +49,7 @@ export default async function AtlasResearchQueue({searchParams}:{searchParams:Pr
      <p><a href={row.manufacturer_url} target="_blank" rel="noopener noreferrer">Inspect submitted source ↗</a></p>
     </details>
     {row.review_note&&<p>Review: {row.review_note}</p>}
+    {row.status==='approved'&&<AtlasImportDraftAction id={row.id} />}
     {row.status==='approved'&&<details style={{marginBlock:'0.75rem'}}><summary style={{cursor:'pointer',minHeight:'44px',fontWeight:600}}>Preview catalog handoff draft</summary>
      {(()=>{try{
       const draft=prepareAtlasApprovedCatalogDraft(row)
