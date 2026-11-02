@@ -1,0 +1,21 @@
+name: Atlas SQL runner safety preflight
+
+on:
+  pull_request:
+    paths:
+      - 'scentmarked-mvp-v0.5/supabase/tests/run_atlas_sql_integration.sh'
+      - 'scentmarked-mvp-v0.5/supabase/tests/test_atlas_runner_preflight.sh'
+      - 'scentmarked-mvp-v0.5/supabase/tests/guard_disposable_database.sh'
+      - '.github/workflows/atlas-sql-runner-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runner-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert SQL runner refuses unsafe execution
+        run: bash scentmarked-mvp-v0.5/supabase/tests/test_atlas_runner_preflight.sh
