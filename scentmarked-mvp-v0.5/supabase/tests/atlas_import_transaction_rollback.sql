@@ -9,6 +9,7 @@ declare
  v_first uuid;
  v_second uuid;
  v_count integer;
+ v_url_id text := 'atlas-invalid-url-' || substr(md5(random()::text),1,16);
  v_bad_id text := 'atlas-invalid-' || substr(md5(random()::text),1,16);
 begin
  insert into public.atlas_research_queue
@@ -62,6 +63,25 @@ begin
  if v_count<>0 then raise exception 'Invalid import created a draft'; end if;
  select count(*) into v_count from public.brands where name='Atlas Invalid Test';
  if v_count<>0 then raise exception 'Invalid import created a brand'; end if;
+ -- Invalid manufacturer URL must not create a draft or ledger entry.
+ insert into public.atlas_research_queue
+ (id,brand,perfume_name,manufacturer_url,source_notes,decision,status,reviewed_at,reviewed_by,review_note)
+ values
+ (v_url_id,'Atlas URL Test','Invalid URL ' || v_url_id,'http://example.org/insecure',
+  '["Top: Vanilla"]'::jsonb,'needs_source_review','approved',now(),'integration-test','Approved for URL negative test');
+ begin
+  perform public.import_approved_atlas_catalog_draft(v_url_id);
+  raise exception 'Invalid source URL was incorrectly accepted';
+ exception when others then
+  if sqlerrm='Invalid source URL was incorrectly accepted' then raise; end if;
+  if sqlerrm<>'Invalid manufacturer source URL' then raise; end if;
+ end;
+ select count(*) into v_count from public.atlas_catalog_imports where research_id=v_url_id;
+ if v_count<>0 then raise exception 'Invalid URL import created a ledger entry'; end if;
+ select count(*) into v_count from public.perfumes where name='Invalid URL ' || v_url_id;
+ if v_count<>0 then raise exception 'Invalid URL import created a draft'; end if;
+ select count(*) into v_count from public.brands where name='Atlas URL Test';
+ if v_count<>0 then raise exception 'Invalid URL import created a brand'; end if;
 end
 $test$;
 rollback;
