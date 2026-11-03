@@ -112,6 +112,7 @@ export default async function Admin({searchParams}:{searchParams:Promise<{q?:str
   <Link className="admin-workspace" href="/admin/email"><span>MARKETING</span><strong>Email campaigns</strong><small>Templates, scheduling and analytics</small><b>Open email →</b></Link>
   <Link className="admin-workspace" href="/admin/contact"><span>INBOX</span><strong>Contact messages</strong><small>Review messages from site visitors</small><b>Open inbox →</b></Link>
   <h2 id="admin-automation" className="admin-section-heading">Automation</h2>
+  <Link className="admin-workspace" href="/admin/atlas-employees"><span>AUTOMATION · WORK QUEUE</span><strong>Atlas employee assignments</strong><small>Prioritize missing research, sources and graphics approvals</small><b>View assignments →</b></Link>
   <Link className="admin-workspace" href="/admin/atlas-research"><span>AUTOMATION · SECONDARY</span><strong>Atlas research queue</strong><small>Review AI research submissions and approvals</small><b>Open research →</b></Link>
  </nav>
  <div id="catalog-operations" className="admin-section-heading"><div><p className="eyebrow">CATALOG OPERATIONS</p><h2>Catalog Studio</h2><p>Manage fragrance records, verification and publishing.</p></div><Link className="button ghost" href="/admin/perfumes/new">Add Fragrance</Link></div>
