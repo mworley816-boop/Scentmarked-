@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import {redirect} from 'next/navigation'
 import {createClient} from '@/lib/supabase/server'
+import {planAtlasTasks,atlasTaskLabels} from '@/lib/atlas-task-planner'
 
 export const dynamic='force-dynamic'
 export const metadata={title:'Atlas Employee Work Queue',robots:{index:false,follow:false}}
@@ -22,13 +23,11 @@ export default async function AtlasEmployeeQueue(){
   if(data.length<200)break
   if(start+200>=20000)loadError=true
  }
+ const planned=planAtlasTasks(rows)
+ const byPerfume=new Map<string,string[]>()
+ for(const task of planned){const tasks=byPerfume.get(task.perfumeId)||[];tasks.push(atlasTaskLabels[task.kind]+(task.requiresApproval?' (approval required)':''));byPerfume.set(task.perfumeId,tasks)}
  const work:Work[]=rows.filter(p=>p.status!=='archived').map(perfume=>{
-  const tasks:string[]=[]
-  if(!perfume.description?.trim())tasks.push('Research description')
-  if(!perfume.perfume_notes?.length)tasks.push('Verify fragrance notes')
-  if(!perfume.perfume_sources?.length)tasks.push('Find source evidence')
-  if(!perfume.image_url)tasks.push('Research authentic product image')
-  else if(!perfume.perfume_image_provenance?.length)tasks.push('Verify image rights')
+  const tasks=byPerfume.get(perfume.id)||[]
   return {perfume,tasks,priority:tasks.length}
  }).filter(x=>x.priority>0).sort((a,b)=>b.priority-a.priority||a.perfume.name.localeCompare(b.perfume.name))
  const counts={research:work.filter(w=>w.tasks.some(t=>t.startsWith('Research')||t.startsWith('Verify fragrance')||t.startsWith('Find source'))).length,graphics:work.filter(w=>w.tasks.some(t=>t.includes('image'))).length}
