@@ -1,5 +1,4 @@
--- Block obvious name variants (spacing, punctuation, terminal plural s) for the same brand.
--- Preserve the existing transactional import and approval safeguards.
+-- Correct the duplicate guard in the previous migration; safe to apply independently.
 -- One transaction for an approved Atlas research record -> unpublished catalog draft.
 -- SECURITY INVOKER: only a privileged, independently admin-authorized server
 -- connection with table privileges can execute this function.
@@ -59,90 +58,7 @@ begin
  insert into public.brands(name,slug) values(v_research.brand,v_brand_slug)
  on conflict (slug) do nothing;
  select id into v_brand_id from public.brands where slug=v_brand_slug;
- if exists(
-  select 1 from public.perfumes
-  where brand_id=v_brand_id
-   and (
-    pg_catalog.lower(name)=pg_catalog.lower(v_research.perfume_name)
-    or pg_catalog.regexp_replace(
-      pg_catalog.regexp_replace(pg_catalog.lower(name),'[^a-z0-9]+','','g'),
-      's
-  raise exception 'Fragrance already exists in catalog';
- end if;
- while exists(select 1 from public.perfumes where slug=v_perfume_slug) loop
-  v_ordinal:=v_ordinal+1;
-  v_perfume_slug:=pg_catalog.btrim(pg_catalog.regexp_replace(pg_catalog.lower(v_research.brand||' '||v_research.perfume_name),'[^a-z0-9]+','-','g'),'-')||'-'||v_ordinal::text;
- end loop;
- insert into public.perfumes(brand_id,name,slug,status,description,concentration,release_year,country)
- values(v_brand_id,v_research.perfume_name,v_perfume_slug,'draft',p_description,p_concentration,p_release_year,p_country)
- returning id into v_perfume_id;
- for v_entry in select value from pg_catalog.jsonb_array_elements_text(v_research.source_notes) as t(value) loop
-  v_match:=pg_catalog.regexp_match(v_entry,'^(Top|Heart|Base):[[:space:]]*(.+)$','i');
-  if v_match is null then raise exception 'Unsupported Atlas note label'; end if;
-  v_position:=pg_catalog.lower(v_match[1]);
-  v_note_name:=pg_catalog.btrim(v_match[2]);
-  if length(v_note_name) not between 1 and 120 or v_note_name !~* '[a-z0-9]' then
-   raise exception 'Invalid Atlas note name';
-  end if;
-  if v_position||'|'||pg_catalog.lower(v_note_name)=any(v_seen) then continue; end if;
-  v_seen:=pg_catalog.array_append(v_seen,v_position||'|'||pg_catalog.lower(v_note_name));
-  v_note_slug:=pg_catalog.btrim(pg_catalog.regexp_replace(pg_catalog.lower(v_note_name),'[^a-z0-9]+','-','g'),'-');
-  if v_note_slug='' then raise exception 'Invalid Atlas note slug'; end if;
-  insert into public.notes(name,slug) values(v_note_name,v_note_slug) on conflict (slug) do nothing;
-  select id into v_note_id from public.notes where slug=v_note_slug;
-  insert into public.perfume_notes(perfume_id,note_id,position)
-  values(v_perfume_id,v_note_id,v_position) on conflict do nothing;
- end loop;
- insert into public.perfume_sources(perfume_id,source_name,source_url,source_type,fields_verified,is_primary,checked_at)
- values(v_perfume_id,'Atlas approved manufacturer research',v_research.manufacturer_url,'official',array[]::text[],false,pg_catalog.now());
- insert into public.atlas_catalog_imports(research_id,perfume_id) values(p_research_id,v_perfume_id);
- return v_perfume_id;
-end;
-$$;
-revoke all on function public.import_approved_atlas_catalog_draft(text,text,text,integer,text) from public,anon,authenticated;
-grant execute on function public.import_approved_atlas_catalog_draft(text,text,text,integer,text) to service_role;
-,'','g'
-    )=pg_catalog.regexp_replace(
-      pg_catalog.regexp_replace(pg_catalog.lower(v_research.perfume_name),'[^a-z0-9]+','','g'),
-      's
-  raise exception 'Fragrance already exists in catalog';
- end if;
- while exists(select 1 from public.perfumes where slug=v_perfume_slug) loop
-  v_ordinal:=v_ordinal+1;
-  v_perfume_slug:=pg_catalog.btrim(pg_catalog.regexp_replace(pg_catalog.lower(v_research.brand||' '||v_research.perfume_name),'[^a-z0-9]+','-','g'),'-')||'-'||v_ordinal::text;
- end loop;
- insert into public.perfumes(brand_id,name,slug,status,description,concentration,release_year,country)
- values(v_brand_id,v_research.perfume_name,v_perfume_slug,'draft',p_description,p_concentration,p_release_year,p_country)
- returning id into v_perfume_id;
- for v_entry in select value from pg_catalog.jsonb_array_elements_text(v_research.source_notes) as t(value) loop
-  v_match:=pg_catalog.regexp_match(v_entry,'^(Top|Heart|Base):[[:space:]]*(.+)$','i');
-  if v_match is null then raise exception 'Unsupported Atlas note label'; end if;
-  v_position:=pg_catalog.lower(v_match[1]);
-  v_note_name:=pg_catalog.btrim(v_match[2]);
-  if length(v_note_name) not between 1 and 120 or v_note_name !~* '[a-z0-9]' then
-   raise exception 'Invalid Atlas note name';
-  end if;
-  if v_position||'|'||pg_catalog.lower(v_note_name)=any(v_seen) then continue; end if;
-  v_seen:=pg_catalog.array_append(v_seen,v_position||'|'||pg_catalog.lower(v_note_name));
-  v_note_slug:=pg_catalog.btrim(pg_catalog.regexp_replace(pg_catalog.lower(v_note_name),'[^a-z0-9]+','-','g'),'-');
-  if v_note_slug='' then raise exception 'Invalid Atlas note slug'; end if;
-  insert into public.notes(name,slug) values(v_note_name,v_note_slug) on conflict (slug) do nothing;
-  select id into v_note_id from public.notes where slug=v_note_slug;
-  insert into public.perfume_notes(perfume_id,note_id,position)
-  values(v_perfume_id,v_note_id,v_position) on conflict do nothing;
- end loop;
- insert into public.perfume_sources(perfume_id,source_name,source_url,source_type,fields_verified,is_primary,checked_at)
- values(v_perfume_id,'Atlas approved manufacturer research',v_research.manufacturer_url,'official',array[]::text[],false,pg_catalog.now());
- insert into public.atlas_catalog_imports(research_id,perfume_id) values(p_research_id,v_perfume_id);
- return v_perfume_id;
-end;
-$$;
-revoke all on function public.import_approved_atlas_catalog_draft(text,text,text,integer,text) from public,anon,authenticated;
-grant execute on function public.import_approved_atlas_catalog_draft(text,text,text,integer,text) to service_role;
-,'','g'
-    )
-   )
- ) then
+ if exists(select 1 from public.perfumes where brand_id=v_brand_id and (case when pg_catalog.right(pg_catalog.regexp_replace(pg_catalog.lower(name),'[^a-z0-9]+','','g'),1)='s' then pg_catalog.left(pg_catalog.regexp_replace(pg_catalog.lower(name),'[^a-z0-9]+','','g'),pg_catalog.length(pg_catalog.regexp_replace(pg_catalog.lower(name),'[^a-z0-9]+','','g'))-1) else pg_catalog.regexp_replace(pg_catalog.lower(name),'[^a-z0-9]+','','g') end = case when pg_catalog.right(pg_catalog.regexp_replace(pg_catalog.lower(v_research.perfume_name),'[^a-z0-9]+','','g'),1)='s' then pg_catalog.left(pg_catalog.regexp_replace(pg_catalog.lower(v_research.perfume_name),'[^a-z0-9]+','','g'),pg_catalog.length(pg_catalog.regexp_replace(pg_catalog.lower(v_research.perfume_name),'[^a-z0-9]+','','g'))-1) else pg_catalog.regexp_replace(pg_catalog.lower(v_research.perfume_name),'[^a-z0-9]+','','g') end)) then
   raise exception 'Fragrance already exists in catalog';
  end if;
  while exists(select 1 from public.perfumes where slug=v_perfume_slug) loop
