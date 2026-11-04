@@ -1,5 +1,5 @@
 import type {SupabaseClient} from '@supabase/supabase-js'
-import {runOneAtlasAssignment,type AtlasWorkerResult,type ClaimedTask} from './atlas-worker-execution'
+import {runOneAtlasAssignment,type AtlasWorkerResult,type ClaimedTask} from './atlas-worker-execution.ts'
 
 // Trusted server only. Caller must independently authorize the operation and
 // provide a service-role Supabase client. No browser/API route or scheduler is exposed.
