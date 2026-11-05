@@ -16,6 +16,8 @@ export async function runAtlasDatabaseWorker(
    if(data.length!==1)throw new Error('Unexpected Atlas claim count')
    const task=data[0] as ClaimedTask
    if(!task||!task.task_id||!task.perfume_id||!task.lease_token||!task.task_kind)throw new Error('Invalid Atlas claim payload')
+   if (!['research_description','verify_notes','verify_sources','research_graphic','verify_image_rights'].includes(task.task_kind)) throw new Error('Unknown Atlas task kind')
+   if (!task.leased_until || !Number.isFinite(Date.parse(task.leased_until))) throw new Error('Invalid Atlas lease expiry')
    return task
   },
   perform,
