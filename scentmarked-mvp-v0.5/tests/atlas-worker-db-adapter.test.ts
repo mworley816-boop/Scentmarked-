@@ -23,3 +23,12 @@ test('adapter rejects database claim errors',async()=>{
  const client={rpc:async()=>({data:null,error:{message:'missing migration'}})} as unknown as SupabaseClient
  await assert.rejects(()=>runAtlasDatabaseWorker(client,async()=>({success:true})),/claim failed/)
 })
+
+test('adapter rejects unknown task kind before executing research',async()=>{
+ const client={rpc:async()=>({data:[{...task,task_kind:'unexpected'}],error:null})} as unknown as SupabaseClient
+ await assert.rejects(()=>runAtlasDatabaseWorker(client,async()=>{throw Error('must not execute')}),/Unknown Atlas task kind/)
+})
+test('adapter rejects malformed lease expiry before executing research',async()=>{
+ const client={rpc:async()=>({data:[{...task,leased_until:'not-a-date'}],error:null})} as unknown as SupabaseClient
+ await assert.rejects(()=>runAtlasDatabaseWorker(client,async()=>{throw Error('must not execute')}),/Invalid Atlas lease expiry/)
+})
