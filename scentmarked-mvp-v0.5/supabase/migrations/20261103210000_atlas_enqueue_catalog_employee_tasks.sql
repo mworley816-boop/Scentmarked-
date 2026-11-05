@@ -13,7 +13,7 @@ begin
     (kinds.task_kind in ('research_graphic','verify_image_rights')) as requires_approval
   from public.perfumes p
   cross join lateral (
-   select 'research_description'::text as task_kind where pg_catalog.nullif(pg_catalog.btrim(p.description),'') is null
+   select 'research_description'::text as task_kind where nullif(pg_catalog.btrim(p.description),'') is null
    union all
    select 'verify_notes' where not exists
      (select 1 from public.perfume_notes n where n.perfume_id=p.id)
