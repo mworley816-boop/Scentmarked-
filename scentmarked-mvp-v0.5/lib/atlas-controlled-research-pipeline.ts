@@ -34,5 +34,10 @@ export function createAtlasControlledResearchPipeline(options:{
   loadContext:createAtlasSourceContextLoader(reader),
   fetchImpl:options.modelFetch
  })
- return ()=>runAtlasResearchDraftWorker(options.client,research)
+ let invoked=false
+ return ()=>{
+  if(invoked)throw new Error('Atlas runner has already been invoked')
+  invoked=true
+  return runAtlasResearchDraftWorker(options.client,research)
+ }
 }
