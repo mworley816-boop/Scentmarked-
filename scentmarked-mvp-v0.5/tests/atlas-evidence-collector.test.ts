@@ -10,7 +10,7 @@ test('collects bounded source text from an explicitly trusted HTTPS host',async(
 })
 test('blocks other hosts and redirects without fetching destination',async()=>{
  let calls=0
- const collector=createAtlasEvidenceCollector({allowedHosts:['example.org'],fetchImpl:async()=>{calls++;return Response.redirect('https://example.org/other',302)} as never})
+ const collector=createAtlasEvidenceCollector({allowedHosts:['example.org'],fetchImpl:(async()=>{calls++;return Response.redirect('https://example.org/other',302)}) as typeof fetch})
  assert.deepEqual(await collector('p',['https://untrusted.org/x','http://example.org/x','https://example.org/x']),[])
  assert.equal(calls,1)
 })
