@@ -5,7 +5,7 @@ create or replace function public.atlas_save_employee_evidence_draft(
  p_image_reference jsonb default null,p_rights_status text default null)
 returns uuid language plpgsql security invoker set search_path=''
 as $$
-declare v_task public.atlas_employee_tasks%rowtype; v_id uuid;
+declare v_task public.atlas_employee_tasks%rowtype; v_id uuid; v_source jsonb;
 begin
  select * into v_task from public.atlas_employee_tasks
  where id=p_task_id and lease_token=p_lease_token
@@ -19,12 +19,24 @@ begin
    or pg_catalog.jsonb_array_length(p_sources)=0 then
   raise exception 'Evidence sources are required';
  end if;
+ for v_source in select value from pg_catalog.jsonb_array_elements(p_sources) loop
+  if pg_catalog.jsonb_typeof(v_source)<>'object'
+   or nullif(pg_catalog.btrim(v_source->>'claim'),'') is null
+   or (v_source->>'url') !~ '^https://[^[:space:]@/]+(/|$)' then
+   raise exception 'Invalid research source citation';
+  end if;
+ end loop;
+ if p_image_reference is not null and
+   (pg_catalog.jsonb_typeof(p_image_reference)<>'object'
+    or (p_image_reference->>'url') !~ '^https://[^[:space:]@/]+(/|$)') then
+  raise exception 'Invalid image reference';
+ end if;
  if p_image_reference is not null and
    v_task.task_kind not in ('research_graphic','verify_image_rights') then
   raise exception 'Image references require graphics review';
  end if;
  if p_image_reference is not null and
-   p_rights_status not in ('unverified','verified') then
+   (p_rights_status is null or p_rights_status not in ('unverified','verified')) then
   raise exception 'Image rights status is required';
  end if;
  insert into public.atlas_research_evidence_drafts(
