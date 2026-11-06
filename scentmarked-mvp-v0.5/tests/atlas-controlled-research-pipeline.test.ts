@@ -19,3 +19,12 @@ test('creates an explicit one-task runner without starting research',()=>{
  assert.equal(typeof run,'function')
  assert.equal(requests,0)
 })
+
+test('one-shot runner refuses a second invocation even when the first run fails',async()=>{
+ const run=createAtlasControlledResearchPipeline({
+  client:{rpc:async()=>({data:null,error:new Error('offline')})} as never,
+  apiKey:'test',model:'test',allowedHosts:['example.org']
+ })
+ await assert.rejects(run(),/claim failed/)
+ assert.throws(()=>run(),/already been invoked/)
+})
