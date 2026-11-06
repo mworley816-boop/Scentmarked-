@@ -2,6 +2,8 @@
 create table if not exists public.atlas_research_budget_days (
  day date primary key,
  reserved_micros bigint not null default 0 check (reserved_micros >= 0),
+ daily_limit_micros bigint not null check (daily_limit_micros > 0),
+ constraint atlas_budget_within_limit check (reserved_micros <= daily_limit_micros),
  created_at timestamptz not null default now()
 );
 create table if not exists public.atlas_research_budget_reservations (
@@ -32,11 +34,12 @@ begin
   or p_amount_micros > p_daily_limit_micros then
   raise exception 'Invalid Atlas research budget request';
  end if;
- insert into public.atlas_research_budget_days(day,reserved_micros)
- values(p_day,p_amount_micros)
+ insert into public.atlas_research_budget_days(day,reserved_micros,daily_limit_micros)
+ values(p_day,p_amount_micros,p_daily_limit_micros)
  on conflict(day) do update
  set reserved_micros=public.atlas_research_budget_days.reserved_micros+excluded.reserved_micros
- where public.atlas_research_budget_days.reserved_micros <= p_daily_limit_micros-excluded.reserved_micros;
+ where public.atlas_research_budget_days.daily_limit_micros = excluded.daily_limit_micros
+ and public.atlas_research_budget_days.reserved_micros <= public.atlas_research_budget_days.daily_limit_micros-excluded.reserved_micros;
  if not found then return null; end if;
  insert into public.atlas_research_budget_reservations(day,reserved_usd_micros)
  values(p_day,p_amount_micros) returning id into v_id;
