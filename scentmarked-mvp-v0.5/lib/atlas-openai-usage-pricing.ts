@@ -28,7 +28,7 @@ export function calculateAtlasOpenAICostMicros(
  const numerator=BigInt(uncached)*BigInt(rates.inputUsdMicrosPerMillion)
   +BigInt(usage.cachedInputTokens)*BigInt(rates.cachedInputUsdMicrosPerMillion)
   +BigInt(usage.outputTokens)*BigInt(rates.outputUsdMicrosPerMillion)
- const rounded=(numerator+999999n)/1000000n
+ const rounded=(numerator+BigInt(999999))/BigInt(1000000)
  if(rounded>BigInt(Number.MAX_SAFE_INTEGER))throw new Error('Atlas cost overflow')
  return Number(rounded)
 }
