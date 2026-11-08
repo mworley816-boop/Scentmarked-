@@ -1,22 +1,24 @@
 import type {ClaimedTask} from './atlas-worker-execution.ts'
 import type {AtlasEvidenceDraftInput} from './atlas-evidence-draft-writer.ts'
 import {validateAtlasResearchEvidence} from './atlas-research-evidence.ts'
+import {parseAtlasOpenAIUsage,type AtlasOpenAIUsage} from './atlas-openai-usage.ts'
 
 // Server-only provider. Sources must be retrieved independently; model output
 // is never accepted as evidence of a source that was not supplied.
 export type AtlasSource={url:string;excerpt:string}
 export type AtlasResearchContext={brand:string;perfumeName:string;sources:AtlasSource[]}
-export function createAtlasOpenAIResearchProvider(options:{
+type ProviderOptions={
  apiKey:string; model:string;
  maxOutputTokens?:number;
  loadContext:(task:ClaimedTask)=>Promise<AtlasResearchContext>;
  fetchImpl?:typeof fetch
-}){
+}
+function createProvider(options:ProviderOptions,requireUsage:boolean){
  if(!options.apiKey||!options.model)throw new Error('Research provider is not configured')
  const maxOutputTokens=options.maxOutputTokens??800
  if(!Number.isInteger(maxOutputTokens)||maxOutputTokens<128||maxOutputTokens>1200)
   throw new Error('Atlas output token limit must be between 128 and 1200')
- return async(task:ClaimedTask):Promise<AtlasEvidenceDraftInput>=>{
+ return async(task:ClaimedTask):Promise<{evidence:AtlasEvidenceDraftInput;usage:AtlasOpenAIUsage|null}>=>{
   const context=await options.loadContext(task)
   if(!context.brand?.trim()||!context.perfumeName?.trim()||!context.sources?.length)throw new Error('Research context or source evidence is missing')
   const sources=context.sources.map((source,index)=>{
@@ -52,6 +54,25 @@ export function createAtlasOpenAIResearchProvider(options:{
   // This provider never proposes an image or claims verified image rights.
   const evidence={proposedText:value.proposedText,sources:citations}
   validateAtlasResearchEvidence({perfumeId:task.perfume_id,taskKind:task.task_kind,...evidence})
-  return evidence
+  return {evidence,usage:requireUsage?parseAtlasOpenAIUsage(body):null}
  }
 }
+
+// Existing draft-only callers remain unchanged; no new network calls.
+export function createAtlasOpenAIResearchProvider(options:ProviderOptions){
+ const provider=createProvider(options,false)
+ return async(task:ClaimedTask):Promise<AtlasEvidenceDraftInput>=>
+  (await provider(task)).evidence
+}
+
+// Opt-in metered provider for future budget-controlled worker wiring.
+// Rejects missing/inconsistent usage rather than silently assuming zero cost.
+export function createAtlasMeteredOpenAIResearchProvider(options:ProviderOptions){
+ const provider=createProvider(options,true)
+ return async(task:ClaimedTask):Promise<{evidence:AtlasEvidenceDraftInput;usage:AtlasOpenAIUsage}>=>{
+  const result=await provider(task)
+  if(!result.usage)throw new Error('Atlas OpenAI usage missing')
+  return {evidence:result.evidence,usage:result.usage}
+ }
+}
+
