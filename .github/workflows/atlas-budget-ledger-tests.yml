@@ -1,0 +1,53 @@
+name: Atlas Budget Ledger PostgreSQL Tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scentmarked-mvp-v0.5/supabase/migrations/20261106170000_atlas_research_budget_ledger.sql'
+      - 'scentmarked-mvp-v0.5/supabase/tests/atlas-research-budget-*.sql'
+      - '.github/workflows/atlas-budget-ledger-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ledger-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: local_test_only
+          POSTGRES_DB: atlas_ledger_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d atlas_ledger_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: local_test_only
+      PGDATABASE: atlas_ledger_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Create isolated Supabase-compatible roles
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          create role anon noinherit;
+          create role authenticated noinherit;
+          create role service_role noinherit;
+          grant service_role to postgres;
+          SQL
+      - name: Apply budget ledger migration to disposable database
+        run: psql -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/migrations/20261106170000_atlas_research_budget_ledger.sql
+      - name: Test reservation and settlement invariants
+        run: psql -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/tests/atlas-research-budget-ledger.sql
+      - name: Test RLS and RPC role isolation
+        run: psql -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/tests/atlas-research-budget-privileges.sql
