@@ -28,3 +28,30 @@ test('accepts sufficient reservation and settles measured usage',async()=>{
  assert.deepEqual(await run({} as never),evidence)
  assert.deepEqual(calls,['reserve','research','settle:1250'])
 })
+
+test('rejects token usage beyond configured input ceiling without settling',async()=>{
+ let settled=false
+ const run=createAtlasBoundedMeteredResearchAdapter({
+  rates,maxInputTokens:1000,maxOutputTokens:800,
+  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:4200,store:{
+   reserve:async()=>({id:'r1',reservedUsdMicros:4200}),
+   settle:async()=>{settled=true}
+  }},
+  research:async()=>({evidence,usage:{...usage,inputTokens:1001,totalTokens:1101}})
+ })
+ await assert.rejects(run({} as never),/exceeds configured ceiling/)
+ assert.equal(settled,false)
+})
+test('rejects token usage beyond configured output ceiling without settling',async()=>{
+ let settled=false
+ const run=createAtlasBoundedMeteredResearchAdapter({
+  rates,maxInputTokens:1000,maxOutputTokens:800,
+  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:4200,store:{
+   reserve:async()=>({id:'r1',reservedUsdMicros:4200}),
+   settle:async()=>{settled=true}
+  }},
+  research:async()=>({evidence,usage:{inputTokens:100,outputTokens:801,cachedInputTokens:0,totalTokens:901}})
+ })
+ await assert.rejects(run({} as never),/exceeds configured ceiling/)
+ assert.equal(settled,false)
+})

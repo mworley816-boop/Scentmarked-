@@ -9,6 +9,7 @@ import {createAtlasMeteredResearchAdapter} from './atlas-metered-research-adapte
 // This composition refuses to construct unless the pre-reserved amount
 // covers the maximum model cost. Caller must enforce input/output token
 // ceilings on the actual request before using this in production.
+// Response usage is also checked, but post-response checks cannot undo costs.
 export function createAtlasBoundedMeteredResearchAdapter(options:{
  budget:AtlasResearchBudgetOptions;
  rates:AtlasModelRates;
@@ -23,5 +24,17 @@ export function createAtlasBoundedMeteredResearchAdapter(options:{
  })
  if(options.budget.perRequestReserveUsdMicros<required)
   throw new Error('Atlas research reserve is below worst-case cost')
- return createAtlasMeteredResearchAdapter(options)
+ return createAtlasMeteredResearchAdapter({
+  ...options,
+  research:async task=>{
+   const result=await options.research(task)
+   if(!result.usage||!Number.isSafeInteger(result.usage.inputTokens)||
+    !Number.isSafeInteger(result.usage.outputTokens)||
+    result.usage.inputTokens<0||result.usage.outputTokens<0||
+    result.usage.inputTokens>options.maxInputTokens||
+    result.usage.outputTokens>options.maxOutputTokens)
+    throw new Error('Atlas research token usage exceeds configured ceiling')
+   return result
+  }
+ })
 }
