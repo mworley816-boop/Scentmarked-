@@ -3,7 +3,7 @@ import {createAtlasCatalogReader} from './atlas-catalog-reader.ts'
 import {createAtlasEvidenceCollector} from './atlas-evidence-collector.ts'
 import {createAtlasSourceContextLoader} from './atlas-source-context-loader.ts'
 import {createAtlasOpenAIResearchProvider,createAtlasMeteredOpenAIResearchProvider} from './atlas-openai-research-provider.ts'
-import {createAtlasMeteredResearchAdapter} from './atlas-metered-research-adapter.ts'
+import {createAtlasBoundedMeteredResearchAdapter} from './atlas-bounded-metered-research-adapter.ts'
 import type {AtlasResearchBudgetOptions} from './atlas-research-budget-gate.ts'
 import type {AtlasModelRates} from './atlas-openai-usage-pricing.ts'
 import {runAtlasResearchDraftWorker} from './atlas-research-draft-worker.ts'
@@ -54,6 +54,8 @@ export function createAtlasControlledMeteredResearchPipeline(options:{
  allowedHosts:readonly string[];
  budget:AtlasResearchBudgetOptions;
  rates:AtlasModelRates;
+ maxInputTokens:number;
+ maxOutputTokens:number;
  sourceFetch?:typeof fetch;
  modelFetch?:typeof fetch;
 }){
@@ -70,10 +72,14 @@ export function createAtlasControlledMeteredResearchPipeline(options:{
  })
  const research=createAtlasMeteredOpenAIResearchProvider({
   apiKey:options.apiKey,model:options.model,
-  loadContext:createAtlasSourceContextLoader(reader),fetchImpl:options.modelFetch
+  loadContext:createAtlasSourceContextLoader(reader),fetchImpl:options.modelFetch,
+  maxOutputTokens:options.maxOutputTokens
  })
- const metered=createAtlasMeteredResearchAdapter({
-  budget:options.budget,rates:options.rates,research
+ const metered=createAtlasBoundedMeteredResearchAdapter({
+  budget:options.budget,rates:options.rates,
+  maxInputTokens:options.maxInputTokens,
+  maxOutputTokens:options.maxOutputTokens,
+  research
  })
  let invoked=false
  return ()=>{
