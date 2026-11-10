@@ -22,6 +22,21 @@ revoke all on public.atlas_research_budget_reservations from public, anon, authe
 grant select, insert, update on public.atlas_research_budget_days to service_role;
 grant select, insert, update on public.atlas_research_budget_reservations to service_role;
 
+-- SECURITY INVOKER RPCs require explicit RLS policies for the service role.
+-- Do not grant these policies to anon or authenticated.
+create policy atlas_budget_days_service_select
+ on public.atlas_research_budget_days for select to service_role using (true);
+create policy atlas_budget_days_service_insert
+ on public.atlas_research_budget_days for insert to service_role with check (true);
+create policy atlas_budget_days_service_update
+ on public.atlas_research_budget_days for update to service_role using (true) with check (true);
+create policy atlas_budget_reservations_service_select
+ on public.atlas_research_budget_reservations for select to service_role using (true);
+create policy atlas_budget_reservations_service_insert
+ on public.atlas_research_budget_reservations for insert to service_role with check (true);
+create policy atlas_budget_reservations_service_update
+ on public.atlas_research_budget_reservations for update to service_role using (true) with check (true);
+
 -- Single-statement conditional UPSERT serializes competing reservations per day.
 create or replace function public.atlas_reserve_research_budget(
  p_day date,p_daily_limit_micros bigint,p_amount_micros bigint
