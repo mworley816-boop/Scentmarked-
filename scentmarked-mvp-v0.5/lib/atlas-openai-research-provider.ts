@@ -11,6 +11,7 @@ type ProviderOptions={
  apiKey:string; model:string;
  maxOutputTokens?:number;
  maxRequestBytes?:number;
+ maxInputTokens?:number;
  loadContext:(task:ClaimedTask)=>Promise<AtlasResearchContext>;
  fetchImpl?:typeof fetch
 }
@@ -18,6 +19,8 @@ function createProvider(options:ProviderOptions,requireUsage:boolean){
  if(!options.apiKey||!options.model)throw new Error('Research provider is not configured')
  const maxOutputTokens=options.maxOutputTokens??800
  const maxRequestBytes=options.maxRequestBytes??32768
+ if(options.maxInputTokens!==undefined&&(!Number.isSafeInteger(options.maxInputTokens)||options.maxInputTokens<=512))
+  throw new Error('Invalid Atlas input token ceiling')
  if(!Number.isSafeInteger(maxRequestBytes)||maxRequestBytes<1024||maxRequestBytes>65536)
   throw new Error('Atlas request byte limit must be between 1024 and 65536')
  if(!Number.isInteger(maxOutputTokens)||maxOutputTokens<128||maxOutputTokens>1200)
@@ -41,6 +44,15 @@ function createProvider(options:ProviderOptions,requireUsage:boolean){
   // Payload byte limit is defense in depth, NOT a verified model input-token limit.
   if(new TextEncoder().encode(requestBody).byteLength>maxRequestBytes)
    throw new Error('Atlas research request exceeds byte limit')
+  // Conservative byte-based preflight for metered requests only. This is not
+  // a model-tokenizer guarantee: do not enable paid automation on this alone.
+  // Include a margin for message framing and provider-side token overhead.
+  if(requireUsage){
+   if(options.maxInputTokens===undefined)throw new Error('Atlas metered input ceiling is required')
+   const inputBytes=new TextEncoder().encode(request.instructions+request.input).byteLength
+   if(inputBytes>options.maxInputTokens-256)
+    throw new Error('Atlas research input exceeds conservative preflight ceiling')
+  }
   const response=await (options.fetchImpl??fetch)('https://api.openai.com/v1/responses',{
    method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+options.apiKey},
    body:requestBody,signal:AbortSignal.timeout(30000)
