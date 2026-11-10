@@ -5,7 +5,7 @@ on:
   pull_request:
     paths:
       - 'scentmarked-mvp-v0.5/supabase/migrations/20261106170000_atlas_research_budget_ledger.sql'
-      - 'scentmarked-mvp-v0.5/supabase/tests/atlas-research-budget-*.sql'
+      - 'scentmarked-mvp-v0.5/supabase/tests/atlas-research-budget-*'
       - '.github/workflows/atlas-budget-ledger-tests.yml'
 
 permissions:
@@ -51,3 +51,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/tests/atlas-research-budget-ledger.sql
       - name: Test RLS and RPC role isolation
         run: psql -v ON_ERROR_STOP=1 -f scentmarked-mvp-v0.5/supabase/tests/atlas-research-budget-privileges.sql
+      - name: Test parallel budget reservations
+        run: bash scentmarked-mvp-v0.5/supabase/tests/atlas-research-budget-concurrency.sh
