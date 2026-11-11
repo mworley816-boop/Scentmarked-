@@ -32,9 +32,12 @@ export async function POST(request:Request){
   }
   if(typeof data!=='string')return NextResponse.json({error:'Unexpected import response'},{status:500})
   const {data:record,error:recordError}=await service.from('perfumes').select('id,status,name').eq('id',data).maybeSingle()
+  if(!recordError&&record?.status==='archived'){
+   return NextResponse.json({error:'This research was already imported, but the catalog entry is archived. Review the archived entry; do not import it again.',perfumeId:data,recordStatus:'archived'},{status:409})
+  }
   if(recordError||!record||record.status!=='draft'){
    console.error('Atlas imported draft verification failed',{code:recordError?.code})
-   return NextResponse.json({error:'Import response could not be verified. Check the catalog before retrying.'},{status:500})
+   return NextResponse.json({error:'Import response could not be verified. Check the catalog before retrying.',perfumeId:data},{status:500})
   }
   const [{count:noteCount,error:noteError},{count:sourceCount,error:sourceError}]=await Promise.all([
    service.from('perfume_notes').select('perfume_id',{count:'exact',head:true}).eq('perfume_id',data),
