@@ -36,3 +36,26 @@ test('metered provider rejects oversized input before fetch',async()=>{
  await assert.rejects(provider(task),/conservative preflight ceiling/)
  assert.equal(called,false)
 })
+
+test('metered provider rejects multibyte input before network request',async()=>{
+ let calls=0
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:1024,
+  loadContext:async()=>({...context,sources:[{...context.sources[0],excerpt:'🍓'.repeat(650)}]}),
+  fetchImpl:async()=>{calls++;throw Error('must not fetch')}})
+ await assert.rejects(provider(task),/conservative preflight ceiling/)
+ assert.equal(calls,0)
+})
+test('metered provider rejects invalid input ceiling at configuration',()=>{
+ assert.throws(()=>createAtlasMeteredOpenAIResearchProvider({
+  apiKey:'test',model:'test-model',maxInputTokens:512,loadContext:async()=>context
+ }),/Invalid Atlas input token ceiling/)
+})
+test('metered provider checks payload byte limit before network request',async()=>{
+ let calls=0
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',
+  maxInputTokens:100000,maxRequestBytes:1024,
+  loadContext:async()=>({...context,sources:[{...context.sources[0],excerpt:'x'.repeat(3000)}]}),
+  fetchImpl:async()=>{calls++;throw Error('must not fetch')}})
+ await assert.rejects(provider(task),/request exceeds byte limit/)
+ assert.equal(calls,0)
+})
