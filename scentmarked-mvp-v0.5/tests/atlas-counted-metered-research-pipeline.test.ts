@@ -7,7 +7,7 @@ test('official counted pipeline construction performs no network, model, or budg
  const run=createAtlasCountedMeteredResearchPipeline({
   client:{} as never,apiKey:'test',model:'test-model',allowedHosts:['example.org'],rates,
   maxInputTokens:4096,maxOutputTokens:800,maxRequestBytes:8192,
-  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:4200,store:{
+  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:8000,store:{
    reserve:async()=>{calls++;return null},settle:async()=>{calls++}
   }},
   tokenCountFetch:(async()=>{calls++;throw Error('unexpected count')}) as typeof fetch,
