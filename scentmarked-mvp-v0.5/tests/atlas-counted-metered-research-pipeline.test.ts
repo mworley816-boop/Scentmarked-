@@ -72,3 +72,71 @@ test('counting endpoint failure blocks model call and draft publication',async()
  assert.equal(writes,0)
  assert.deepEqual(finished,{p_success:false,p_error:'Atlas input token count request failed (503)'})
 })
+
+test('counted pipeline saves private evidence after model usage is settled',async()=>{
+ const events:string[]=[]
+ const sourceUrl='https://example.org/reference'
+ let draft:Record<string,unknown>|null=null
+ const client={
+  rpc:async(name:string,args?:Record<string,unknown>)=>{
+   events.push(name)
+   if(name==='atlas_claim_employee_task')return {data:[{
+    task_id:'task',perfume_id:'perfume',task_kind:'research_description',
+    lease_token:'lease',leased_until:'2099-01-01T00:00:00Z'
+   }],error:null}
+   if(name==='atlas_save_employee_evidence_draft'){
+    draft=args??null
+    return {data:'private-draft-id',error:null}
+   }
+   if(name==='atlas_finish_employee_task'){
+    assert.equal(args?.p_success,true)
+    return {data:true,error:null}
+   }
+   throw Error('unexpected RPC: '+name)
+  },
+  from:(table:string)=>({
+   select:()=>({
+    eq:()=>({
+     maybeSingle:async()=>({data:table==='perfumes'?{id:'perfume',name:'Sample Scent',brand_id:'brand'}:{name:'Sample Brand'},error:null}),
+     limit:async()=>({data:[{source_url:sourceUrl}],error:null})
+    })
+   })
+  })
+ } as never
+ const run=createAtlasCountedMeteredResearchPipeline({
+  client,apiKey:'test',model:'test-model',allowedHosts:['example.org'],rates,
+  maxInputTokens:4096,maxOutputTokens:800,maxRequestBytes:8192,
+  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:8000,store:{
+   reserve:async()=>{events.push('reserve');return {id:'reservation',reservedUsdMicros:8000}},
+   settle:async input=>{events.push('settle');assert.equal(input.reservationId,'reservation');assert.equal(input.actualUsdMicros,200)}
+  }},
+  sourceFetch:(async()=>new Response('The fragrance lists vanilla and amber notes with a warm base.',{
+   status:200,headers:{'content-type':'text/plain'}
+  })) as typeof fetch,
+  tokenCountFetch:(async(url,init)=>{
+   events.push('count')
+   assert.equal(url,'https://api.openai.com/v1/responses/input_tokens')
+   const body=JSON.parse(String(init?.body))
+   assert.equal(body.model,'test-model')
+   assert.match(body.input,/Sample Scent/)
+   return {ok:true,json:async()=>({object:'response.input_tokens',input_tokens:120})} as Response
+  }) as typeof fetch,
+  modelFetch:(async(url,init)=>{
+   events.push('model')
+   assert.equal(url,'https://api.openai.com/v1/responses')
+   assert.equal(JSON.parse(String(init?.body)).store,false)
+   return {ok:true,json:async()=>({
+    output:[{content:[{type:'output_text',text:JSON.stringify({
+     proposedText:'Vanilla scent',citations:[{id:1,claim:'Vanilla is listed'}]
+    })}]}],
+    usage:{input_tokens:120,output_tokens:20,total_tokens:140}
+   })} as Response
+  }) as typeof fetch
+ })
+ assert.deepEqual(await run(),{status:'completed',taskId:'task'})
+ assert.deepEqual(events.slice(-5),['count','model','settle','atlas_save_employee_evidence_draft','atlas_finish_employee_task'])
+ assert.equal(draft?.p_task_id,'task')
+ assert.equal(draft?.p_proposed_text,'Vanilla scent')
+ assert.deepEqual(draft?.p_sources,[{url:sourceUrl,claim:'Vanilla is listed'}])
+ assert.equal(draft?.p_image_reference,null)
+})
