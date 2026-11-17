@@ -55,12 +55,13 @@ export function createAtlasControlledMeteredResearchPipeline(options:{
  budget:AtlasResearchBudgetOptions;
  rates:AtlasModelRates;
  maxInputTokens:number;
- countInputTokens?:(request:{model:string;instructions:string;input:string})=>number|Promise<number>;
+ countInputTokens:(request:{model:string;instructions:string;input:string})=>number|Promise<number>;
  maxOutputTokens:number;
  maxRequestBytes:number;
  sourceFetch?:typeof fetch;
  modelFetch?:typeof fetch;
 }){
+ if(typeof options.countInputTokens!=='function')throw new Error('Atlas metered pipeline requires a verified model token counter')
  if(!options.allowedHosts.length)throw new Error('Atlas source allowlist is required')
  const collect=createAtlasEvidenceCollector({
   allowedHosts:options.allowedHosts,fetchImpl:options.sourceFetch
