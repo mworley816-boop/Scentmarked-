@@ -97,6 +97,8 @@ export function createAtlasControlledMeteredResearchPipeline(options:{
   return runAtlasResearchDraftWorker(options.client,task=>{
    if(task.task_kind!=='research_description')
     throw new Error('Atlas metered research pilot only permits description tasks')
+   if(!Number.isFinite(Date.parse(task.leased_until))||Date.parse(task.leased_until)<=Date.now())
+    throw new Error('Atlas metered research task lease is expired')
    return metered(task)
   })
  }
