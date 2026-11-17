@@ -95,3 +95,22 @@ test('verified model counter failure prevents network request',async()=>{
  await assert.rejects(provider(task),/tokenizer unavailable/)
  assert.equal(called,0)
 })
+
+test('verified token counter rejects negative and fractional counts before fetch',async()=>{
+ for(const count of [-1,1.5,Infinity]){
+  let calls=0
+  const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,
+   countInputTokens:async()=>count,loadContext:async()=>context,
+   fetchImpl:async()=>{calls++;throw Error('must not fetch')}})
+  await assert.rejects(provider(task),/verified input token ceiling exceeded or invalid/)
+  assert.equal(calls,0)
+ }
+})
+test('verified token counter accepts exact preflight boundary',async()=>{
+ let calls=0
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,
+  countInputTokens:async()=>3840,loadContext:async()=>context,
+  fetchImpl:async()=>{calls++;return {ok:true,json:async()=>({output,usage:{input_tokens:120,output_tokens:30,total_tokens:150}})} as Response}})
+ await provider(task)
+ assert.equal(calls,1)
+})
