@@ -218,3 +218,36 @@ test('metered pilot refuses expired leases before source, token, budget, or mode
  assert.equal(finishSuccess,false)
  assert.equal(externalCalls,0)
 })
+
+
+test('metered pilot is one-shot even when the first claim is still pending',async()=>{
+ let claims=0
+ let releaseClaim:((value:{data:unknown[];error:null})=>void)|undefined
+ const client={
+  rpc:async(name:string)=>{
+   if(name!=='atlas_claim_employee_task')throw Error('unexpected RPC '+name)
+   claims++
+   return new Promise<{data:unknown[];error:null}>(resolve=>{releaseClaim=resolve})
+  }
+ } as never
+ const run=createAtlasCountedMeteredResearchPipeline({
+  client,apiKey:'test',model:'test-model',allowedHosts:['example.org'],rates,
+  maxInputTokens:4096,maxOutputTokens:800,maxRequestBytes:8192,
+  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:8000,store:{
+   reserve:async()=>{throw Error('no budget calls')},
+   settle:async()=>{throw Error('no settlement calls')}
+  }},
+  sourceFetch:(async()=>{throw Error('no source calls')}) as typeof fetch,
+  tokenCountFetch:(async()=>{throw Error('no count calls')}) as typeof fetch,
+  modelFetch:(async()=>{throw Error('no model calls')}) as typeof fetch
+ })
+ const first=run()
+ assert.equal(claims,1)
+ assert.throws(()=>run(),/already been invoked/)
+ assert.equal(claims,1)
+ assert.ok(releaseClaim)
+ releaseClaim({data:[],error:null})
+ assert.deepEqual(await first,{status:'idle'})
+ assert.throws(()=>run(),/already been invoked/)
+ assert.equal(claims,1)
+})
