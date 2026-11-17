@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {createAtlasCountedMeteredResearchPipeline} from '../lib/atlas-counted-metered-research-pipeline.ts'
+import {createAtlasSupabaseBudgetStore} from '../lib/atlas-supabase-budget-store.ts'
 const rates={inputUsdMicrosPerMillion:1000000,cachedInputUsdMicrosPerMillion:250000,outputUsdMicrosPerMillion:4000000}
 test('official counted pipeline construction performs no network, model, or budget calls',()=>{
  let calls=0
@@ -84,6 +85,17 @@ test('counted pipeline saves private evidence after model usage is settled',asyn
     task_id:'task',perfume_id:'perfume',task_kind:'research_description',
     lease_token:'lease',leased_until:'2099-01-01T00:00:00Z'
    }],error:null}
+   if(name==='atlas_reserve_research_budget'){
+    assert.equal(args?.p_amount_micros,8000)
+    assert.equal(args?.p_daily_limit_micros,10000)
+    assert.match(String(args?.p_day),/^\\d{4}-\\d{2}-\\d{2}$/)
+    return {data:{id:'reservation',reserved_usd_micros:8000},error:null}
+   }
+   if(name==='atlas_settle_research_budget'){
+    assert.equal(args?.p_reservation_id,'reservation')
+    assert.equal(args?.p_actual_micros,200)
+    return {data:true,error:null}
+   }
    if(name==='atlas_save_employee_evidence_draft'){
     draft=args??null
     return {data:'private-draft-id',error:null}
@@ -106,10 +118,7 @@ test('counted pipeline saves private evidence after model usage is settled',asyn
  const run=createAtlasCountedMeteredResearchPipeline({
   client,apiKey:'test',model:'test-model',allowedHosts:['example.org'],rates,
   maxInputTokens:4096,maxOutputTokens:800,maxRequestBytes:8192,
-  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:8000,store:{
-   reserve:async()=>{events.push('reserve');return {id:'reservation',reservedUsdMicros:8000}},
-   settle:async input=>{events.push('settle');assert.equal(input.reservationId,'reservation');assert.equal(input.actualUsdMicros,200)}
-  }},
+  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:8000,store:createAtlasSupabaseBudgetStore(client)},
   sourceFetch:(async()=>new Response('The fragrance lists vanilla and amber notes with a warm base.',{
    status:200,headers:{'content-type':'text/plain'}
   })) as typeof fetch,
@@ -134,7 +143,8 @@ test('counted pipeline saves private evidence after model usage is settled',asyn
   }) as typeof fetch
  })
  assert.deepEqual(await run(),{status:'completed',taskId:'task'})
- assert.deepEqual(events.slice(-5),['count','model','settle','atlas_save_employee_evidence_draft','atlas_finish_employee_task'])
+ assert.ok(events.indexOf('atlas_reserve_research_budget')<events.indexOf('count'))
+ assert.deepEqual(events.slice(-5),['count','model','atlas_settle_research_budget','atlas_save_employee_evidence_draft','atlas_finish_employee_task'])
  const savedDraft=draft as Record<string,unknown>|null
  assert.ok(savedDraft,'Expected a private evidence draft to be saved')
  assert.equal(savedDraft.p_task_id,'task')
