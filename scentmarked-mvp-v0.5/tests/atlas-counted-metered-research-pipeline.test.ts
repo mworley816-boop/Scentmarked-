@@ -24,3 +24,51 @@ test('official counted pipeline refuses missing credentials at construction',()=
   budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:4200,store:{reserve:async()=>null,settle:async()=>{}}}
  }),/counter is not configured/)
 })
+
+test('counting endpoint failure blocks model call and draft publication',async()=>{
+ let counts=0,models=0,reserves=0,settles=0,writes=0
+ let finished:{p_success:boolean;p_error:string|null}|null=null
+ const sourceUrl='https://example.org/reference'
+ const client={
+  rpc:async(name:string,args?:Record<string,unknown>)=>{
+   if(name==='atlas_claim_employee_task')return {data:[{
+    task_id:'task',perfume_id:'perfume',task_kind:'research_description',
+    lease_token:'lease',leased_until:'2099-01-01T00:00:00Z'
+   }],error:null}
+   if(name==='atlas_finish_employee_task'){
+    finished={p_success:args?.p_success as boolean,p_error:args?.p_error as string|null}
+    return {data:true,error:null}
+   }
+   throw Error('unexpected RPC: '+name)
+  },
+  from:(table:string)=>({
+   select:()=>({
+    eq:()=>({
+     maybeSingle:async()=>({data:table==='perfumes'?{id:'perfume',name:'Sample Scent',brand_id:'brand'}:{name:'Sample Brand'},error:null}),
+     limit:async()=>({data:[{source_url:sourceUrl}],error:null})
+    })
+   }),
+   insert:()=>{writes++;throw Error('draft write must not occur')}
+  })
+ } as never
+ const run=createAtlasCountedMeteredResearchPipeline({
+  client,apiKey:'test',model:'test-model',allowedHosts:['example.org'],rates,
+  maxInputTokens:4096,maxOutputTokens:800,maxRequestBytes:8192,
+  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:8000,store:{
+   reserve:async()=>{reserves++;return {id:'reservation',reservedUsdMicros:8000}},
+   settle:async()=>{settles++}
+  }},
+  sourceFetch:(async()=>new Response('The fragrance lists vanilla and amber notes with a warm base.',{
+   status:200,headers:{'content-type':'text/plain'}
+  })) as typeof fetch,
+  tokenCountFetch:(async()=>{counts++;return {ok:false,status:503} as Response}) as typeof fetch,
+  modelFetch:(async()=>{models++;throw Error('model must not run')}) as typeof fetch
+ })
+ assert.deepEqual(await run(),{status:'retry_or_failed',taskId:'task'})
+ assert.equal(counts,1)
+ assert.equal(models,0)
+ assert.equal(reserves,1)
+ assert.equal(settles,0)
+ assert.equal(writes,0)
+ assert.deepEqual(finished,{p_success:false,p_error:'Atlas input token count request failed (503)'})
+})
