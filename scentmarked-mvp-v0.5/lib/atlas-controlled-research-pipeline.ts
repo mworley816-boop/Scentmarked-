@@ -94,6 +94,10 @@ export function createAtlasControlledMeteredResearchPipeline(options:{
  return ()=>{
   if(invoked)throw new Error('Atlas runner has already been invoked')
   invoked=true
-  return runAtlasResearchDraftWorker(options.client,metered)
+  return runAtlasResearchDraftWorker(options.client,task=>{
+   if(task.task_kind!=='research_description')
+    throw new Error('Atlas metered research pilot only permits description tasks')
+   return metered(task)
+  })
  }
 }

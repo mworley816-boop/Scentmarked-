@@ -152,3 +152,36 @@ test('counted pipeline saves private evidence after model usage is settled',asyn
  assert.deepEqual(savedDraft.p_sources,[{url:sourceUrl,claim:'Vanilla is listed'}])
  assert.equal(savedDraft.p_image_reference,null)
 })
+
+test('metered pilot refuses graphics tasks before source, token, budget, or model calls',async()=>{
+ let externalCalls=0
+ let finishSuccess:boolean|null=null
+ const client={
+  rpc:async(name:string,args?:Record<string,unknown>)=>{
+   if(name==='atlas_claim_employee_task')return {data:[{
+    task_id:'graphics-task',perfume_id:'perfume',task_kind:'research_graphic',
+    lease_token:'lease',leased_until:'2099-01-01T00:00:00Z'
+   }],error:null}
+   if(name==='atlas_finish_employee_task'){
+    finishSuccess=args?.p_success as boolean
+    return {data:true,error:null}
+   }
+   throw Error('unexpected RPC '+name)
+  },
+  from:()=>{externalCalls++;throw Error('catalog must not be queried')}
+ } as never
+ const run=createAtlasCountedMeteredResearchPipeline({
+  client,apiKey:'test',model:'test-model',allowedHosts:['example.org'],rates,
+  maxInputTokens:4096,maxOutputTokens:800,maxRequestBytes:8192,
+  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:8000,store:{
+   reserve:async()=>{externalCalls++;throw Error('budget must not be reserved')},
+   settle:async()=>{externalCalls++;throw Error('budget must not be settled')}
+  }},
+  sourceFetch:(async()=>{externalCalls++;throw Error('source must not run')}) as typeof fetch,
+  tokenCountFetch:(async()=>{externalCalls++;throw Error('count must not run')}) as typeof fetch,
+  modelFetch:(async()=>{externalCalls++;throw Error('model must not run')}) as typeof fetch
+ })
+ assert.deepEqual(await run(),{status:'retry_or_failed',taskId:'graphics-task'})
+ assert.equal(finishSuccess,false)
+ assert.equal(externalCalls,0)
+})
