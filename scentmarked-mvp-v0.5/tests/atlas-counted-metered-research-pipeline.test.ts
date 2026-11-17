@@ -101,7 +101,7 @@ test('counted pipeline saves private evidence after model usage is settled',asyn
     return {data:'private-draft-id',error:null}
    }
    if(name==='atlas_finish_employee_task'){
-    assert.equal(args?.p_success,true)
+    assert.equal(args?.p_success,true,String(args?.p_error))
     return {data:true,error:null}
    }
    throw Error('unexpected RPC: '+name)
