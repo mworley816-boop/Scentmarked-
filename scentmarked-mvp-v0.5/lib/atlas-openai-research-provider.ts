@@ -54,11 +54,11 @@ function createProvider(options:ProviderOptions,requireUsage:boolean){
    const inputBytes=new TextEncoder().encode(request.instructions+request.input).byteLength
    if(inputBytes>options.maxInputTokens-256)
     throw new Error('Atlas research input exceeds conservative preflight ceiling')
-   if(options.countInputTokens){
-    const counted=await options.countInputTokens({model:request.model,instructions:request.instructions,input:request.input})
-    if(!Number.isSafeInteger(counted)||counted<0||counted>options.maxInputTokens-256)
-     throw new Error('Atlas research verified input token ceiling exceeded or invalid')
-   }
+   if(typeof options.countInputTokens!=='function')
+    throw new Error('Atlas metered research requires a model token counter')
+   const counted=await options.countInputTokens({model:request.model,instructions:request.instructions,input:request.input})
+   if(!Number.isSafeInteger(counted)||counted<0||counted>options.maxInputTokens-256)
+    throw new Error('Atlas research verified input token ceiling exceeded or invalid')
   }
   const response=await (options.fetchImpl??fetch)('https://api.openai.com/v1/responses',{
    method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+options.apiKey},
