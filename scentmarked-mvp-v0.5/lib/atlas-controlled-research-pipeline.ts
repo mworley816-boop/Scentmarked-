@@ -88,16 +88,16 @@ export function createAtlasControlledMeteredResearchPipeline(options:{
   budget:options.budget,rates:options.rates,
   maxInputTokens:options.maxInputTokens,
   maxOutputTokens:options.maxOutputTokens,
-  research:task=>{
-   if(task.task_kind!=='research_description')
-    throw new Error('Atlas metered research pilot only permits description tasks')
-   return research(task)
-  }
+  research
  })
  let invoked=false
  return ()=>{
   if(invoked)throw new Error('Atlas runner has already been invoked')
   invoked=true
-  return runAtlasResearchDraftWorker(options.client,metered)
+  return runAtlasResearchDraftWorker(options.client,task=>{
+   if(task.task_kind!=='research_description')
+    throw new Error('Atlas metered research pilot only permits description tasks')
+   return metered(task)
+  })
  }
 }
