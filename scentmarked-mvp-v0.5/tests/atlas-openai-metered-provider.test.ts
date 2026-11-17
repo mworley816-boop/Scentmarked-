@@ -59,3 +59,39 @@ test('metered provider checks payload byte limit before network request',async()
  await assert.rejects(provider(task),/request exceeds byte limit/)
  assert.equal(calls,0)
 })
+
+test('verified model counter blocks request before fetch when over ceiling',async()=>{
+ let calls=0
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:1024,
+  countInputTokens:async request=>{assert.equal(request.model,'test-model');return 769},
+  loadContext:async()=>context,fetchImpl:async()=>{calls++;throw Error('must not fetch')}})
+ await assert.rejects(provider(task),/verified input token ceiling/)
+ assert.equal(calls,0)
+})
+test('verified model counter rejects invalid counts before fetch',async()=>{
+ let calls=0
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,
+  countInputTokens:async()=>NaN,
+  loadContext:async()=>context,fetchImpl:async()=>{calls++;throw Error('must not fetch')}})
+ await assert.rejects(provider(task),/verified input token ceiling/)
+ assert.equal(calls,0)
+})
+
+test('verified model counter permits valid bounded request',async()=>{
+ let counted=0,called=0
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,
+  countInputTokens:async request=>{counted++;assert.equal(request.model,'test-model');assert.match(request.input,/Sample Brand/);return 120},
+  loadContext:async()=>context,
+  fetchImpl:async()=>{called++;return {ok:true,json:async()=>({output,usage:{input_tokens:120,output_tokens:30,total_tokens:150}})} as Response}})
+ await provider(task)
+ assert.equal(counted,1)
+ assert.equal(called,1)
+})
+test('verified model counter failure prevents network request',async()=>{
+ let called=0
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,
+  countInputTokens:async()=>{throw new Error('tokenizer unavailable')},
+  loadContext:async()=>context,fetchImpl:async()=>{called++;throw Error('must not fetch')}})
+ await assert.rejects(provider(task),/tokenizer unavailable/)
+ assert.equal(called,0)
+})
