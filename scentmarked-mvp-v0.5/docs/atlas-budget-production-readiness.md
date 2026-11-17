@@ -1,6 +1,6 @@
 # Atlas budget ledger: production readiness and approval gate
 
-**Status (2026-11-17): BLOCKED — migration not applied.** This document does not authorize deployment, paid OpenAI requests, scheduled research, or publication.
+**Status (2026-11-17): Budget ledger migration applied and security objects verified; paid pilot NOT authorized.** This document does not authorize paid OpenAI requests, scheduled research, or publication.
 
 ## Verified read-only production inventory
 
@@ -10,20 +10,20 @@ Scentmarked Supabase project `qnlqdkctfmfagsvbwiis`:
 | --- | --- |
 | `public.atlas_employee_tasks` | Present |
 | `public.atlas_research_evidence_drafts` | Present |
-| `public.atlas_research_budget_days` | Missing |
-| `public.atlas_research_budget_reservations` | Missing |
-| `public.atlas_reserve_research_budget(date,bigint,bigint)` | Missing |
-| `public.atlas_settle_research_budget(uuid,bigint)` | Missing |
+| `public.atlas_research_budget_days` | Present (verified after migration) |
+| `public.atlas_research_budget_reservations` | Present (verified after migration) |
+| `public.atlas_reserve_research_budget(date,bigint,bigint)` | Present (verified after migration) |
+| `public.atlas_settle_research_budget(uuid,bigint)` | Present (verified after migration) |
 
-Inventory was obtained by a read-only `to_regclass` / `to_regprocedure` query. This does **not** establish that all other production permissions, triggers, or secrets are ready.
+The pre-migration inventory was obtained read-only. The approved migration was subsequently applied to this Scentmarked production project and recorded in Supabase migration history as `20261117151622` (`atlas_research_budget_ledger`). Post-migration checks confirmed RLS enabled on both budget tables, no anonymous/authenticated SELECT, service-role access, and both RPCs as `SECURITY INVOKER` with EXECUTE denied to anonymous/authenticated roles. This does **not** establish that provider credentials, pricing, alerting, or pilot permissions are ready.
 
-## Review before any migration
+## Migration review record and remaining pilot gates
 
-1. Review the committed migration `supabase/migrations/20261106170000_atlas_research_budget_ledger.sql` in its entirety, including service-role-only RLS, `SECURITY INVOKER` RPCs, privileges, atomic reservation, settlement, and idempotency.
-2. Verify migration history and existing objects on the target project; review a backup/rollback plan. Do not run migrations against the wrong Supabase project.
+1. Completed: reviewed and applied the committed migration `supabase/migrations/20261106170000_atlas_research_budget_ledger.sql` in its entirety, including service-role-only RLS, `SECURITY INVOKER` RPCs, privileges, atomic reservation, settlement, and idempotency.
+2. Completed: verified migration history and ledger objects on the Scentmarked target project. Do not reapply the migration.
 3. Verify disposable-Postgres CI: `atlas-budget-ledger-tests` including role-isolation and concurrent reservations. Do not execute destructive test scripts against production.
-4. Obtain **explicit operator approval** before applying any production migration.
-5. After approval and application, rerun the object inventory, inspect RLS/policies and RPC grants, and run non-destructive verification. Never perform a paid provider call as a migration smoke test.
+4. Completed: operator explicitly approved the production migration before it was applied.
+5. Completed: checked object inventory, RLS and RPC grants using non-destructive verification. No paid provider call was used as a migration smoke test.
 6. Independently verify provider credentials, current model pricing, daily cap, worst-case reserve, model/token ceilings, and alerting. Obtain **separate explicit approval** for any paid pilot.
 7. Run a small, supervised, explicitly authorized pilot. All findings remain private drafts; graphics and catalog publication require separate review.
 
@@ -39,4 +39,6 @@ select
  to_regclass('public.atlas_research_evidence_drafts') as evidence_drafts;
 ```
 
-**Stop conditions:** missing ledger objects, unexpected public/anon/authenticated privileges, failed disposable CI, unverified pricing/credentials, or missing operator approval. Keep paid research and automatic publishing disabled.
+**Stop conditions for paid pilot:** missing ledger objects, unexpected public/anon/authenticated privileges, failed disposable CI, unverified pricing/credentials, or missing operator approval. Keep paid research and automatic publishing disabled.
+
+See [`atlas-supervised-pilot-activation-gates.md`](./atlas-supervised-pilot-activation-gates.md) for the separate supervised pilot authorization checklist.
