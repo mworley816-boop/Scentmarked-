@@ -55,6 +55,7 @@ export function createAtlasControlledMeteredResearchPipeline(options:{
  budget:AtlasResearchBudgetOptions;
  rates:AtlasModelRates;
  maxInputTokens:number;
+ countInputTokens?:(request:{model:string;instructions:string;input:string})=>number|Promise<number>;
  maxOutputTokens:number;
  maxRequestBytes:number;
  sourceFetch?:typeof fetch;
@@ -76,7 +77,8 @@ export function createAtlasControlledMeteredResearchPipeline(options:{
   loadContext:createAtlasSourceContextLoader(reader),fetchImpl:options.modelFetch,
   maxOutputTokens:options.maxOutputTokens,
   maxRequestBytes:options.maxRequestBytes,
-  maxInputTokens:options.maxInputTokens
+  maxInputTokens:options.maxInputTokens,
+  countInputTokens:options.countInputTokens
  })
  const metered=createAtlasBoundedMeteredResearchAdapter({
   budget:options.budget,rates:options.rates,
