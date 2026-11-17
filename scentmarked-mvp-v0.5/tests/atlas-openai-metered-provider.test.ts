@@ -6,17 +6,17 @@ const task:ClaimedTask={task_id:'task',perfume_id:'perfume',task_kind:'research_
 const context={brand:'Sample Brand',perfumeName:'Sample Scent',sources:[{url:'https://example.org/reference',excerpt:'Vanilla is listed in the scent notes.'}]}
 const output=[{content:[{type:'output_text',text:JSON.stringify({proposedText:'Vanilla scent',citations:[{id:1,claim:'Vanilla is listed'}]})}]}]
 test('metered provider returns validated evidence and actual response usage',async()=>{
- const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,loadContext:async()=>context,
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,countInputTokens:async()=>120,loadContext:async()=>context,
   fetchImpl:async()=>({ok:true,json:async()=>({output,usage:{input_tokens:120,output_tokens:30,total_tokens:150,input_tokens_details:{cached_tokens:20}}})} as Response)})
  assert.deepEqual(await provider(task),{evidence:{proposedText:'Vanilla scent',sources:[{url:'https://example.org/reference',claim:'Vanilla is listed'}]},usage:{inputTokens:120,outputTokens:30,totalTokens:150,cachedInputTokens:20}})
 })
 test('metered provider rejects successful output with missing usage',async()=>{
- const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,loadContext:async()=>context,
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,countInputTokens:async()=>120,loadContext:async()=>context,
   fetchImpl:async()=>({ok:true,json:async()=>({output})} as Response)})
  await assert.rejects(provider(task),/usage missing/)
 })
 test('metered provider rejects inconsistent token accounting',async()=>{
- const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,loadContext:async()=>context,
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,countInputTokens:async()=>120,loadContext:async()=>context,
   fetchImpl:async()=>({ok:true,json:async()=>({output,usage:{input_tokens:120,output_tokens:30,total_tokens:149}})} as Response)})
  await assert.rejects(provider(task),/Inconsistent/)
 })
@@ -113,4 +113,14 @@ test('verified token counter accepts exact preflight boundary',async()=>{
   fetchImpl:async()=>{calls++;return {ok:true,json:async()=>({output,usage:{input_tokens:120,output_tokens:30,total_tokens:150}})} as Response}})
  await provider(task)
  assert.equal(calls,1)
+})
+
+test('direct metered provider fails closed without a model token counter',async()=>{
+ let calls=0
+ const provider=createAtlasMeteredOpenAIResearchProvider({
+  apiKey:'test',model:'test-model',maxInputTokens:4096,loadContext:async()=>context,
+  fetchImpl:async()=>{calls++;throw Error('must not fetch')}
+ })
+ await assert.rejects(provider(task),/requires a model token counter/)
+ assert.equal(calls,0)
 })
