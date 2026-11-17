@@ -56,3 +56,14 @@ test('metered pipeline rejects counter configured for a different model',()=>{
   budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:4200,store:{reserve:async()=>null,settle:async()=>{}}}
  }),/counter model must match/)
 })
+
+test('metered pipeline rejects missing or empty counter model identity',()=>{
+ for(const tokenCounterModel of [undefined,'']){
+  assert.throws(()=>createAtlasControlledMeteredResearchPipeline({
+   client:{} as never,apiKey:'test',model:'test',allowedHosts:['example.org'],rates,
+   maxInputTokens:1000,maxOutputTokens:800,maxRequestBytes:8192,
+   countInputTokens:async()=>100,tokenCounterModel:tokenCounterModel as never,
+   budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:4200,store:{reserve:async()=>null,settle:async()=>{}}}
+  }),/counter model must match/)
+ }
+})
