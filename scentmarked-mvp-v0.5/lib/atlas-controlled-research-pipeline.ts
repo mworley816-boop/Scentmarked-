@@ -88,7 +88,11 @@ export function createAtlasControlledMeteredResearchPipeline(options:{
   budget:options.budget,rates:options.rates,
   maxInputTokens:options.maxInputTokens,
   maxOutputTokens:options.maxOutputTokens,
-  research
+  research:task=>{
+   if(task.task_kind!=='research_description')
+    throw new Error('Atlas metered research pilot only permits description tasks')
+   return research(task)
+  }
  })
  let invoked=false
  return ()=>{
