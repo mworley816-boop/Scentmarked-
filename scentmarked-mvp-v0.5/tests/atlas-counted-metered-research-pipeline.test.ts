@@ -88,7 +88,7 @@ test('counted pipeline saves private evidence after model usage is settled',asyn
    if(name==='atlas_reserve_research_budget'){
     assert.equal(args?.p_amount_micros,8000)
     assert.equal(args?.p_daily_limit_micros,10000)
-    assert.match(String(args?.p_day),/^\\d{4}-\\d{2}-\\d{2}$/)
+    assert.match(String(args?.p_day),/^\d{4}-\d{2}-\d{2}$/)
     return {data:{id:'reservation',reserved_usd_micros:8000},error:null}
    }
    if(name==='atlas_settle_research_budget'){
