@@ -59,3 +59,20 @@ test('metered provider checks payload byte limit before network request',async()
  await assert.rejects(provider(task),/request exceeds byte limit/)
  assert.equal(calls,0)
 })
+
+test('verified model counter blocks request before fetch when over ceiling',async()=>{
+ let calls=0
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:1024,
+  countInputTokens:async request=>{assert.equal(request.model,'test-model');return 769},
+  loadContext:async()=>context,fetchImpl:async()=>{calls++;throw Error('must not fetch')}})
+ await assert.rejects(provider(task),/verified input token ceiling/)
+ assert.equal(calls,0)
+})
+test('verified model counter rejects invalid counts before fetch',async()=>{
+ let calls=0
+ const provider=createAtlasMeteredOpenAIResearchProvider({apiKey:'test',model:'test-model',maxInputTokens:4096,
+  countInputTokens:async()=>NaN,
+  loadContext:async()=>context,fetchImpl:async()=>{calls++;throw Error('must not fetch')}})
+ await assert.rejects(provider(task),/verified input token ceiling/)
+ assert.equal(calls,0)
+})
