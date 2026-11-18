@@ -251,3 +251,69 @@ test('metered pilot is one-shot even when the first claim is still pending',asyn
  assert.throws(()=>run(),/already been invoked/)
  assert.equal(claims,1)
 })
+
+test('metered pilot refuses near-expired leases before source, token, budget, or model calls',async()=>{
+ let externalCalls=0
+ let finishSuccess:boolean|null=null
+ const client={
+  rpc:async(name:string,args?:Record<string,unknown>)=>{
+   if(name==='atlas_claim_employee_task')return {data:[{
+    task_id:'near-expired-task',perfume_id:'perfume',task_kind:'research_description',
+    lease_token:'lease',leased_until:new Date(Date.now()+30000).toISOString()
+   }],error:null}
+   if(name==='atlas_finish_employee_task'){
+    finishSuccess=args?.p_success as boolean
+    return {data:true,error:null}
+   }
+   throw Error('unexpected RPC '+name)
+  },
+  from:()=>{externalCalls++;throw Error('catalog must not be queried')}
+ } as never
+ const run=createAtlasCountedMeteredResearchPipeline({
+  client,apiKey:'test',model:'test-model',allowedHosts:['example.org'],rates,
+  maxInputTokens:4096,maxOutputTokens:800,maxRequestBytes:8192,
+  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:8000,store:{
+   reserve:async()=>{externalCalls++;throw Error('budget must not be reserved')},
+   settle:async()=>{externalCalls++;throw Error('budget must not be settled')}
+  }},
+  sourceFetch:(async()=>{externalCalls++;throw Error('source must not run')}) as typeof fetch,
+  tokenCountFetch:(async()=>{externalCalls++;throw Error('count must not run')}) as typeof fetch,
+  modelFetch:(async()=>{externalCalls++;throw Error('model must not run')}) as typeof fetch
+ })
+ assert.deepEqual(await run(),{status:'retry_or_failed',taskId:'near-expired-task'})
+ assert.equal(finishSuccess,false)
+ assert.equal(externalCalls,0)
+})
+
+
+test('metered pilot is one-shot even when the first claim is still pending',async()=>{
+ let claims=0
+ let releaseClaim:((value:{data:unknown[];error:null})=>void)|undefined
+ const client={
+  rpc:async(name:string)=>{
+   if(name!=='atlas_claim_employee_task')throw Error('unexpected RPC '+name)
+   claims++
+   return new Promise<{data:unknown[];error:null}>(resolve=>{releaseClaim=resolve})
+  }
+ } as never
+ const run=createAtlasCountedMeteredResearchPipeline({
+  client,apiKey:'test',model:'test-model',allowedHosts:['example.org'],rates,
+  maxInputTokens:4096,maxOutputTokens:800,maxRequestBytes:8192,
+  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:8000,store:{
+   reserve:async()=>{throw Error('no budget calls')},
+   settle:async()=>{throw Error('no settlement calls')}
+  }},
+  sourceFetch:(async()=>{throw Error('no source calls')}) as typeof fetch,
+  tokenCountFetch:(async()=>{throw Error('no count calls')}) as typeof fetch,
+  modelFetch:(async()=>{throw Error('no model calls')}) as typeof fetch
+ })
+ const first=run()
+ assert.equal(claims,1)
+ assert.throws(()=>run(),/already been invoked/)
+ assert.equal(claims,1)
+ assert.ok(releaseClaim)
+ releaseClaim({data:[],error:null})
+ assert.deepEqual(await first,{status:'idle'})
+ assert.throws(()=>run(),/already been invoked/)
+ assert.equal(claims,1)
+})
