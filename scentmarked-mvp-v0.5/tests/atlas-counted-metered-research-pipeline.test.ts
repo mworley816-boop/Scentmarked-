@@ -317,3 +317,51 @@ test('metered pilot is one-shot even when the first claim is still pending',asyn
  assert.throws(()=>run(),/already been invoked/)
  assert.equal(claims,1)
 })
+
+
+test('exhausted daily budget blocks token count, model and private draft',async()=>{
+ let reserves=0,counts=0,models=0,drafts=0
+ let finish:{success:boolean;error:string|null}|null=null
+ const client={
+  rpc:async(name:string,args?:Record<string,unknown>)=>{
+   if(name==='atlas_claim_employee_task')return {data:[{
+    task_id:'budget-task',perfume_id:'perfume',task_kind:'research_description',
+    lease_token:'lease',leased_until:'2099-01-01T00:00:00Z'
+   }],error:null}
+   if(name==='atlas_finish_employee_task'){
+    finish={success:args?.p_success as boolean,error:args?.p_error as string|null}
+    return {data:true,error:null}
+   }
+   if(name==='atlas_save_employee_evidence_draft'){drafts++;throw Error('draft must not be saved')}
+   throw Error('unexpected RPC '+name)
+  },
+  from:(table:string)=>({
+   select:()=>({
+    eq:()=>({
+     maybeSingle:async()=>({data:table==='perfumes'
+      ?{id:'perfume',name:'Sample Scent',brand_id:'brand'}:{name:'Sample Brand'},error:null}),
+     limit:async()=>({data:[{source_url:'https://example.org/reference'}],error:null})
+    })
+   })
+  })
+ } as never
+ const run=createAtlasCountedMeteredResearchPipeline({
+  client,apiKey:'test',model:'test-model',allowedHosts:['example.org'],rates,
+  maxInputTokens:4096,maxOutputTokens:800,maxRequestBytes:8192,
+  budget:{dailyLimitUsdMicros:10000,perRequestReserveUsdMicros:8000,store:{
+   reserve:async()=>{reserves++;return null},
+   settle:async()=>{throw Error('budget must not settle')}
+  }},
+  sourceFetch:(async()=>new Response('Vanilla and amber notes appear in this fragrance.',{
+   status:200,headers:{'content-type':'text/plain'}
+  })) as typeof fetch,
+  tokenCountFetch:(async()=>{counts++;throw Error('token count must not run')}) as typeof fetch,
+  modelFetch:(async()=>{models++;throw Error('model must not run')}) as typeof fetch
+ })
+ assert.deepEqual(await run(),{status:'retry_or_failed',taskId:'budget-task'})
+ assert.equal(reserves,1)
+ assert.equal(counts,0)
+ assert.equal(models,0)
+ assert.equal(drafts,0)
+ assert.deepEqual(finish,{success:false,error:'Atlas daily research budget exhausted'})
+})
