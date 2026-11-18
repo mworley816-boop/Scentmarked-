@@ -97,8 +97,11 @@ export function createAtlasControlledMeteredResearchPipeline(options:{
   return runAtlasResearchDraftWorker(options.client,task=>{
    if(task.task_kind!=='research_description')
     throw new Error('Atlas metered research pilot only permits description tasks')
-   if(!Number.isFinite(Date.parse(task.leased_until))||Date.parse(task.leased_until)<=Date.now())
-    throw new Error('Atlas metered research task lease is expired')
+   // Allow time for source retrieval, provider timeout, settlement and task finish.
+   // A near-expired lease must never start a potentially billable operation.
+   const leaseExpiresAt=Date.parse(task.leased_until)
+   if(!Number.isFinite(leaseExpiresAt)||leaseExpiresAt-Date.now()<60000)
+    throw new Error('Atlas metered research task lease has insufficient time remaining')
    return metered(task)
   })
  }
