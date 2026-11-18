@@ -1,0 +1,29 @@
+name: Atlas scheduled source verification employee
+
+on:
+  schedule:
+    - cron: '41 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atlas-source-verification-employee
+  cancel-in-progress: false
+
+jobs:
+  verify-one:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify one queued source assignment
+        env:
+          ATLAS_SUPABASE_URL: ${{ secrets.ATLAS_SUPABASE_URL }}
+          ATLAS_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.ATLAS_SUPABASE_SERVICE_ROLE_KEY }}
+          ATLAS_VERIFICATION_ALLOWED_HOSTS: ${{ vars.ATLAS_VERIFICATION_ALLOWED_HOSTS }}
+        run: node scentmarked-mvp-v0.5/scripts/atlas-verify-sources-worker.mjs
