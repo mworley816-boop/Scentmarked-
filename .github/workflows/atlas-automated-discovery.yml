@@ -1,0 +1,29 @@
+name: Atlas automated catalog task discovery
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atlas-catalog-task-discovery
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Discover and queue incomplete fragrance assignments
+        env:
+          ATLAS_SUPABASE_URL: ${{ secrets.ATLAS_SUPABASE_URL }}
+          ATLAS_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.ATLAS_SUPABASE_SERVICE_ROLE_KEY }}
+          ATLAS_DISCOVERY_LIMIT: '100'
+        run: node scentmarked-mvp-v0.5/scripts/atlas-discover-catalog-tasks.mjs
