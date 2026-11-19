@@ -4,8 +4,8 @@ const url=process.env.ATLAS_SUPABASE_URL
 const key=process.env.ATLAS_SUPABASE_SERVICE_ROLE_KEY
 const hosts=(process.env.ATLAS_VERIFICATION_ALLOWED_HOSTS??'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean)
 if(!url||!key||!hosts.length){
- console.log('Atlas source verification skipped: credentials or source allowlist not configured')
- process.exit(0)
+ console.error('Atlas source verification cannot run: credentials or source allowlist not configured')
+ process.exit(1)
 }
 const base=new URL(url)
 if(base.protocol!=='https:'||!/^[a-z0-9-]+\.supabase\.co$/.test(base.hostname)||base.pathname!=='/'||base.search||base.hash)throw Error('Invalid Supabase URL')
