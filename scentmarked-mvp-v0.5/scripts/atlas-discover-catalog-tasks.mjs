@@ -2,8 +2,8 @@
 const endpoint=process.env.ATLAS_SUPABASE_URL?.trim()
 const key=process.env.ATLAS_SUPABASE_SERVICE_ROLE_KEY?.trim()
 if(!endpoint||!key){
- console.log('Atlas discovery skipped: configure ATLAS_SUPABASE_URL and ATLAS_SUPABASE_SERVICE_ROLE_KEY')
- process.exit(0)
+ console.error('Atlas discovery cannot run: configure ATLAS_SUPABASE_URL and ATLAS_SUPABASE_SERVICE_ROLE_KEY')
+ process.exit(1)
 }
 let base
 try{
